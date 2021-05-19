@@ -11,5 +11,7 @@ find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 add_executable(${CMAKE_PROJECT_NAME}
     main.cpp
     NesFile.cpp
-    Cartridge.cpp)
+    Cartridge.cpp
+    Mapper.cpp
+    Mapper0.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME} sfml-system sfml-graphics sfml-window)
