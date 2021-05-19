@@ -8,7 +8,7 @@ Bus::Bus(std::unique_ptr<Mapper> mapper)
 uint8_t Bus::read(uint16_t addr) {
     if (addr < 0x2000) {
         return ram[addr & 0x07FF];
-    } else if (addr < 0x8000) {
+    } else if (addr < 0x6000) {
         // TODO
     } else {
         return mapper->read(addr);
@@ -20,7 +20,7 @@ uint8_t Bus::read(uint16_t addr) {
 void Bus::write(uint16_t addr, uint8_t data) {
     if (addr < 0x2000) {
         ram[addr & 0x07FF] = data;
-    } else if (addr < 0x8000) {
+    } else if (addr < 0x6000) {
         // TODO
     } else {
         mapper->write(addr, data);
