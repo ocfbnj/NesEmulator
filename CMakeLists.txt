@@ -13,5 +13,6 @@ add_executable(${CMAKE_PROJECT_NAME}
     NesFile.cpp
     Cartridge.cpp
     Mapper.cpp
-    Mapper0.cpp)
+    Mapper0.cpp
+    Bus.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME} sfml-system sfml-graphics sfml-window)
