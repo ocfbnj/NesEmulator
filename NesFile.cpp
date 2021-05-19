@@ -12,15 +12,15 @@
 struct NesFileHeader {
     static constexpr uint32_t Constant = 0x1A53454E;
 
-    uint32_t constant;  // Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
-    uint8_t prgSize;    // Size of PRG ROM in 16 KB units
-    uint8_t chrSize;    // Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
-    uint8_t flag6;      // Mapper, mirroring, battery, trainer
-    uint8_t flag7;      // Mapper, VS/Playchoice, NES 2.0
-    uint8_t flag8;      // PRG-RAM size (rarely used extension)
-    uint8_t flag9;      // TV system (rarely used extension)
-    uint8_t flag10;     // TV system, PRG-RAM presence (unofficial, rarely used extension)
-    uint8_t padding[5]; // Unused padding (should be filled with zero, but some rippers put their name across bytes 7-15)
+    uint32_t constant;                   // Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
+    uint8_t prgSize;                     // Size of PRG ROM in 16 KB units
+    uint8_t chrSize;                     // Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
+    uint8_t flag6;                       // Mapper, mirroring, battery, trainer
+    uint8_t flag7;                       // Mapper, VS/Playchoice, NES 2.0
+    [[maybe_unused]] uint8_t flag8;      // PRG-RAM size (rarely used extension)
+    [[maybe_unused]] uint8_t flag9;      // TV system (rarely used extension)
+    [[maybe_unused]] uint8_t flag10;     // TV system, PRG-RAM presence (unofficial, rarely used extension)
+    [[maybe_unused]] uint8_t padding[5]; // Unused padding (should be filled with zero, but some rippers put their name across bytes 7-15)
 };
 
 static_assert(sizeof(NesFileHeader) == 16, "The header is not 16 bytes");
@@ -33,7 +33,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // header
-    NesFileHeader header;
+    NesFileHeader header{};
     nesFile.read(reinterpret_cast<char*>(&header), sizeof(NesFileHeader));
     if (!nesFile) {
         std::clog << "Read the nes file header failed\n";
