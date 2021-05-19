@@ -6,3 +6,7 @@
 /.vs
 /out
 CMakeSettings.json
+
+# CLion
+/.idea
+/cmake-build-debug
