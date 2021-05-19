@@ -7,5 +7,6 @@
 - <https://github.com/fogleman/nes>
 - <https://github.com/amhndu/SimpleNES>
 - <https://skilldrick.github.io/easy6502>
-- <https://wiki.nesdev.com/w/index.php/Nesdev_Wiki>
 - <https://www.masswerk.at/6502/6502_instruction_set.html>
+- <http://obelisk.me.uk/6502/>
+- <http://wiki.nesdev.com/w/index.php/Nesdev_Wiki>
