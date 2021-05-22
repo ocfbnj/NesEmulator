@@ -19,6 +19,9 @@ public:
 private:
     // Addressing Mode
     // See http://obelisk.me.uk/6502/addressing.html
+    // TODO We should use `enum class` instead of `enum`.
+    // In C++20, we can use `using enum` to reduce repetitive code.
+    // See https://en.cppreference.com/w/cpp/language/enum#Using-enum-declaration
     enum Addressing {
         Imp,
         Acc,
