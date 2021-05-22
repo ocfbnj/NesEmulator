@@ -8,12 +8,28 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 # vcpkg install sfml
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 
-add_executable(${CMAKE_PROJECT_NAME}
-    main.cpp
-    NesFile.cpp
+set(deps
+    sfml-system
+    sfml-graphics
+    sfml-window)
+
+set(headers
+    Bus.h
+    Cartridge.h
+    Cpu.h
+    literals.h
+    Mapper.h
+    Mapper0.h
+    NesFile.h)
+
+set(srcs
+    Bus.cpp
     Cartridge.cpp
+    Cpu.cpp
+    main.cpp
     Mapper.cpp
     Mapper0.cpp
-    Bus.cpp
-    Cpu.cpp)
-target_link_libraries(${CMAKE_PROJECT_NAME} sfml-system sfml-graphics sfml-window)
+    NesFile.cpp)
+
+add_executable(${CMAKE_PROJECT_NAME} ${headers} ${srcs})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${deps})
