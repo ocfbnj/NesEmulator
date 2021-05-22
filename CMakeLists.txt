@@ -14,5 +14,6 @@ add_executable(${CMAKE_PROJECT_NAME}
     Cartridge.cpp
     Mapper.cpp
     Mapper0.cpp
-    Bus.cpp)
+    Bus.cpp
+    Cpu.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME} sfml-system sfml-graphics sfml-window)
