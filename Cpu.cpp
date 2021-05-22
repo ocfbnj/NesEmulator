@@ -1,9 +1,18 @@
 #include "Cpu.h"
 #include "Bus.h"
 
+bool isCrossed(uint16_t a, uint16_t b) {
+    return (a & 0xFF00) != (b & 0xFF00);
+}
+
+std::array<Cpu::Operate, 256> Cpu::opTable{
+    // TODO
+};
+
 Cpu::Cpu(Bus& bus) : bus(bus) {}
 
 void Cpu::clock() {
+    // execute the operation at last cycle
     if (cycles == 0) {
         step();
     }
@@ -37,16 +46,7 @@ void Cpu::irq() {
         b = 0;
         u = 1;
         i = 1;
-
-        uint8_t status = (c << 0) |
-                         (z << 1) |
-                         (i << 2) |
-                         (d << 3) |
-                         (b << 4) |
-                         (u << 5) |
-                         (v << 6) |
-                         (n << 7);
-        push(status);
+        push(getStatus());
 
         pc = bus.read16(0xFFFE);
 
@@ -60,16 +60,7 @@ void Cpu::nmi() {
     b = 0;
     u = 1;
     i = 1;
-
-    uint8_t status = (c << 0) |
-                     (z << 1) |
-                     (i << 2) |
-                     (d << 3) |
-                     (b << 4) |
-                     (u << 5) |
-                     (v << 6) |
-                     (n << 7);
-    push(status);
+    push(getStatus());
 
     pc = bus.read16(0xFFFA);
 
@@ -78,6 +69,78 @@ void Cpu::nmi() {
 
 void Cpu::step() {
     uint8_t opcode = bus.read(pc++);
+    Operate& op = opTable[opcode];
+
+    uint16_t address = 0;
+    bool pageCrossed = false;
+
+    switch (op.addressing) {
+    case Imp:
+    case Acc:
+        // ignore
+        break;
+    case Imm:
+        address = pc++;
+        break;
+    case Zp0:
+        address = bus.read(pc++) & 0x00FF;
+        break;
+    case Zpx:
+        address = (bus.read(pc++) + x) & 0x00FF;
+        break;
+    case Zpy:
+        address = (bus.read(pc++) + y) & 0x00FF;
+        break;
+    case Rel:
+        // TODO
+        address = bus.read(pc++);
+        if (address & 0x80) {
+            address |= 0xFF00;
+        }
+        break;
+    case Abs:
+        address = bus.read16(pc);
+        pc += 2;
+        break;
+    case Abx:
+        address = bus.read16(pc) + x;
+        pc += 2;
+        pageCrossed = isCrossed(address - x, address);
+        break;
+    case Aby:
+        address = bus.read16(pc) + y;
+        pc += 2;
+        pageCrossed = isCrossed(address - y, address);
+        break;
+    case Ind: {
+        uint16_t ptr = bus.read16(pc);
+        pc += 2;
+
+        // TODO
+        if ((ptr & 0x00FF) == 0x00FF) {
+            address = bus.read(ptr & 0x00FF) << 8 | bus.read(ptr);
+        } else {
+            address = bus.read(ptr + 1) << 8 | bus.read(ptr);
+        }
+    } break;
+    case Izx: {
+        uint16_t temp = bus.read(pc++);
+        address = bus.read((temp + x + 1) & 0x00FF) << 8 | bus.read((temp + x) & 0x00FF);
+    } break;
+    case Izy: {
+        uint16_t temp = bus.read(pc++);
+        address = bus.read((temp + 1) & 0x00FF) << 8 | bus.read(temp & 0x00FF);
+        address += y;
+        pageCrossed = isCrossed(address - y, address);
+    } break;
+    }
+
+    (this->*op.instruction)(address);
+    cycles += op.cycle;
+
+    if (pageCrossed) {
+        cycles += op.pageCycle;
+    }
 }
 
 void Cpu::push(uint8_t data) {
@@ -85,8 +148,8 @@ void Cpu::push(uint8_t data) {
 }
 
 void Cpu::push16(uint16_t data) {
-    push((data >> 8) & 0xFF);
-    push(data & 0xFF);
+    push((data >> 8) & 0x00FF);
+    push(data & 0x00FF);
 }
 
 uint8_t Cpu::pop() {
@@ -98,4 +161,15 @@ uint16_t Cpu::pop16() {
     uint16_t h = pop();
 
     return (h << 8) | l;
+}
+
+uint8_t Cpu::getStatus() {
+    return c << 0 |
+           z << 1 |
+           i << 2 |
+           d << 3 |
+           b << 4 |
+           u << 5 |
+           v << 6 |
+           n << 7;
 }

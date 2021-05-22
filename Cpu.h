@@ -1,7 +1,9 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include <array>
 #include <cstdint>
+#include <string_view>
 
 class Bus;
 
@@ -15,14 +17,7 @@ public:
     void nmi();
 
 private:
-    void step();
-    void push(uint8_t data);
-    void push16(uint16_t data);
-    uint8_t pop();
-    uint16_t pop16();
-    uint8_t fetch();
-
-    // TODO
+    // Addressing Mode
     // See http://obelisk.me.uk/6502/addressing.html
     enum Addressing {
         Imp,
@@ -40,69 +35,84 @@ private:
         Izy,
     };
 
-    // TODO
-    // See http://obelisk.me.uk/6502/reference.html
-    enum Opcodes {
-        ADC,
-        AND,
-        ASL,
-        BCC,
-        BCS,
-        BEQ,
-        BIT,
-        BMI,
-        BNE,
-        BPL,
-        BRK,
-        BVC,
-        BVS,
-        CLC,
-        CLD,
-        CLI,
-        CLV,
-        CMP,
-        CPX,
-        CPY,
-        DEC,
-        DEX,
-        DEY,
-        EOR,
-        INC,
-        INX,
-        INY,
-        JMP,
-        JSR,
-        LDA,
-        LDX,
-        LDY,
-        LSR,
-        NOP,
-        ORA,
-        PHA,
-        PHP,
-        PLA,
-        PLP,
-        ROL,
-        ROR,
-        RTI,
-        RTS,
-        SBC,
-        SEC,
-        SED,
-        SEI,
-        STA,
-        STX,
-        STY,
-        TAX,
-        TAY,
-        TSX,
-        TXA,
-        TXS,
-        TYA,
+    struct Operate {
+        std::string_view name;
+        Addressing addressing;
+        void (Cpu::*instruction)(uint16_t);
+        uint8_t cycle;
+        uint8_t pageCycle;
     };
 
-    Bus& bus;
-    uint8_t cycles;
+    void step();
+    void push(uint8_t data);
+    void push16(uint16_t data);
+    uint8_t pop();
+    uint16_t pop16();
+    uint8_t getStatus();
+
+    // Assembly Instructions
+    // See http://obelisk.me.uk/6502/reference.html
+    // The function name is capitalized because we cannot use `and` as the function name.
+    void ADC(uint16_t address);
+    void AND(uint16_t address);
+    void ASL(uint16_t address);
+    void BCC(uint16_t address);
+    void BCS(uint16_t address);
+    void BEQ(uint16_t address);
+    void BIT(uint16_t address);
+    void BMI(uint16_t address);
+    void BNE(uint16_t address);
+    void BPL(uint16_t address);
+    void BRK(uint16_t address);
+    void BVC(uint16_t address);
+    void BVS(uint16_t address);
+    void CLC(uint16_t address);
+    void CLD(uint16_t address);
+    void CLI(uint16_t address);
+    void CLV(uint16_t address);
+    void CMP(uint16_t address);
+    void CPX(uint16_t address);
+    void CPY(uint16_t address);
+    void DEC(uint16_t address);
+    void DEX(uint16_t address);
+    void DEY(uint16_t address);
+    void EOR(uint16_t address);
+    void INC(uint16_t address);
+    void INX(uint16_t address);
+    void INY(uint16_t address);
+    void JMP(uint16_t address);
+    void JSR(uint16_t address);
+    void LDA(uint16_t address);
+    void LDX(uint16_t address);
+    void LDY(uint16_t address);
+    void LSR(uint16_t address);
+    void NOP(uint16_t address);
+    void ORA(uint16_t address);
+    void PHA(uint16_t address);
+    void PHP(uint16_t address);
+    void PLA(uint16_t address);
+    void PLP(uint16_t address);
+    void ROL(uint16_t address);
+    void ROR(uint16_t address);
+    void RTI(uint16_t address);
+    void RTS(uint16_t address);
+    void SBC(uint16_t address);
+    void SEC(uint16_t address);
+    void SED(uint16_t address);
+    void SEI(uint16_t address);
+    void STA(uint16_t address);
+    void STX(uint16_t address);
+    void STY(uint16_t address);
+    void TAX(uint16_t address);
+    void TAY(uint16_t address);
+    void TSX(uint16_t address);
+    void TXA(uint16_t address);
+    void TXS(uint16_t address);
+    void TYA(uint16_t address);
+
+    // Instruction Set
+    // See https://www.masswerk.at/6502/6502_instruction_set.html
+    static std::array<Operate, 256> opTable;
 
     // CPU Registers
     // See http://wiki.nesdev.com/w/index.php/CPU_registers
@@ -119,6 +129,9 @@ private:
     uint8_t u : 1; // unused flag
     uint8_t v : 1; // overflow flag
     uint8_t n : 1; // negative flag
+
+    Bus& bus;
+    uint8_t cycles;
 };
 
 #endif
