@@ -139,6 +139,8 @@ private:
 
     Bus& bus;
     uint8_t cycles;
+    uint32_t totalCycles{7};
+    Addressing addressingMode;
 };
 
 #endif

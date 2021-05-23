@@ -336,18 +336,20 @@ void Cpu::step() {
 
     // debug
     std::cout << std::hex << std::uppercase << std::right << std::setfill('0');
-    std::cout << pc - 1 << " " << std::setw(2) << +opcode << " " << op.name << "         ";
+    std::cout << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
     std::cout << " A:" << std::setw(2) << +a
               << " X:" << std::setw(2) << +x
               << " Y:" << std::setw(2) << +y
               << " P:" << std::setw(2) << +getStatus()
               << " SP:" << std::setw(2) << +sp
+              << " CYC:" << std::dec << totalCycles
               << "\n";
 
     uint16_t address = 0;
     bool pageCrossed = false;
 
-    switch (op.addressing) {
+    addressingMode = op.addressing;
+    switch (addressingMode) {
     case Imp:
     case Acc:
         // ignore
@@ -391,7 +393,7 @@ void Cpu::step() {
 
         // TODO
         if ((ptr & 0x00FF) == 0x00FF) {
-            address = bus.read(ptr & 0x00FF) << 8 | bus.read(ptr);
+            address = bus.read(ptr & 0xFF00) << 8 | bus.read(ptr);
         } else {
             address = bus.read(ptr + 1) << 8 | bus.read(ptr);
         }
@@ -414,6 +416,8 @@ void Cpu::step() {
     if (pageCrossed) {
         cycles += op.pageCycle;
     }
+
+    totalCycles += cycles;
 }
 
 void Cpu::push(uint8_t data) {
@@ -459,12 +463,14 @@ void Cpu::setStatus(uint8_t status) {
 }
 
 void Cpu::ADC(uint16_t address) {
-    uint16_t sum = uint16_t(a) + bus.read(address) + c;
-    a = uint8_t(sum);
+    uint8_t m = bus.read(address);
+    uint16_t sum = uint16_t(a) + m + c;
 
     c = (sum > 0xFF ? 1 : 0);
+    v = ((a ^ sum) & (m ^ sum) & 0x80 ? 1 : 0);
+
+    a = uint8_t(sum);
     z = (a == 0 ? 1 : 0);
-    v = (((sum >> 7) & 1) != ((a >> 7) & 1) ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
@@ -475,7 +481,19 @@ void Cpu::AND(uint16_t address) {
 }
 
 void Cpu::ASL(uint16_t address) {
-    // TODO
+    if (addressingMode == Acc) {
+        c = (a >> 7) & 1;
+        a <<= 1;
+        z = (a == 0 ? 1 : 0);
+        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    } else {
+        uint8_t m = bus.read(address);
+        c = (m >> 7) & 1;
+        m <<= 1;
+        bus.write(address, m);
+        z = (m == 0 ? 1 : 0);
+        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    }
 }
 
 void Cpu::BCC(uint16_t address) {
@@ -540,7 +558,10 @@ void Cpu::BPL(uint16_t address) {
 }
 
 void Cpu::BRK(uint16_t address) {
-    // TODO
+    push16(pc);
+    PHP(address);
+    b = 1;
+    pc = bus.read16(0xFFFE);
 }
 
 void Cpu::BVC(uint16_t address) {
@@ -589,39 +610,65 @@ void Cpu::CMP(uint16_t address) {
 }
 
 void Cpu::CPX(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    c = (x >= m ? 1 : 0);
+    z = (x == m ? 1 : 0);
+    n = ((((x - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::CPY(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    c = (y >= m ? 1 : 0);
+    z = (y == m ? 1 : 0);
+    n = ((((y - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::DEC(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    m--;
+    bus.write(address, m);
+
+    z = (m == 0 ? 1 : 0);
+    n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::DEX(uint16_t address) {
-    // TODO
+    x--;
+    z = (x == 0 ? 1 : 0);
+    n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::DEY(uint16_t address) {
-    // TODO
+    y--;
+    z = (y == 0 ? 1 : 0);
+    n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::EOR(uint16_t address) {
-    // TODO
+    a = a ^ bus.read(address);
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::INC(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    m++;
+    bus.write(address, m);
+
+    z = (m == 0 ? 1 : 0);
+    n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::INX(uint16_t address) {
-    // TODO
+    x++;
+    z = (x == 0 ? 1 : 0);
+    n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::INY(uint16_t address) {
-    // TODO
+    y++;
+    z = (y == 0 ? 1 : 0);
+    n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::JMP(uint16_t address) {
@@ -652,7 +699,19 @@ void Cpu::LDY(uint16_t address) {
 }
 
 void Cpu::LSR(uint16_t address) {
-    // TODO
+    if (addressingMode == Acc) {
+        c = a & 1;
+        a >>= 1;
+        z = (a == 0 ? 1 : 0);
+        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    } else {
+        uint8_t m = bus.read(address);
+        c = m & 1;
+        m >>= 1;
+        bus.write(address, m);
+        z = (m == 0 ? 1 : 0);
+        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    }
 }
 
 void Cpu::NOP(uint16_t address) {
@@ -684,15 +743,44 @@ void Cpu::PLP(uint16_t address) {
 }
 
 void Cpu::ROL(uint16_t address) {
-    // TODO
+    if (addressingMode == Acc) {
+        uint8_t oldC = c;
+        c = (a >> 7) & 1;
+        a = (a << 1) | oldC;
+        z = (a == 0 ? 1 : 0);
+        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    } else {
+        uint8_t m = bus.read(address);
+        uint8_t oldC = c;
+        c = (m >> 7) & 1;
+        m = (m << 1) | oldC;
+        bus.write(address, m);
+        z = (m == 0 ? 1 : 0);
+        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    }
 }
 
 void Cpu::ROR(uint16_t address) {
-    // TODO
+    if (addressingMode == Acc) {
+        uint8_t oldC = c;
+        c = a & 1;
+        a = (a >> 1) | (oldC << 7);
+        z = (a == 0 ? 1 : 0);
+        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    } else {
+        uint8_t m = bus.read(address);
+        uint8_t oldC = c;
+        c = m & 1;
+        m = (m >> 1) | (oldC << 7);
+        bus.write(address, m);
+        z = (m == 0 ? 1 : 0);
+        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    }
 }
 
 void Cpu::RTI(uint16_t address) {
-    // TODO
+    setStatus(pop() & 0xEF | 0x20);
+    pc = pop16();
 }
 
 void Cpu::RTS(uint16_t address) {
@@ -700,7 +788,15 @@ void Cpu::RTS(uint16_t address) {
 }
 
 void Cpu::SBC(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    uint16_t diff = uint16_t(a) - m - (1 - c);
+
+    c = (diff > 0xFF ? 0 : 1);
+    v = ((a ^ diff) & (~m ^ diff) & 0x80 ? 1 : 0);
+
+    a = uint8_t(diff);
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::SEC(uint16_t address) {
@@ -728,27 +824,37 @@ void Cpu::STY(uint16_t address) {
 }
 
 void Cpu::TAX(uint16_t address) {
-    // TODO
+    x = a;
+    z = (x == 0 ? 1 : 0);
+    n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::TAY(uint16_t address) {
-    // TODO
+    y = a;
+    z = (y == 0 ? 1 : 0);
+    n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::TSX(uint16_t address) {
-    // TODO
+    x = sp;
+    z = (x == 0 ? 1 : 0);
+    n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::TXA(uint16_t address) {
-    // TODO
+    a = x;
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::TXS(uint16_t address) {
-    // TODO
+    sp = x;
 }
 
 void Cpu::TYA(uint16_t address) {
-    // TODO
+    a = y;
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::NIL(uint16_t address) {
