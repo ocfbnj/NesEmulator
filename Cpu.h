@@ -51,7 +51,7 @@ private:
     void push16(uint16_t data);
     uint8_t pop();
     uint16_t pop16();
-    uint8_t getStatus();
+    [[nodiscard]] uint8_t getStatus() const;
     void setStatus(uint8_t status);
 
     // Assembly Instructions

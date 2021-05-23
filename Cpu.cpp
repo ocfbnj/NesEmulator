@@ -1,5 +1,7 @@
+#ifdef NES_DEBUG
 #include <iomanip>
 #include <iostream>
+#endif
 
 #include "Bus.h"
 #include "Cpu.h"
@@ -443,7 +445,7 @@ uint16_t Cpu::pop16() {
     return (h << 8) | l;
 }
 
-uint8_t Cpu::getStatus() {
+uint8_t Cpu::getStatus() const {
     return c << 0 |
            z << 1 |
            i << 2 |
@@ -589,19 +591,19 @@ void Cpu::BVS(uint16_t address) {
     }
 }
 
-void Cpu::CLC(uint16_t address) {
+void Cpu::CLC(uint16_t) {
     c = 0;
 }
 
-void Cpu::CLD(uint16_t address) {
+void Cpu::CLD(uint16_t) {
     d = 0;
 }
 
-void Cpu::CLI(uint16_t address) {
+void Cpu::CLI(uint16_t) {
     i = 0;
 }
 
-void Cpu::CLV(uint16_t address) {
+void Cpu::CLV(uint16_t) {
     v = 0;
 }
 
@@ -635,13 +637,13 @@ void Cpu::DEC(uint16_t address) {
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::DEX(uint16_t address) {
+void Cpu::DEX(uint16_t) {
     x--;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::DEY(uint16_t address) {
+void Cpu::DEY(uint16_t) {
     y--;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
@@ -662,13 +664,13 @@ void Cpu::INC(uint16_t address) {
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::INX(uint16_t address) {
+void Cpu::INX(uint16_t) {
     x++;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::INY(uint16_t address) {
+void Cpu::INY(uint16_t) {
     y++;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
@@ -717,7 +719,7 @@ void Cpu::LSR(uint16_t address) {
     }
 }
 
-void Cpu::NOP(uint16_t address) {
+void Cpu::NOP(uint16_t) {
     // do nothing
 }
 
@@ -727,21 +729,21 @@ void Cpu::ORA(uint16_t address) {
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::PHA(uint16_t address) {
+void Cpu::PHA(uint16_t) {
     push(a);
 }
 
-void Cpu::PHP(uint16_t address) {
+void Cpu::PHP(uint16_t) {
     push(getStatus() | 0x10);
 }
 
-void Cpu::PLA(uint16_t address) {
+void Cpu::PLA(uint16_t) {
     a = pop();
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::PLP(uint16_t address) {
+void Cpu::PLP(uint16_t) {
     setStatus(pop() & 0xEF | 0x20);
 }
 
@@ -781,12 +783,12 @@ void Cpu::ROR(uint16_t address) {
     }
 }
 
-void Cpu::RTI(uint16_t address) {
+void Cpu::RTI(uint16_t) {
     setStatus(pop() & 0xEF | 0x20);
     pc = pop16();
 }
 
-void Cpu::RTS(uint16_t address) {
+void Cpu::RTS(uint16_t) {
     pc = pop16() + 1;
 }
 
@@ -802,15 +804,15 @@ void Cpu::SBC(uint16_t address) {
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::SEC(uint16_t address) {
+void Cpu::SEC(uint16_t) {
     c = 1;
 }
 
-void Cpu::SED(uint16_t address) {
+void Cpu::SED(uint16_t) {
     d = 1;
 }
 
-void Cpu::SEI(uint16_t address) {
+void Cpu::SEI(uint16_t) {
     i = 1;
 }
 
@@ -826,40 +828,40 @@ void Cpu::STY(uint16_t address) {
     bus.write(address, y);
 }
 
-void Cpu::TAX(uint16_t address) {
+void Cpu::TAX(uint16_t) {
     x = a;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TAY(uint16_t address) {
+void Cpu::TAY(uint16_t) {
     y = a;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TSX(uint16_t address) {
+void Cpu::TSX(uint16_t) {
     x = sp;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TXA(uint16_t address) {
+void Cpu::TXA(uint16_t) {
     a = x;
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TXS(uint16_t address) {
+void Cpu::TXS(uint16_t) {
     sp = x;
 }
 
-void Cpu::TYA(uint16_t address) {
+void Cpu::TYA(uint16_t) {
     a = y;
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::NIL(uint16_t address) {
+void Cpu::NIL(uint16_t) {
     // unimplemented
 }

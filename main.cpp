@@ -1,5 +1,4 @@
 #include <cassert>
-#include <iostream>
 
 #include "Bus.h"
 #include "Cpu.h"
