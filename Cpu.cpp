@@ -269,8 +269,10 @@ std::array<Cpu::Operate, 256> Cpu::opTable{
 
 Cpu::Cpu(Bus& bus) : bus(bus) {
     reset();
-    // debug
+
+#ifdef NES_DEBUG
     pc = 0xC000;
+#endif
 }
 
 void Cpu::clock() {
@@ -334,7 +336,7 @@ void Cpu::step() {
     uint8_t opcode = bus.read(pc++);
     Operate& op = opTable[opcode];
 
-    // debug
+#ifdef NES_DEBUG
     std::cout << std::hex << std::uppercase << std::right << std::setfill('0');
     std::cout << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
     std::cout << " A:" << std::setw(2) << +a
@@ -344,6 +346,7 @@ void Cpu::step() {
               << " SP:" << std::setw(2) << +sp
               << " CYC:" << std::dec << totalCycles
               << "\n";
+#endif
 
     uint16_t address = 0;
     bool pageCrossed = false;
@@ -367,7 +370,6 @@ void Cpu::step() {
         address = (bus.read(pc++) + y) & 0x00FF;
         break;
     case Rel:
-        // TODO
         address = bus.read(pc++);
         if (address & 0x80) {
             address |= 0xFF00;
@@ -391,7 +393,6 @@ void Cpu::step() {
         uint16_t ptr = bus.read16(pc);
         pc += 2;
 
-        // TODO
         if ((ptr & 0x00FF) == 0x00FF) {
             address = bus.read(ptr & 0xFF00) << 8 | bus.read(ptr);
         } else {
