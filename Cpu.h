@@ -9,7 +9,7 @@ class Bus;
 
 class Cpu {
 public:
-    Cpu(Bus& bus);
+    explicit Cpu(Bus& bus);
 
     void clock();
     void reset();
@@ -112,6 +112,9 @@ private:
     void TXA(uint16_t address);
     void TXS(uint16_t address);
     void TYA(uint16_t address);
+
+    // unimplemented
+    void NIL(uint16_t address);
 
     // Instruction Set
     // See https://www.masswerk.at/6502/6502_instruction_set.html
