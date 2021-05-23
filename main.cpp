@@ -1,23 +1,22 @@
 #include <cassert>
 #include <iostream>
 
-#include "Mapper.h"
-#include "NesFile.h"
 #include "Bus.h"
+#include "Cpu.h"
+#include "NesFile.h"
 
 int main() {
-    auto cartridge = loadNesFile(R"(C:\Users\ocfbnj\Downloads\Super Mario Bros (E).nes)");
+    auto cartridge = loadNesFile(R"(C:\Users\13911\Downloads\nestest.nes)");
     assert(cartridge != nullptr);
 
     auto mapper = Mapper::create(std::move(cartridge));
     assert(mapper != nullptr);
 
     Bus bus{std::move(mapper)};
+    Cpu cpu{bus};
 
-    std::cout << std::hex << +bus.read(0x8000) << "\n";
-    std::cout << std::hex << +bus.read(0x8001) << "\n";
-    std::cout << std::hex << +bus.read16(0x8000) << "\n";
-
-    bus.write16(0x9000, 0x1234);
-    assert(bus.read16(0x9000) == 0x1234);
+    // debug
+    while (true) {
+        cpu.clock();
+    }
 }
