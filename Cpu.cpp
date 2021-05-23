@@ -418,7 +418,9 @@ void Cpu::step() {
         cycles += op.pageCycle;
     }
 
+#ifdef NES_DEBUG
     totalCycles += cycles;
+#endif
 }
 
 void Cpu::push(uint8_t data) {
