@@ -335,9 +335,8 @@ void Cpu::step() {
     Operate& op = opTable[opcode];
 
     // debug
-    std::cout << std::hex << std::uppercase;
-    std::cout << pc - 1 << " " << +opcode << " " << op.name << "         ";
-    std::cout << std::right << std::setfill('0');
+    std::cout << std::hex << std::uppercase << std::right << std::setfill('0');
+    std::cout << pc - 1 << " " << std::setw(2) << +opcode << " " << op.name << "         ";
     std::cout << " A:" << std::setw(2) << +a
               << " X:" << std::setw(2) << +x
               << " Y:" << std::setw(2) << +y
@@ -427,7 +426,7 @@ void Cpu::push16(uint16_t data) {
 }
 
 uint8_t Cpu::pop() {
-    return bus.read(0x0100 + sp++);
+    return bus.read(0x0100 + ++sp);
 }
 
 uint16_t Cpu::pop16() {
@@ -448,12 +447,31 @@ uint8_t Cpu::getStatus() {
            n << 7;
 }
 
+void Cpu::setStatus(uint8_t status) {
+    c = (status >> 0) & 1;
+    z = (status >> 1) & 1;
+    i = (status >> 2) & 1;
+    d = (status >> 3) & 1;
+    b = (status >> 4) & 1;
+    u = (status >> 5) & 1;
+    v = (status >> 6) & 1;
+    n = (status >> 7) & 1;
+}
+
 void Cpu::ADC(uint16_t address) {
-    // TODO
+    uint16_t sum = uint16_t(a) + bus.read(address) + c;
+    a = uint8_t(sum);
+
+    c = (sum > 0xFF ? 1 : 0);
+    z = (a == 0 ? 1 : 0);
+    v = (((sum >> 7) & 1) != ((a >> 7) & 1) ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::AND(uint16_t address) {
-    // TODO
+    a = a & bus.read(address);
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::ASL(uint16_t address) {
@@ -461,31 +479,64 @@ void Cpu::ASL(uint16_t address) {
 }
 
 void Cpu::BCC(uint16_t address) {
-    // TODO
+    if (!c) {
+        pc += address;
+        if (isCrossed(pc, pc - address)) {
+            cycles += 2;
+        } else {
+            cycles += 1;
+        }
+    }
 }
 
 void Cpu::BCS(uint16_t address) {
-    // TODO
+    if (c) {
+        pc += address;
+        if (isCrossed(pc, pc - address)) {
+            cycles += 2;
+        } else {
+            cycles += 1;
+        }
+    }
 }
 
 void Cpu::BEQ(uint16_t address) {
-    // TODO
+    if (z) {
+        pc += address;
+        if (isCrossed(pc, pc - address)) {
+            cycles += 2;
+        } else {
+            cycles += 1;
+        }
+    }
 }
 
 void Cpu::BIT(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    z = (m & a) == 0;
+    v = (m >> 6) & 1;
+    n = (m >> 7) & 1;
 }
 
 void Cpu::BMI(uint16_t address) {
-    // TODO
+    if (n) {
+        pc += address;
+        cycles += (isCrossed(pc, pc - address) ? 2 : 1);
+    }
 }
 
 void Cpu::BNE(uint16_t address) {
-    // TODO
+    if (!z) {
+        pc += address;
+        cycles += (isCrossed(pc, pc - address) ? 2 : 1);
+    }
 }
 
 void Cpu::BPL(uint16_t address) {
-    // TODO
+    if (!n) {
+        pc += address;
+        cycles += (isCrossed(pc, pc - address) ? 2 : 1);
+    }
 }
 
 void Cpu::BRK(uint16_t address) {
@@ -493,31 +544,48 @@ void Cpu::BRK(uint16_t address) {
 }
 
 void Cpu::BVC(uint16_t address) {
-    // TODO
+    if (!v) {
+        pc += address;
+        if (isCrossed(pc, pc - address)) {
+            cycles += 2;
+        } else {
+            cycles += 1;
+        }
+    }
 }
 
 void Cpu::BVS(uint16_t address) {
-    // TODO
+    if (v) {
+        pc += address;
+        if (isCrossed(pc, pc - address)) {
+            cycles += 2;
+        } else {
+            cycles += 1;
+        }
+    }
 }
 
 void Cpu::CLC(uint16_t address) {
-    // TODO
+    c = 0;
 }
 
 void Cpu::CLD(uint16_t address) {
-    // TODO
+    d = 0;
 }
 
 void Cpu::CLI(uint16_t address) {
-    // TODO
+    i = 0;
 }
 
 void Cpu::CLV(uint16_t address) {
-    // TODO
+    v = 0;
 }
 
 void Cpu::CMP(uint16_t address) {
-    // TODO
+    uint8_t m = bus.read(address);
+    c = (a >= m ? 1 : 0);
+    z = (a == m ? 1 : 0);
+    n = ((((a - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::CPX(uint16_t address) {
@@ -561,19 +629,26 @@ void Cpu::JMP(uint16_t address) {
 }
 
 void Cpu::JSR(uint16_t address) {
-    // TODO
+    push16(pc - 1);
+    pc = address;
 }
 
 void Cpu::LDA(uint16_t address) {
-    // TODO
+    a = bus.read(address);
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::LDX(uint16_t address) {
-    // TODO
+    x = bus.read(address);
+    z = (x == 0 ? 1 : 0);
+    n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::LDY(uint16_t address) {
-    // TODO
+    y = bus.read(address);
+    z = (y == 0 ? 1 : 0);
+    n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::LSR(uint16_t address) {
@@ -581,27 +656,31 @@ void Cpu::LSR(uint16_t address) {
 }
 
 void Cpu::NOP(uint16_t address) {
-    // TODO
+    // do nothing
 }
 
 void Cpu::ORA(uint16_t address) {
-    // TODO
+    a = a | bus.read(address);
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::PHA(uint16_t address) {
-    // TODO
+    push(a);
 }
 
 void Cpu::PHP(uint16_t address) {
-    // TODO
+    push(getStatus() | 0x10);
 }
 
 void Cpu::PLA(uint16_t address) {
-    // TODO
+    a = pop();
+    z = (a == 0 ? 1 : 0);
+    n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void Cpu::PLP(uint16_t address) {
-    // TODO
+    setStatus(pop() & 0xEF | 0x20);
 }
 
 void Cpu::ROL(uint16_t address) {
@@ -617,7 +696,7 @@ void Cpu::RTI(uint16_t address) {
 }
 
 void Cpu::RTS(uint16_t address) {
-    // TODO
+    pc = pop16() + 1;
 }
 
 void Cpu::SBC(uint16_t address) {
@@ -625,27 +704,27 @@ void Cpu::SBC(uint16_t address) {
 }
 
 void Cpu::SEC(uint16_t address) {
-    // TODO
+    c = 1;
 }
 
 void Cpu::SED(uint16_t address) {
-    // TODO
+    d = 1;
 }
 
 void Cpu::SEI(uint16_t address) {
-    // TODO
+    i = 1;
 }
 
 void Cpu::STA(uint16_t address) {
-    // TODO
+    bus.write(address, a);
 }
 
 void Cpu::STX(uint16_t address) {
-    // TODO
+    bus.write(address, x);
 }
 
 void Cpu::STY(uint16_t address) {
-    // TODO
+    bus.write(address, y);
 }
 
 void Cpu::TAX(uint16_t address) {

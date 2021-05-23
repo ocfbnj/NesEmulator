@@ -52,6 +52,7 @@ private:
     uint8_t pop();
     uint16_t pop16();
     uint8_t getStatus();
+    void setStatus(uint8_t status);
 
     // Assembly Instructions
     // See http://obelisk.me.uk/6502/reference.html
