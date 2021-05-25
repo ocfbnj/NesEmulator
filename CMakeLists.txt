@@ -5,6 +5,8 @@ project(NesEmulator)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
+add_subdirectory(test)
+
 # vcpkg install sfml
 find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
 

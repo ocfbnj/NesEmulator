@@ -1,6 +1,8 @@
 #ifdef NES_DEBUG
 #include <iomanip>
-#include <iostream>
+#include <sstream>
+
+extern std::ostringstream oss;
 #endif
 
 #include "Bus.h"
@@ -339,15 +341,15 @@ void Cpu::step() {
     Operate& op = opTable[opcode];
 
 #ifdef NES_DEBUG
-    std::cout << std::hex << std::uppercase << std::right << std::setfill('0');
-    std::cout << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
-    std::cout << " A:" << std::setw(2) << +a
-              << " X:" << std::setw(2) << +x
-              << " Y:" << std::setw(2) << +y
-              << " P:" << std::setw(2) << +getStatus()
-              << " SP:" << std::setw(2) << +sp
-              << " CYC:" << std::dec << totalCycles
-              << "\n";
+    oss << std::hex << std::uppercase << std::right << std::setfill('0');
+    oss << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
+    oss << " A:" << std::setw(2) << +a
+        << " X:" << std::setw(2) << +x
+        << " Y:" << std::setw(2) << +y
+        << " P:" << std::setw(2) << +getStatus()
+        << " SP:" << std::setw(2) << +sp
+        << " CYC:" << std::dec << totalCycles
+        << "\n";
 #endif
 
     uint16_t address = 0;
