@@ -19,6 +19,7 @@ set(headers
     Bus.h
     Cartridge.h
     Cpu.h
+    EmulatorWindow.h
     literals.h
     Mapper.h
     Mapper0.h
@@ -28,6 +29,7 @@ set(srcs
     Bus.cpp
     Cartridge.cpp
     Cpu.cpp
+    EmulatorWindow.cpp
     main.cpp
     Mapper.cpp
     Mapper0.cpp
