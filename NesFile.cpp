@@ -47,8 +47,8 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
 
     uint8_t lowerMapper = header.flag6 >> 4;
     uint8_t upperMapper = header.flag7 >> 4;
-    uint8_t mapper = (upperMapper << 4) | lowerMapper;
-    std::clog << "The mapper is " << int(mapper) << "\n";
+    uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
+    std::clog << "The mapper number is " << int(mapperNum) << "\n";
 
     // trainer, if present
     if (header.flag6 & (1u << 2)) {
@@ -76,5 +76,5 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         return {};
     }
 
-    return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapper);
+    return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum);
 }

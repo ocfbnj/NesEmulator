@@ -2,17 +2,17 @@
 #define CARTRIDGE_H
 
 #include <cstdint>
-#include <utility>
 #include <vector>
 
 // Cartridge represents a NES cartridge.
-// See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format
+// It carried two banks of ROM memory: PRG ROM for code and CHR ROM for visual graphics.
+// See https://bugzmanov.github.io/nes_ebook/chapter_5.html
 struct Cartridge {
-    Cartridge(std::vector<uint8_t> prgRom, std::vector<uint8_t> chrRom, uint8_t mapper);
+    Cartridge(std::vector<uint8_t> prgRom, std::vector<uint8_t> chrRom, uint8_t mapperNum);
 
     std::vector<uint8_t> prgRom;
     std::vector<uint8_t> chrRom;
-    uint8_t mapper;
+    uint8_t mapperNum;
 };
 
 #endif

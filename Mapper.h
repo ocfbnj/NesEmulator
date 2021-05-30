@@ -6,7 +6,8 @@
 
 #include "Cartridge.h"
 
-// Mapper is an interface.
+// Mapper is an interface that provide access to extended ROM memory(both CHR ROM and PRG ROM).
+// See https://bugzmanov.github.io/nes_ebook/chapter_5.html
 class Mapper {
 public:
     static std::unique_ptr<Mapper> create(std::unique_ptr<Cartridge> cartridge);
