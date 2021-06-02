@@ -6,272 +6,272 @@ extern std::ostringstream oss;
 #endif
 
 #include "Bus.h"
-#include "Cpu.h"
+#include "CPU.h"
 
 bool isCrossed(uint16_t a, uint16_t b) {
     return (a & 0xFF00) != (b & 0xFF00);
 }
 
-std::array<Cpu::Operate, 256> Cpu::opTable{
-    Operate{"BRK", Imp, &Cpu::BRK, 7, 0},
-    Operate{"ORA", Izx, &Cpu::ORA, 6, 0},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zp0, &Cpu::NOP, 3, 0},
-    Operate{"ORA", Zp0, &Cpu::ORA, 3, 0},
-    Operate{"ASL", Zp0, &Cpu::ASL, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"PHP", Imp, &Cpu::PHP, 3, 0},
-    Operate{"ORA", Imm, &Cpu::ORA, 2, 0},
-    Operate{"ASL", Acc, &Cpu::ASL, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"NOP", Abs, &Cpu::NOP, 4, 0},
-    Operate{"ORA", Abs, &Cpu::ORA, 4, 0},
-    Operate{"ASL", Abs, &Cpu::ASL, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BPL", Rel, &Cpu::BPL, 2, 1},
-    Operate{"ORA", Izy, &Cpu::ORA, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"ORA", Zpx, &Cpu::ORA, 4, 0},
-    Operate{"ASL", Zpx, &Cpu::ASL, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"CLC", Imp, &Cpu::CLC, 2, 0},
-    Operate{"ORA", Aby, &Cpu::ORA, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"ORA", Abx, &Cpu::ORA, 4, 1},
-    Operate{"ASL", Abx, &Cpu::ASL, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
-    Operate{"JSR", Abs, &Cpu::JSR, 6, 0},
-    Operate{"AND", Izx, &Cpu::AND, 6, 0},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"BIT", Zp0, &Cpu::BIT, 3, 0},
-    Operate{"AND", Zp0, &Cpu::AND, 3, 0},
-    Operate{"ROL", Zp0, &Cpu::ROL, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"PLP", Imp, &Cpu::PLP, 4, 0},
-    Operate{"AND", Imm, &Cpu::AND, 2, 0},
-    Operate{"ROL", Acc, &Cpu::ROL, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"BIT", Abs, &Cpu::BIT, 4, 0},
-    Operate{"AND", Abs, &Cpu::AND, 4, 0},
-    Operate{"ROL", Abs, &Cpu::ROL, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BMI", Rel, &Cpu::BMI, 2, 1},
-    Operate{"AND", Izy, &Cpu::AND, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"AND", Zpx, &Cpu::AND, 4, 0},
-    Operate{"ROL", Zpx, &Cpu::ROL, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"SEC", Imp, &Cpu::SEC, 2, 0},
-    Operate{"AND", Aby, &Cpu::AND, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"AND", Abx, &Cpu::AND, 4, 1},
-    Operate{"ROL", Abx, &Cpu::ROL, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
-    Operate{"RTI", Imp, &Cpu::RTI, 6, 0},
-    Operate{"EOR", Izx, &Cpu::EOR, 6, 0},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zp0, &Cpu::NOP, 3, 0},
-    Operate{"EOR", Zp0, &Cpu::EOR, 3, 0},
-    Operate{"LSR", Zp0, &Cpu::LSR, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"PHA", Imp, &Cpu::PHA, 3, 0},
-    Operate{"EOR", Imm, &Cpu::EOR, 2, 0},
-    Operate{"LSR", Acc, &Cpu::LSR, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"JMP", Abs, &Cpu::JMP, 3, 0},
-    Operate{"EOR", Abs, &Cpu::EOR, 4, 0},
-    Operate{"LSR", Abs, &Cpu::LSR, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BVC", Rel, &Cpu::BVC, 2, 1},
-    Operate{"EOR", Izy, &Cpu::EOR, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"EOR", Zpx, &Cpu::EOR, 4, 0},
-    Operate{"LSR", Zpx, &Cpu::LSR, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"CLI", Imp, &Cpu::CLI, 2, 0},
-    Operate{"EOR", Aby, &Cpu::EOR, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"EOR", Abx, &Cpu::EOR, 4, 1},
-    Operate{"LSR", Abx, &Cpu::LSR, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
-    Operate{"RTS", Imp, &Cpu::RTS, 6, 0},
-    Operate{"ADC", Izx, &Cpu::ADC, 6, 0},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zp0, &Cpu::NOP, 3, 0},
-    Operate{"ADC", Zp0, &Cpu::ADC, 3, 0},
-    Operate{"ROR", Zp0, &Cpu::ROR, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"PLA", Imp, &Cpu::PLA, 4, 0},
-    Operate{"ADC", Imm, &Cpu::ADC, 2, 0},
-    Operate{"ROR", Acc, &Cpu::ROR, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"JMP", Ind, &Cpu::JMP, 5, 0},
-    Operate{"ADC", Abs, &Cpu::ADC, 4, 0},
-    Operate{"ROR", Abs, &Cpu::ROR, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BVS", Rel, &Cpu::BVS, 2, 1},
-    Operate{"ADC", Izy, &Cpu::ADC, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"ADC", Zpx, &Cpu::ADC, 4, 0},
-    Operate{"ROR", Zpx, &Cpu::ROR, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"SEI", Imp, &Cpu::SEI, 2, 0},
-    Operate{"ADC", Aby, &Cpu::ADC, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"ADC", Abx, &Cpu::ADC, 4, 1},
-    Operate{"ROR", Abx, &Cpu::ROR, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Imm, &Cpu::NOP, 2, 0},
-    Operate{"STA", Izx, &Cpu::STA, 6, 0},
-    Operate{"NOP", Imm, &Cpu::NOP, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 6, 0},
-    Operate{"STY", Zp0, &Cpu::STY, 3, 0},
-    Operate{"STA", Zp0, &Cpu::STA, 3, 0},
-    Operate{"STX", Zp0, &Cpu::STX, 3, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 3, 0},
-    Operate{"DEY", Imp, &Cpu::DEY, 2, 0},
-    Operate{"NOP", Imm, &Cpu::NOP, 2, 0},
-    Operate{"TXA", Imp, &Cpu::TXA, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"STY", Abs, &Cpu::STY, 4, 0},
-    Operate{"STA", Abs, &Cpu::STA, 4, 0},
-    Operate{"STX", Abs, &Cpu::STX, 4, 0},
-    Operate{"???", Abs, &Cpu::NIL, 4, 0},
-    Operate{"BCC", Rel, &Cpu::BCC, 2, 1},
-    Operate{"STA", Izy, &Cpu::STA, 6, 0},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 6, 0},
-    Operate{"STY", Zpx, &Cpu::STY, 4, 0},
-    Operate{"STA", Zpx, &Cpu::STA, 4, 0},
-    Operate{"STX", Zpy, &Cpu::STX, 4, 0},
-    Operate{"???", Zpy, &Cpu::NIL, 4, 0},
-    Operate{"TYA", Imp, &Cpu::TYA, 2, 0},
-    Operate{"STA", Aby, &Cpu::STA, 5, 0},
-    Operate{"TXS", Imp, &Cpu::TXS, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 5, 0},
-    Operate{"???", Abx, &Cpu::NIL, 5, 0},
-    Operate{"STA", Abx, &Cpu::STA, 5, 0},
-    Operate{"???", Aby, &Cpu::NIL, 5, 0},
-    Operate{"???", Aby, &Cpu::NIL, 5, 0},
-    Operate{"LDY", Imm, &Cpu::LDY, 2, 0},
-    Operate{"LDA", Izx, &Cpu::LDA, 6, 0},
-    Operate{"LDX", Imm, &Cpu::LDX, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 6, 0},
-    Operate{"LDY", Zp0, &Cpu::LDY, 3, 0},
-    Operate{"LDA", Zp0, &Cpu::LDA, 3, 0},
-    Operate{"LDX", Zp0, &Cpu::LDX, 3, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 3, 0},
-    Operate{"TAY", Imp, &Cpu::TAY, 2, 0},
-    Operate{"LDA", Imm, &Cpu::LDA, 2, 0},
-    Operate{"TAX", Imp, &Cpu::TAX, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"LDY", Abs, &Cpu::LDY, 4, 0},
-    Operate{"LDA", Abs, &Cpu::LDA, 4, 0},
-    Operate{"LDX", Abs, &Cpu::LDX, 4, 0},
-    Operate{"???", Abs, &Cpu::NIL, 4, 0},
-    Operate{"BCS", Rel, &Cpu::BCS, 2, 1},
-    Operate{"LDA", Izy, &Cpu::LDA, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 5, 1},
-    Operate{"LDY", Zpx, &Cpu::LDY, 4, 0},
-    Operate{"LDA", Zpx, &Cpu::LDA, 4, 0},
-    Operate{"LDX", Zpy, &Cpu::LDX, 4, 0},
-    Operate{"???", Zpy, &Cpu::NIL, 4, 0},
-    Operate{"CLV", Imp, &Cpu::CLV, 2, 0},
-    Operate{"LDA", Aby, &Cpu::LDA, 4, 1},
-    Operate{"TSX", Imp, &Cpu::TSX, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 4, 1},
-    Operate{"LDY", Abx, &Cpu::LDY, 4, 1},
-    Operate{"LDA", Abx, &Cpu::LDA, 4, 1},
-    Operate{"LDX", Aby, &Cpu::LDX, 4, 1},
-    Operate{"???", Aby, &Cpu::NIL, 4, 1},
-    Operate{"CPY", Imm, &Cpu::CPY, 2, 0},
-    Operate{"CMP", Izx, &Cpu::CMP, 6, 0},
-    Operate{"NOP", Imm, &Cpu::NOP, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"CPY", Zp0, &Cpu::CPY, 3, 0},
-    Operate{"CMP", Zp0, &Cpu::CMP, 3, 0},
-    Operate{"DEC", Zp0, &Cpu::DEC, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"INY", Imp, &Cpu::INY, 2, 0},
-    Operate{"CMP", Imm, &Cpu::CMP, 2, 0},
-    Operate{"DEX", Imp, &Cpu::DEX, 2, 0},
-    Operate{"???", Imm, &Cpu::NIL, 2, 0},
-    Operate{"CPY", Abs, &Cpu::CPY, 4, 0},
-    Operate{"CMP", Abs, &Cpu::CMP, 4, 0},
-    Operate{"DEC", Abs, &Cpu::DEC, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BNE", Rel, &Cpu::BNE, 2, 1},
-    Operate{"CMP", Izy, &Cpu::CMP, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"CMP", Zpx, &Cpu::CMP, 4, 0},
-    Operate{"DEC", Zpx, &Cpu::DEC, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"CLD", Imp, &Cpu::CLD, 2, 0},
-    Operate{"CMP", Aby, &Cpu::CMP, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"CMP", Abx, &Cpu::CMP, 4, 1},
-    Operate{"DEC", Abx, &Cpu::DEC, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
-    Operate{"CPX", Imm, &Cpu::CPX, 2, 0},
-    Operate{"SBC", Izx, &Cpu::SBC, 6, 0},
-    Operate{"NOP", Imm, &Cpu::NOP, 2, 0},
-    Operate{"???", Izx, &Cpu::NIL, 8, 0},
-    Operate{"CPX", Zp0, &Cpu::CPX, 3, 0},
-    Operate{"SBC", Zp0, &Cpu::SBC, 3, 0},
-    Operate{"INC", Zp0, &Cpu::INC, 5, 0},
-    Operate{"???", Zp0, &Cpu::NIL, 5, 0},
-    Operate{"INX", Imp, &Cpu::INX, 2, 0},
-    Operate{"SBC", Imm, &Cpu::SBC, 2, 0},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"SBC", Imm, &Cpu::SBC, 2, 0},
-    Operate{"CPX", Abs, &Cpu::CPX, 4, 0},
-    Operate{"SBC", Abs, &Cpu::SBC, 4, 0},
-    Operate{"INC", Abs, &Cpu::INC, 6, 0},
-    Operate{"???", Abs, &Cpu::NIL, 6, 0},
-    Operate{"BEQ", Rel, &Cpu::BEQ, 2, 1},
-    Operate{"SBC", Izy, &Cpu::SBC, 5, 1},
-    Operate{"???", Imp, &Cpu::NIL, 2, 0},
-    Operate{"???", Izy, &Cpu::NIL, 8, 0},
-    Operate{"NOP", Zpx, &Cpu::NOP, 4, 0},
-    Operate{"SBC", Zpx, &Cpu::SBC, 4, 0},
-    Operate{"INC", Zpx, &Cpu::INC, 6, 0},
-    Operate{"???", Zpx, &Cpu::NIL, 6, 0},
-    Operate{"SED", Imp, &Cpu::SED, 2, 0},
-    Operate{"SBC", Aby, &Cpu::SBC, 4, 1},
-    Operate{"NOP", Imp, &Cpu::NOP, 2, 0},
-    Operate{"???", Aby, &Cpu::NIL, 7, 0},
-    Operate{"NOP", Abx, &Cpu::NOP, 4, 1},
-    Operate{"SBC", Abx, &Cpu::SBC, 4, 1},
-    Operate{"INC", Abx, &Cpu::INC, 7, 0},
-    Operate{"???", Abx, &Cpu::NIL, 7, 0},
+std::array<CPU::Operate, 256> CPU::opTable{
+    Operate{"BRK", Imp, &CPU::BRK, 7, 0},
+    Operate{"ORA", Izx, &CPU::ORA, 6, 0},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zp0, &CPU::NOP, 3, 0},
+    Operate{"ORA", Zp0, &CPU::ORA, 3, 0},
+    Operate{"ASL", Zp0, &CPU::ASL, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"PHP", Imp, &CPU::PHP, 3, 0},
+    Operate{"ORA", Imm, &CPU::ORA, 2, 0},
+    Operate{"ASL", Acc, &CPU::ASL, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"NOP", Abs, &CPU::NOP, 4, 0},
+    Operate{"ORA", Abs, &CPU::ORA, 4, 0},
+    Operate{"ASL", Abs, &CPU::ASL, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BPL", Rel, &CPU::BPL, 2, 1},
+    Operate{"ORA", Izy, &CPU::ORA, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"ORA", Zpx, &CPU::ORA, 4, 0},
+    Operate{"ASL", Zpx, &CPU::ASL, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"CLC", Imp, &CPU::CLC, 2, 0},
+    Operate{"ORA", Aby, &CPU::ORA, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"ORA", Abx, &CPU::ORA, 4, 1},
+    Operate{"ASL", Abx, &CPU::ASL, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
+    Operate{"JSR", Abs, &CPU::JSR, 6, 0},
+    Operate{"AND", Izx, &CPU::AND, 6, 0},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"BIT", Zp0, &CPU::BIT, 3, 0},
+    Operate{"AND", Zp0, &CPU::AND, 3, 0},
+    Operate{"ROL", Zp0, &CPU::ROL, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"PLP", Imp, &CPU::PLP, 4, 0},
+    Operate{"AND", Imm, &CPU::AND, 2, 0},
+    Operate{"ROL", Acc, &CPU::ROL, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"BIT", Abs, &CPU::BIT, 4, 0},
+    Operate{"AND", Abs, &CPU::AND, 4, 0},
+    Operate{"ROL", Abs, &CPU::ROL, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BMI", Rel, &CPU::BMI, 2, 1},
+    Operate{"AND", Izy, &CPU::AND, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"AND", Zpx, &CPU::AND, 4, 0},
+    Operate{"ROL", Zpx, &CPU::ROL, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"SEC", Imp, &CPU::SEC, 2, 0},
+    Operate{"AND", Aby, &CPU::AND, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"AND", Abx, &CPU::AND, 4, 1},
+    Operate{"ROL", Abx, &CPU::ROL, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
+    Operate{"RTI", Imp, &CPU::RTI, 6, 0},
+    Operate{"EOR", Izx, &CPU::EOR, 6, 0},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zp0, &CPU::NOP, 3, 0},
+    Operate{"EOR", Zp0, &CPU::EOR, 3, 0},
+    Operate{"LSR", Zp0, &CPU::LSR, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"PHA", Imp, &CPU::PHA, 3, 0},
+    Operate{"EOR", Imm, &CPU::EOR, 2, 0},
+    Operate{"LSR", Acc, &CPU::LSR, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"JMP", Abs, &CPU::JMP, 3, 0},
+    Operate{"EOR", Abs, &CPU::EOR, 4, 0},
+    Operate{"LSR", Abs, &CPU::LSR, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BVC", Rel, &CPU::BVC, 2, 1},
+    Operate{"EOR", Izy, &CPU::EOR, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"EOR", Zpx, &CPU::EOR, 4, 0},
+    Operate{"LSR", Zpx, &CPU::LSR, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"CLI", Imp, &CPU::CLI, 2, 0},
+    Operate{"EOR", Aby, &CPU::EOR, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"EOR", Abx, &CPU::EOR, 4, 1},
+    Operate{"LSR", Abx, &CPU::LSR, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
+    Operate{"RTS", Imp, &CPU::RTS, 6, 0},
+    Operate{"ADC", Izx, &CPU::ADC, 6, 0},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zp0, &CPU::NOP, 3, 0},
+    Operate{"ADC", Zp0, &CPU::ADC, 3, 0},
+    Operate{"ROR", Zp0, &CPU::ROR, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"PLA", Imp, &CPU::PLA, 4, 0},
+    Operate{"ADC", Imm, &CPU::ADC, 2, 0},
+    Operate{"ROR", Acc, &CPU::ROR, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"JMP", Ind, &CPU::JMP, 5, 0},
+    Operate{"ADC", Abs, &CPU::ADC, 4, 0},
+    Operate{"ROR", Abs, &CPU::ROR, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BVS", Rel, &CPU::BVS, 2, 1},
+    Operate{"ADC", Izy, &CPU::ADC, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"ADC", Zpx, &CPU::ADC, 4, 0},
+    Operate{"ROR", Zpx, &CPU::ROR, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"SEI", Imp, &CPU::SEI, 2, 0},
+    Operate{"ADC", Aby, &CPU::ADC, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"ADC", Abx, &CPU::ADC, 4, 1},
+    Operate{"ROR", Abx, &CPU::ROR, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
+    Operate{"NOP", Imm, &CPU::NOP, 2, 0},
+    Operate{"STA", Izx, &CPU::STA, 6, 0},
+    Operate{"NOP", Imm, &CPU::NOP, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 6, 0},
+    Operate{"STY", Zp0, &CPU::STY, 3, 0},
+    Operate{"STA", Zp0, &CPU::STA, 3, 0},
+    Operate{"STX", Zp0, &CPU::STX, 3, 0},
+    Operate{"???", Zp0, &CPU::NIL, 3, 0},
+    Operate{"DEY", Imp, &CPU::DEY, 2, 0},
+    Operate{"NOP", Imm, &CPU::NOP, 2, 0},
+    Operate{"TXA", Imp, &CPU::TXA, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"STY", Abs, &CPU::STY, 4, 0},
+    Operate{"STA", Abs, &CPU::STA, 4, 0},
+    Operate{"STX", Abs, &CPU::STX, 4, 0},
+    Operate{"???", Abs, &CPU::NIL, 4, 0},
+    Operate{"BCC", Rel, &CPU::BCC, 2, 1},
+    Operate{"STA", Izy, &CPU::STA, 6, 0},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 6, 0},
+    Operate{"STY", Zpx, &CPU::STY, 4, 0},
+    Operate{"STA", Zpx, &CPU::STA, 4, 0},
+    Operate{"STX", Zpy, &CPU::STX, 4, 0},
+    Operate{"???", Zpy, &CPU::NIL, 4, 0},
+    Operate{"TYA", Imp, &CPU::TYA, 2, 0},
+    Operate{"STA", Aby, &CPU::STA, 5, 0},
+    Operate{"TXS", Imp, &CPU::TXS, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 5, 0},
+    Operate{"???", Abx, &CPU::NIL, 5, 0},
+    Operate{"STA", Abx, &CPU::STA, 5, 0},
+    Operate{"???", Aby, &CPU::NIL, 5, 0},
+    Operate{"???", Aby, &CPU::NIL, 5, 0},
+    Operate{"LDY", Imm, &CPU::LDY, 2, 0},
+    Operate{"LDA", Izx, &CPU::LDA, 6, 0},
+    Operate{"LDX", Imm, &CPU::LDX, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 6, 0},
+    Operate{"LDY", Zp0, &CPU::LDY, 3, 0},
+    Operate{"LDA", Zp0, &CPU::LDA, 3, 0},
+    Operate{"LDX", Zp0, &CPU::LDX, 3, 0},
+    Operate{"???", Zp0, &CPU::NIL, 3, 0},
+    Operate{"TAY", Imp, &CPU::TAY, 2, 0},
+    Operate{"LDA", Imm, &CPU::LDA, 2, 0},
+    Operate{"TAX", Imp, &CPU::TAX, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"LDY", Abs, &CPU::LDY, 4, 0},
+    Operate{"LDA", Abs, &CPU::LDA, 4, 0},
+    Operate{"LDX", Abs, &CPU::LDX, 4, 0},
+    Operate{"???", Abs, &CPU::NIL, 4, 0},
+    Operate{"BCS", Rel, &CPU::BCS, 2, 1},
+    Operate{"LDA", Izy, &CPU::LDA, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 5, 1},
+    Operate{"LDY", Zpx, &CPU::LDY, 4, 0},
+    Operate{"LDA", Zpx, &CPU::LDA, 4, 0},
+    Operate{"LDX", Zpy, &CPU::LDX, 4, 0},
+    Operate{"???", Zpy, &CPU::NIL, 4, 0},
+    Operate{"CLV", Imp, &CPU::CLV, 2, 0},
+    Operate{"LDA", Aby, &CPU::LDA, 4, 1},
+    Operate{"TSX", Imp, &CPU::TSX, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 4, 1},
+    Operate{"LDY", Abx, &CPU::LDY, 4, 1},
+    Operate{"LDA", Abx, &CPU::LDA, 4, 1},
+    Operate{"LDX", Aby, &CPU::LDX, 4, 1},
+    Operate{"???", Aby, &CPU::NIL, 4, 1},
+    Operate{"CPY", Imm, &CPU::CPY, 2, 0},
+    Operate{"CMP", Izx, &CPU::CMP, 6, 0},
+    Operate{"NOP", Imm, &CPU::NOP, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"CPY", Zp0, &CPU::CPY, 3, 0},
+    Operate{"CMP", Zp0, &CPU::CMP, 3, 0},
+    Operate{"DEC", Zp0, &CPU::DEC, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"INY", Imp, &CPU::INY, 2, 0},
+    Operate{"CMP", Imm, &CPU::CMP, 2, 0},
+    Operate{"DEX", Imp, &CPU::DEX, 2, 0},
+    Operate{"???", Imm, &CPU::NIL, 2, 0},
+    Operate{"CPY", Abs, &CPU::CPY, 4, 0},
+    Operate{"CMP", Abs, &CPU::CMP, 4, 0},
+    Operate{"DEC", Abs, &CPU::DEC, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BNE", Rel, &CPU::BNE, 2, 1},
+    Operate{"CMP", Izy, &CPU::CMP, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"CMP", Zpx, &CPU::CMP, 4, 0},
+    Operate{"DEC", Zpx, &CPU::DEC, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"CLD", Imp, &CPU::CLD, 2, 0},
+    Operate{"CMP", Aby, &CPU::CMP, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"CMP", Abx, &CPU::CMP, 4, 1},
+    Operate{"DEC", Abx, &CPU::DEC, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
+    Operate{"CPX", Imm, &CPU::CPX, 2, 0},
+    Operate{"SBC", Izx, &CPU::SBC, 6, 0},
+    Operate{"NOP", Imm, &CPU::NOP, 2, 0},
+    Operate{"???", Izx, &CPU::NIL, 8, 0},
+    Operate{"CPX", Zp0, &CPU::CPX, 3, 0},
+    Operate{"SBC", Zp0, &CPU::SBC, 3, 0},
+    Operate{"INC", Zp0, &CPU::INC, 5, 0},
+    Operate{"???", Zp0, &CPU::NIL, 5, 0},
+    Operate{"INX", Imp, &CPU::INX, 2, 0},
+    Operate{"SBC", Imm, &CPU::SBC, 2, 0},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"SBC", Imm, &CPU::SBC, 2, 0},
+    Operate{"CPX", Abs, &CPU::CPX, 4, 0},
+    Operate{"SBC", Abs, &CPU::SBC, 4, 0},
+    Operate{"INC", Abs, &CPU::INC, 6, 0},
+    Operate{"???", Abs, &CPU::NIL, 6, 0},
+    Operate{"BEQ", Rel, &CPU::BEQ, 2, 1},
+    Operate{"SBC", Izy, &CPU::SBC, 5, 1},
+    Operate{"???", Imp, &CPU::NIL, 2, 0},
+    Operate{"???", Izy, &CPU::NIL, 8, 0},
+    Operate{"NOP", Zpx, &CPU::NOP, 4, 0},
+    Operate{"SBC", Zpx, &CPU::SBC, 4, 0},
+    Operate{"INC", Zpx, &CPU::INC, 6, 0},
+    Operate{"???", Zpx, &CPU::NIL, 6, 0},
+    Operate{"SED", Imp, &CPU::SED, 2, 0},
+    Operate{"SBC", Aby, &CPU::SBC, 4, 1},
+    Operate{"NOP", Imp, &CPU::NOP, 2, 0},
+    Operate{"???", Aby, &CPU::NIL, 7, 0},
+    Operate{"NOP", Abx, &CPU::NOP, 4, 1},
+    Operate{"SBC", Abx, &CPU::SBC, 4, 1},
+    Operate{"INC", Abx, &CPU::INC, 7, 0},
+    Operate{"???", Abx, &CPU::NIL, 7, 0},
 };
 
-Cpu::Cpu(Bus& bus) : bus(bus) {
+CPU::CPU(Bus& bus) : bus(bus) {
     reset();
 
 #ifdef NES_DEBUG
@@ -279,7 +279,7 @@ Cpu::Cpu(Bus& bus) : bus(bus) {
 #endif
 }
 
-void Cpu::clock() {
+void CPU::clock() {
     // execute the operation at last cycle
     if (cycles == 0) {
         step();
@@ -288,7 +288,7 @@ void Cpu::clock() {
     cycles--;
 }
 
-void Cpu::reset() {
+void CPU::reset() {
     pc = bus.read16(0xFFFC);
     a = 0;
     x = 0;
@@ -308,7 +308,7 @@ void Cpu::reset() {
     cycles = 8;
 }
 
-void Cpu::irq() {
+void CPU::irq() {
     if (i == 0) {
         push16(pc);
 
@@ -323,7 +323,7 @@ void Cpu::irq() {
     }
 }
 
-void Cpu::nmi() {
+void CPU::nmi() {
     push16(pc);
 
     b = 0;
@@ -336,7 +336,7 @@ void Cpu::nmi() {
     cycles = 8;
 }
 
-void Cpu::step() {
+void CPU::step() {
     uint8_t opcode = bus.read(pc++);
     Operate& op = opTable[opcode];
 
@@ -427,27 +427,27 @@ void Cpu::step() {
 #endif
 }
 
-void Cpu::push(uint8_t data) {
+void CPU::push(uint8_t data) {
     bus.write(0x0100 + sp--, data);
 }
 
-void Cpu::push16(uint16_t data) {
+void CPU::push16(uint16_t data) {
     push((data >> 8) & 0x00FF);
     push(data & 0x00FF);
 }
 
-uint8_t Cpu::pop() {
+uint8_t CPU::pop() {
     return bus.read(0x0100 + ++sp);
 }
 
-uint16_t Cpu::pop16() {
+uint16_t CPU::pop16() {
     uint16_t l = pop();
     uint16_t h = pop();
 
     return (h << 8) | l;
 }
 
-uint8_t Cpu::getStatus() const {
+uint8_t CPU::getStatus() const {
     return c << 0 |
            z << 1 |
            i << 2 |
@@ -458,7 +458,7 @@ uint8_t Cpu::getStatus() const {
            n << 7;
 }
 
-void Cpu::setStatus(uint8_t status) {
+void CPU::setStatus(uint8_t status) {
     c = (status >> 0) & 1;
     z = (status >> 1) & 1;
     i = (status >> 2) & 1;
@@ -469,7 +469,7 @@ void Cpu::setStatus(uint8_t status) {
     n = (status >> 7) & 1;
 }
 
-void Cpu::ADC(uint16_t address) {
+void CPU::ADC(uint16_t address) {
     uint8_t m = bus.read(address);
     uint16_t sum = uint16_t(a) + m + c;
 
@@ -481,13 +481,13 @@ void Cpu::ADC(uint16_t address) {
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::AND(uint16_t address) {
+void CPU::AND(uint16_t address) {
     a = a & bus.read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::ASL(uint16_t address) {
+void CPU::ASL(uint16_t address) {
     if (addressingMode == Acc) {
         c = (a >> 7) & 1;
         a <<= 1;
@@ -503,7 +503,7 @@ void Cpu::ASL(uint16_t address) {
     }
 }
 
-void Cpu::BCC(uint16_t address) {
+void CPU::BCC(uint16_t address) {
     if (!c) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
@@ -514,7 +514,7 @@ void Cpu::BCC(uint16_t address) {
     }
 }
 
-void Cpu::BCS(uint16_t address) {
+void CPU::BCS(uint16_t address) {
     if (c) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
@@ -525,7 +525,7 @@ void Cpu::BCS(uint16_t address) {
     }
 }
 
-void Cpu::BEQ(uint16_t address) {
+void CPU::BEQ(uint16_t address) {
     if (z) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
@@ -536,42 +536,42 @@ void Cpu::BEQ(uint16_t address) {
     }
 }
 
-void Cpu::BIT(uint16_t address) {
+void CPU::BIT(uint16_t address) {
     uint8_t m = bus.read(address);
     z = (m & a) == 0;
     v = (m >> 6) & 1;
     n = (m >> 7) & 1;
 }
 
-void Cpu::BMI(uint16_t address) {
+void CPU::BMI(uint16_t address) {
     if (n) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
 }
 
-void Cpu::BNE(uint16_t address) {
+void CPU::BNE(uint16_t address) {
     if (!z) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
 }
 
-void Cpu::BPL(uint16_t address) {
+void CPU::BPL(uint16_t address) {
     if (!n) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
 }
 
-void Cpu::BRK(uint16_t address) {
+void CPU::BRK(uint16_t address) {
     push16(pc);
     PHP(address);
     b = 1;
     pc = bus.read16(0xFFFE);
 }
 
-void Cpu::BVC(uint16_t address) {
+void CPU::BVC(uint16_t address) {
     if (!v) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
@@ -582,7 +582,7 @@ void Cpu::BVC(uint16_t address) {
     }
 }
 
-void Cpu::BVS(uint16_t address) {
+void CPU::BVS(uint16_t address) {
     if (v) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
@@ -593,44 +593,44 @@ void Cpu::BVS(uint16_t address) {
     }
 }
 
-void Cpu::CLC(uint16_t) {
+void CPU::CLC(uint16_t) {
     c = 0;
 }
 
-void Cpu::CLD(uint16_t) {
+void CPU::CLD(uint16_t) {
     d = 0;
 }
 
-void Cpu::CLI(uint16_t) {
+void CPU::CLI(uint16_t) {
     i = 0;
 }
 
-void Cpu::CLV(uint16_t) {
+void CPU::CLV(uint16_t) {
     v = 0;
 }
 
-void Cpu::CMP(uint16_t address) {
+void CPU::CMP(uint16_t address) {
     uint8_t m = bus.read(address);
     c = (a >= m ? 1 : 0);
     z = (a == m ? 1 : 0);
     n = ((((a - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::CPX(uint16_t address) {
+void CPU::CPX(uint16_t address) {
     uint8_t m = bus.read(address);
     c = (x >= m ? 1 : 0);
     z = (x == m ? 1 : 0);
     n = ((((x - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::CPY(uint16_t address) {
+void CPU::CPY(uint16_t address) {
     uint8_t m = bus.read(address);
     c = (y >= m ? 1 : 0);
     z = (y == m ? 1 : 0);
     n = ((((y - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::DEC(uint16_t address) {
+void CPU::DEC(uint16_t address) {
     uint8_t m = bus.read(address);
     m--;
     bus.write(address, m);
@@ -639,25 +639,25 @@ void Cpu::DEC(uint16_t address) {
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::DEX(uint16_t) {
+void CPU::DEX(uint16_t) {
     x--;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::DEY(uint16_t) {
+void CPU::DEY(uint16_t) {
     y--;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::EOR(uint16_t address) {
+void CPU::EOR(uint16_t address) {
     a = a ^ bus.read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::INC(uint16_t address) {
+void CPU::INC(uint16_t address) {
     uint8_t m = bus.read(address);
     m++;
     bus.write(address, m);
@@ -666,46 +666,46 @@ void Cpu::INC(uint16_t address) {
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::INX(uint16_t) {
+void CPU::INX(uint16_t) {
     x++;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::INY(uint16_t) {
+void CPU::INY(uint16_t) {
     y++;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::JMP(uint16_t address) {
+void CPU::JMP(uint16_t address) {
     pc = address;
 }
 
-void Cpu::JSR(uint16_t address) {
+void CPU::JSR(uint16_t address) {
     push16(pc - 1);
     pc = address;
 }
 
-void Cpu::LDA(uint16_t address) {
+void CPU::LDA(uint16_t address) {
     a = bus.read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::LDX(uint16_t address) {
+void CPU::LDX(uint16_t address) {
     x = bus.read(address);
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::LDY(uint16_t address) {
+void CPU::LDY(uint16_t address) {
     y = bus.read(address);
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::LSR(uint16_t address) {
+void CPU::LSR(uint16_t address) {
     if (addressingMode == Acc) {
         c = a & 1;
         a >>= 1;
@@ -721,35 +721,35 @@ void Cpu::LSR(uint16_t address) {
     }
 }
 
-void Cpu::NOP(uint16_t) {
+void CPU::NOP(uint16_t) {
     // do nothing
 }
 
-void Cpu::ORA(uint16_t address) {
+void CPU::ORA(uint16_t address) {
     a = a | bus.read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::PHA(uint16_t) {
+void CPU::PHA(uint16_t) {
     push(a);
 }
 
-void Cpu::PHP(uint16_t) {
+void CPU::PHP(uint16_t) {
     push(getStatus() | 0x10);
 }
 
-void Cpu::PLA(uint16_t) {
+void CPU::PLA(uint16_t) {
     a = pop();
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::PLP(uint16_t) {
+void CPU::PLP(uint16_t) {
     setStatus(pop() & 0xEF | 0x20);
 }
 
-void Cpu::ROL(uint16_t address) {
+void CPU::ROL(uint16_t address) {
     if (addressingMode == Acc) {
         uint8_t oldC = c;
         c = (a >> 7) & 1;
@@ -767,7 +767,7 @@ void Cpu::ROL(uint16_t address) {
     }
 }
 
-void Cpu::ROR(uint16_t address) {
+void CPU::ROR(uint16_t address) {
     if (addressingMode == Acc) {
         uint8_t oldC = c;
         c = a & 1;
@@ -785,16 +785,16 @@ void Cpu::ROR(uint16_t address) {
     }
 }
 
-void Cpu::RTI(uint16_t) {
+void CPU::RTI(uint16_t) {
     setStatus(pop() & 0xEF | 0x20);
     pc = pop16();
 }
 
-void Cpu::RTS(uint16_t) {
+void CPU::RTS(uint16_t) {
     pc = pop16() + 1;
 }
 
-void Cpu::SBC(uint16_t address) {
+void CPU::SBC(uint16_t address) {
     uint8_t m = bus.read(address);
     uint16_t diff = uint16_t(a) - m - (1 - c);
 
@@ -806,64 +806,64 @@ void Cpu::SBC(uint16_t address) {
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::SEC(uint16_t) {
+void CPU::SEC(uint16_t) {
     c = 1;
 }
 
-void Cpu::SED(uint16_t) {
+void CPU::SED(uint16_t) {
     d = 1;
 }
 
-void Cpu::SEI(uint16_t) {
+void CPU::SEI(uint16_t) {
     i = 1;
 }
 
-void Cpu::STA(uint16_t address) {
+void CPU::STA(uint16_t address) {
     bus.write(address, a);
 }
 
-void Cpu::STX(uint16_t address) {
+void CPU::STX(uint16_t address) {
     bus.write(address, x);
 }
 
-void Cpu::STY(uint16_t address) {
+void CPU::STY(uint16_t address) {
     bus.write(address, y);
 }
 
-void Cpu::TAX(uint16_t) {
+void CPU::TAX(uint16_t) {
     x = a;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TAY(uint16_t) {
+void CPU::TAY(uint16_t) {
     y = a;
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TSX(uint16_t) {
+void CPU::TSX(uint16_t) {
     x = sp;
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TXA(uint16_t) {
+void CPU::TXA(uint16_t) {
     a = x;
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::TXS(uint16_t) {
+void CPU::TXS(uint16_t) {
     sp = x;
 }
 
-void Cpu::TYA(uint16_t) {
+void CPU::TYA(uint16_t) {
     a = y;
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
-void Cpu::NIL(uint16_t) {
+void CPU::NIL(uint16_t) {
     // unimplemented
 }

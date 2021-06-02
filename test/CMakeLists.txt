@@ -9,20 +9,22 @@ if(GTest_FOUND)
     set(headers
         ${CMAKE_SOURCE_DIR}/Bus.h
         ${CMAKE_SOURCE_DIR}/Cartridge.h
-        ${CMAKE_SOURCE_DIR}/Cpu.h
+        ${CMAKE_SOURCE_DIR}/CPU.h
         ${CMAKE_SOURCE_DIR}/literals.h
         ${CMAKE_SOURCE_DIR}/Mapper.h
         ${CMAKE_SOURCE_DIR}/Mapper0.h
-        ${CMAKE_SOURCE_DIR}/NesFile.h)
+        ${CMAKE_SOURCE_DIR}/NesFile.h
+        ${CMAKE_SOURCE_DIR}/PPU.h)
 
     set(srcs
-        testCpu.cpp
+        testCPU.cpp
         ${CMAKE_SOURCE_DIR}/Bus.cpp
         ${CMAKE_SOURCE_DIR}/Cartridge.cpp
-        ${CMAKE_SOURCE_DIR}/Cpu.cpp
+        ${CMAKE_SOURCE_DIR}/CPU.cpp
         ${CMAKE_SOURCE_DIR}/Mapper.cpp
         ${CMAKE_SOURCE_DIR}/Mapper0.cpp
-        ${CMAKE_SOURCE_DIR}/NesFile.cpp)
+        ${CMAKE_SOURCE_DIR}/NesFile.cpp
+        ${CMAKE_SOURCE_DIR}/PPU.cpp)
 
     file(COPY
             ${CMAKE_CURRENT_SOURCE_DIR}/nestest.nes
@@ -30,8 +32,8 @@ if(GTest_FOUND)
          DESTINATION
             ${CMAKE_CURRENT_BINARY_DIR}/)
 
-    add_executable(testCpu ${headers} ${srcs})
-    target_link_libraries(testCpu ${deps})
-    target_include_directories(testCpu PRIVATE ${CMAKE_SOURCE_DIR})
-    target_compile_definitions(testCpu PRIVATE NES_DEBUG)
+    add_executable(testCPU ${headers} ${srcs})
+    target_link_libraries(testCPU ${deps})
+    target_include_directories(testCPU PRIVATE ${CMAKE_SOURCE_DIR})
+    target_compile_definitions(testCPU PRIVATE NES_DEBUG)
 endif(GTest_FOUND)

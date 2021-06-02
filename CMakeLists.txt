@@ -33,22 +33,24 @@ set(deps
 set(headers
     Bus.h
     Cartridge.h
-    Cpu.h
+    CPU.h
     EmulatorWindow.h
     literals.h
     Mapper.h
     Mapper0.h
-    NesFile.h)
+    NesFile.h
+    PPU.h)
 
 set(srcs
     Bus.cpp
     Cartridge.cpp
-    Cpu.cpp
+    CPU.cpp
     EmulatorWindow.cpp
     main.cpp
     Mapper.cpp
     Mapper0.cpp
-    NesFile.cpp)
+    NesFile.cpp
+    PPU.cpp)
 
 add_executable(${CMAKE_PROJECT_NAME} ${headers} ${srcs})
 target_link_libraries(${CMAKE_PROJECT_NAME} ${deps})

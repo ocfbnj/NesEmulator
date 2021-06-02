@@ -6,12 +6,14 @@
 #include <gtest/gtest.h>
 
 #include "Bus.h"
-#include "Cpu.h"
+#include "CPU.h"
+#include "Mapper.h"
 #include "NesFile.h"
+#include "PPU.h"
 
 std::ostringstream oss;
 
-GTEST_TEST(Nes, Cpu) {
+GTEST_TEST(Nes, CPU) {
     auto cartridge = loadNesFile("nestest.nes");
     ASSERT_TRUE(cartridge != nullptr);
 
@@ -19,7 +21,7 @@ GTEST_TEST(Nes, Cpu) {
     ASSERT_TRUE(mapper != nullptr);
 
     Bus bus{std::move(mapper)};
-    Cpu cpu{bus};
+    CPU& cpu{bus.getCPU()};
 
     int cycles = 15274 + 3;
 

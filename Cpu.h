@@ -7,9 +7,9 @@
 
 class Bus;
 
-class Cpu {
+class CPU {
 public:
-    explicit Cpu(Bus& bus);
+    explicit CPU(Bus& bus);
 
     void clock();
     void reset();
@@ -42,7 +42,7 @@ private:
     struct Operate {
         std::string_view name;
         Addressing addressing;
-        void (Cpu::*instruction)(uint16_t);
+        void (CPU::*instruction)(uint16_t);
         uint8_t cycle;
         uint8_t pageCycle;
     };
