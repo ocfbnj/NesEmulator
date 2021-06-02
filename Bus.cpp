@@ -37,7 +37,7 @@ uint8_t Bus::read(uint16_t addr) {
         // Expansion Rom
     } else {
         // Save RAM and PRG ROM that stored in cartridge
-        return mapper->read(addr);
+        return mapper->readPrgRom(addr);
     }
 
     return 0;
@@ -70,7 +70,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
         // Expansion Rom
     } else {
         // Save RAM and PRG ROM that stored in cartridge
-        mapper->write(addr, data);
+        mapper->writePrgRom(addr, data);
     }
 }
 

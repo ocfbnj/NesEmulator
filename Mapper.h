@@ -15,8 +15,11 @@ public:
     explicit Mapper(std::unique_ptr<Cartridge> cartridge);
     virtual ~Mapper() = default;
 
-    virtual uint8_t read(uint16_t addr) = 0;
-    virtual void write(uint16_t addr, uint8_t data) = 0;
+    virtual uint8_t readChrRom(uint16_t addr) = 0;
+    virtual void writeChrRom(uint16_t addr, uint8_t data) = 0;
+
+    virtual uint8_t readPrgRom(uint16_t addr) = 0;
+    virtual void writePrgRom(uint16_t addr, uint8_t data) = 0;
 
 protected:
     std::unique_ptr<Cartridge> cartridge;

@@ -5,7 +5,17 @@ Mapper0::Mapper0(std::unique_ptr<Cartridge> c)
     : Mapper(std::move(c)),
       isMirrored(cartridge->prgRom.size() == 16_kb) {}
 
-uint8_t Mapper0::read(uint16_t addr) {
+uint8_t Mapper0::readChrRom(uint16_t addr) {
+    // TODO
+    return cartridge->chrRom[addr];
+}
+
+void Mapper0::writeChrRom(uint16_t addr, uint8_t data) {
+    // TODO
+    cartridge->chrRom[addr] = data;
+}
+
+uint8_t Mapper0::readPrgRom(uint16_t addr) {
     if (addr < 0x8000) {
         // Save RAM
     } else {
@@ -20,7 +30,7 @@ uint8_t Mapper0::read(uint16_t addr) {
     return 0;
 }
 
-void Mapper0::write(uint16_t addr, uint8_t data) {
+void Mapper0::writePrgRom(uint16_t addr, uint8_t data) {
     if (addr < 0x8000) {
         // Save RAM
     } else {
