@@ -289,7 +289,7 @@ void CPU::clock() {
 }
 
 void CPU::reset() {
-    pc = bus.read16(0xFFFC);
+    pc = read16(0xFFFC);
     a = 0;
     x = 0;
     y = 0;
@@ -317,7 +317,7 @@ void CPU::irq() {
         i = 1;
         push(getStatus());
 
-        pc = bus.read16(0xFFFE);
+        pc = read16(0xFFFE);
 
         cycles = 7;
     }
@@ -331,13 +331,29 @@ void CPU::nmi() {
     i = 1;
     push(getStatus());
 
-    pc = bus.read16(0xFFFA);
+    pc = read16(0xFFFA);
 
     cycles = 8;
 }
 
+uint8_t CPU::read(uint16_t addr) {
+    return bus.read(addr);
+}
+
+void CPU::write(uint16_t addr, uint8_t data) {
+    bus.write(addr, data);
+}
+
+uint16_t CPU::read16(uint16_t addr) {
+    return bus.read16(addr);
+}
+
+void CPU::write16(uint16_t addr, uint16_t data) {
+    bus.write16(addr, data);
+}
+
 void CPU::step() {
-    uint8_t opcode = bus.read(pc++);
+    uint8_t opcode = read(pc++);
     Operate& op = opTable[opcode];
 
 #ifdef NES_DEBUG
@@ -366,51 +382,51 @@ void CPU::step() {
         address = pc++;
         break;
     case Zp0:
-        address = bus.read(pc++) & 0x00FF;
+        address = read(pc++) & 0x00FF;
         break;
     case Zpx:
-        address = (bus.read(pc++) + x) & 0x00FF;
+        address = (read(pc++) + x) & 0x00FF;
         break;
     case Zpy:
-        address = (bus.read(pc++) + y) & 0x00FF;
+        address = (read(pc++) + y) & 0x00FF;
         break;
     case Rel:
-        address = bus.read(pc++);
+        address = read(pc++);
         if (address & 0x80) {
             address |= 0xFF00;
         }
         break;
     case Abs:
-        address = bus.read16(pc);
+        address = read16(pc);
         pc += 2;
         break;
     case Abx:
-        address = bus.read16(pc) + x;
+        address = read16(pc) + x;
         pc += 2;
         pageCrossed = isCrossed(address - x, address);
         break;
     case Aby:
-        address = bus.read16(pc) + y;
+        address = read16(pc) + y;
         pc += 2;
         pageCrossed = isCrossed(address - y, address);
         break;
     case Ind: {
-        uint16_t ptr = bus.read16(pc);
+        uint16_t ptr = read16(pc);
         pc += 2;
 
         if ((ptr & 0x00FF) == 0x00FF) {
-            address = bus.read(ptr & 0xFF00) << 8 | bus.read(ptr);
+            address = read(ptr & 0xFF00) << 8 | read(ptr);
         } else {
-            address = bus.read(ptr + 1) << 8 | bus.read(ptr);
+            address = read(ptr + 1) << 8 | read(ptr);
         }
     } break;
     case Izx: {
-        uint16_t temp = bus.read(pc++);
-        address = bus.read((temp + x + 1) & 0x00FF) << 8 | bus.read((temp + x) & 0x00FF);
+        uint16_t temp = read(pc++);
+        address = read((temp + x + 1) & 0x00FF) << 8 | read((temp + x) & 0x00FF);
     } break;
     case Izy: {
-        uint16_t temp = bus.read(pc++);
-        address = bus.read((temp + 1) & 0x00FF) << 8 | bus.read(temp & 0x00FF);
+        uint16_t temp = read(pc++);
+        address = read((temp + 1) & 0x00FF) << 8 | read(temp & 0x00FF);
         address += y;
         pageCrossed = isCrossed(address - y, address);
     } break;
@@ -438,7 +454,7 @@ void CPU::push16(uint16_t data) {
 }
 
 uint8_t CPU::pop() {
-    return bus.read(0x0100 + ++sp);
+    return read(0x0100 + ++sp);
 }
 
 uint16_t CPU::pop16() {
@@ -471,7 +487,7 @@ void CPU::setStatus(uint8_t status) {
 }
 
 void CPU::ADC(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     uint16_t sum = uint16_t(a) + m + c;
 
     c = (sum > 0xFF ? 1 : 0);
@@ -483,7 +499,7 @@ void CPU::ADC(uint16_t address) {
 }
 
 void CPU::AND(uint16_t address) {
-    a = a & bus.read(address);
+    a = a & read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
@@ -495,7 +511,7 @@ void CPU::ASL(uint16_t address) {
         z = (a == 0 ? 1 : 0);
         n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
-        uint8_t m = bus.read(address);
+        uint8_t m = read(address);
         c = (m >> 7) & 1;
         m <<= 1;
         bus.write(address, m);
@@ -538,7 +554,7 @@ void CPU::BEQ(uint16_t address) {
 }
 
 void CPU::BIT(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     z = (m & a) == 0;
     v = (m >> 6) & 1;
     n = (m >> 7) & 1;
@@ -569,7 +585,7 @@ void CPU::BRK(uint16_t address) {
     push16(pc);
     PHP(address);
     b = 1;
-    pc = bus.read16(0xFFFE);
+    pc = read16(0xFFFE);
 }
 
 void CPU::BVC(uint16_t address) {
@@ -611,28 +627,28 @@ void CPU::CLV(uint16_t) {
 }
 
 void CPU::CMP(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     c = (a >= m ? 1 : 0);
     z = (a == m ? 1 : 0);
     n = ((((a - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::CPX(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     c = (x >= m ? 1 : 0);
     z = (x == m ? 1 : 0);
     n = ((((x - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::CPY(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     c = (y >= m ? 1 : 0);
     z = (y == m ? 1 : 0);
     n = ((((y - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::DEC(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     m--;
     bus.write(address, m);
 
@@ -653,13 +669,13 @@ void CPU::DEY(uint16_t) {
 }
 
 void CPU::EOR(uint16_t address) {
-    a = a ^ bus.read(address);
+    a = a ^ read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::INC(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     m++;
     bus.write(address, m);
 
@@ -689,19 +705,19 @@ void CPU::JSR(uint16_t address) {
 }
 
 void CPU::LDA(uint16_t address) {
-    a = bus.read(address);
+    a = read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::LDX(uint16_t address) {
-    x = bus.read(address);
+    x = read(address);
     z = (x == 0 ? 1 : 0);
     n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::LDY(uint16_t address) {
-    y = bus.read(address);
+    y = read(address);
     z = (y == 0 ? 1 : 0);
     n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
@@ -713,7 +729,7 @@ void CPU::LSR(uint16_t address) {
         z = (a == 0 ? 1 : 0);
         n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
-        uint8_t m = bus.read(address);
+        uint8_t m = read(address);
         c = m & 1;
         m >>= 1;
         bus.write(address, m);
@@ -727,7 +743,7 @@ void CPU::NOP(uint16_t) {
 }
 
 void CPU::ORA(uint16_t address) {
-    a = a | bus.read(address);
+    a = a | read(address);
     z = (a == 0 ? 1 : 0);
     n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
@@ -758,7 +774,7 @@ void CPU::ROL(uint16_t address) {
         z = (a == 0 ? 1 : 0);
         n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
-        uint8_t m = bus.read(address);
+        uint8_t m = read(address);
         uint8_t oldC = c;
         c = (m >> 7) & 1;
         m = (m << 1) | oldC;
@@ -776,7 +792,7 @@ void CPU::ROR(uint16_t address) {
         z = (a == 0 ? 1 : 0);
         n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
-        uint8_t m = bus.read(address);
+        uint8_t m = read(address);
         uint8_t oldC = c;
         c = m & 1;
         m = (m >> 1) | (oldC << 7);
@@ -796,7 +812,7 @@ void CPU::RTS(uint16_t) {
 }
 
 void CPU::SBC(uint16_t address) {
-    uint8_t m = bus.read(address);
+    uint8_t m = read(address);
     uint16_t diff = uint16_t(a) - m - (1 - c);
 
     c = (diff > 0xFF ? 0 : 1);
