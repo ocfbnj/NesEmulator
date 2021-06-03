@@ -11,15 +11,18 @@ public:
     explicit PPU(Bus& bus);
 
     uint8_t read();
+    void write(uint8_t data);
 
     void writeAddr(uint8_t data);
     void writeCtrl(uint8_t data);
 
     void incrementAddr();
 
+    [[nodiscard]] uint8_t getStatus() const;
+
 private:
     struct AddressRegister {
-        uint16_t get() const {
+        [[nodiscard]] uint16_t get() const {
             return (addr[0] << 8) | addr[1];
         }
 
@@ -49,12 +52,12 @@ private:
             set(get() & 0x3FFF);
         }
 
-        std::array<uint8_t, 2> addr;
+        std::array<uint8_t, 2> addr; // [hi, lo]
         bool hiPtr = false;
     };
 
     struct ControlRegister {
-        uint8_t addrIncrement() {
+        [[nodiscard]] uint8_t addrIncrement() const {
             return i ? 32 : 1;
         }
 
@@ -78,11 +81,35 @@ private:
     };
     static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 bytes");
 
+    struct StatusRegister {
+        [[nodiscard]] uint8_t get() const {
+            return _0 << 0 |
+                   _1 << 1 |
+                   _2 << 2 |
+                   _3 << 3 |
+                   _4 << 4 |
+                   o << 5 |
+                   s << 6 |
+                   v << 7;
+        }
+
+        uint8_t _0 : 1;
+        uint8_t _1 : 1;
+        uint8_t _2 : 1;
+        uint8_t _3 : 1;
+        uint8_t _4 : 1;
+        uint8_t o : 1; // Sprite overflow
+        uint8_t s : 1; // Sprite 0 Hit
+        uint8_t v : 1; // Vertical blank has started (0: not in vblank; 1: in vblank)
+    };
+    static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 bytes");
+
     Bus& bus;
 
     std::array<uint8_t, 32> palette;
     AddressRegister address;
     ControlRegister control;
+    StatusRegister status;
 
     uint8_t internalDataBuf;
 };

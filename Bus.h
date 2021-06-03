@@ -17,11 +17,17 @@ class Bus {
 public:
     explicit Bus(std::unique_ptr<Mapper> mapper);
 
-    // cpu read and write
+    // CPU and PPU have different buses.
+
+    // cpu read from and write to the bus
     uint8_t read(uint16_t addr);
     void write(uint16_t addr, uint8_t data);
     uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t data);
+
+    // ppu read from and write to the bus
+    uint8_t ppuRead(uint16_t addr);
+    void ppuWrite(uint16_t addr, uint8_t data);
 
     // fot testing
     CPU& getCPU();
