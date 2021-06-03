@@ -336,16 +336,16 @@ void CPU::nmi() {
     cycles = 8;
 }
 
-uint8_t CPU::read(uint16_t addr) {
+uint8_t CPU::read(uint16_t addr) const {
     return bus.read(addr);
+}
+
+uint16_t CPU::read16(uint16_t addr) const {
+    return bus.read16(addr);
 }
 
 void CPU::write(uint16_t addr, uint8_t data) {
     bus.write(addr, data);
-}
-
-uint16_t CPU::read16(uint16_t addr) {
-    return bus.read16(addr);
 }
 
 void CPU::write16(uint16_t addr, uint16_t data) {

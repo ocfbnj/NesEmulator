@@ -43,9 +43,9 @@ private:
         uint8_t pageCycle;
     };
 
-    uint8_t read(uint16_t addr);
+    [[nodiscard]] uint8_t read(uint16_t addr) const;
+    [[nodiscard]] uint16_t read16(uint16_t addr) const;
     void write(uint16_t addr, uint8_t data);
-    uint16_t read16(uint16_t addr);
     void write16(uint16_t addr, uint16_t data);
 
     void step();
