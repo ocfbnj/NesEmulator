@@ -373,44 +373,43 @@ void CPU::step() {
 
     addressingMode = op.addressing;
     switch (addressingMode) {
-        using enum Addressing;
-    case Imp:
-    case Acc:
+    case Addressing::Imp:
+    case Addressing::Acc:
         // ignore
         break;
-    case Imm:
+    case Addressing::Imm:
         address = pc++;
         break;
-    case Zp0:
+    case Addressing::Zp0:
         address = read(pc++) & 0x00FF;
         break;
-    case Zpx:
+    case Addressing::Zpx:
         address = (read(pc++) + x) & 0x00FF;
         break;
-    case Zpy:
+    case Addressing::Zpy:
         address = (read(pc++) + y) & 0x00FF;
         break;
-    case Rel:
+    case Addressing::Rel:
         address = read(pc++);
         if (address & 0x80) {
             address |= 0xFF00;
         }
         break;
-    case Abs:
+    case Addressing::Abs:
         address = read16(pc);
         pc += 2;
         break;
-    case Abx:
+    case Addressing::Abx:
         address = read16(pc) + x;
         pc += 2;
         pageCrossed = isCrossed(address - x, address);
         break;
-    case Aby:
+    case Addressing::Aby:
         address = read16(pc) + y;
         pc += 2;
         pageCrossed = isCrossed(address - y, address);
         break;
-    case Ind: {
+    case Addressing::Ind: {
         uint16_t ptr = read16(pc);
         pc += 2;
 
@@ -420,11 +419,11 @@ void CPU::step() {
             address = read(ptr + 1) << 8 | read(ptr);
         }
     } break;
-    case Izx: {
+    case Addressing::Izx: {
         uint16_t temp = read(pc++);
         address = read((temp + x + 1) & 0x00FF) << 8 | read((temp + x) & 0x00FF);
     } break;
-    case Izy: {
+    case Addressing::Izy: {
         uint16_t temp = read(pc++);
         address = read((temp + 1) & 0x00FF) << 8 | read(temp & 0x00FF);
         address += y;
