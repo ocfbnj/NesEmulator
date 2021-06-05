@@ -29,8 +29,8 @@ public:
     uint8_t ppuRead(uint16_t addr);
     void ppuWrite(uint16_t addr, uint8_t data);
 
-    // fot testing
     CPU& getCPU();
+    PPU& getPPU();
 
 private:
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
