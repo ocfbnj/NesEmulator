@@ -1,9 +1,6 @@
 #include <utility>
 
 #include "Bus.h"
-#include "CPU.h"
-#include "Mapper.h"
-#include "PPU.h"
 
 Bus::Bus(std::unique_ptr<Mapper> mapper)
     : mapper(std::move(mapper)),
