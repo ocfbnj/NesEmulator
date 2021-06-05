@@ -1,13 +1,6 @@
-#include "EmulatorWindow.h"
+#include "Emulator.h"
 
 int main() {
-    EmulatorWindow emulator;
-
-    while (emulator.isOpen()) {
-        emulator.handleEvent();
-        emulator.draw();
-        emulator.display();
-    }
-
-    return 0;
+    Emulator emulator{"test/nestest.nes"};
+    emulator.run();
 }

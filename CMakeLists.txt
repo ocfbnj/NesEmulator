@@ -39,7 +39,8 @@ set(headers
     Mapper.h
     Mapper0.h
     NesFile.h
-    PPU.h)
+    PPU.h
+    Emulator.h)
 
 set(srcs
     Bus.cpp
@@ -50,7 +51,8 @@ set(srcs
     Mapper.cpp
     Mapper0.cpp
     NesFile.cpp
-    PPU.cpp)
+    PPU.cpp
+    Emulator.cpp)
 
 add_executable(${CMAKE_PROJECT_NAME} ${headers} ${srcs})
 target_link_libraries(${CMAKE_PROJECT_NAME} ${deps})
