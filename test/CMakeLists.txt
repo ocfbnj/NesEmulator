@@ -1,8 +1,9 @@
-# vcpkg install gtest
-find_package(GTest CONFIG)
-
-if(GTest_FOUND)
-    set(DEPS GTest::gtest GTest::gtest_main)
+if(GTest_FOUND OR TARGET CONAN_PKG::sfml)
+    if(NOT USE_CONAN)
+        set(DEPS GTest::gtest GTest::gtest_main)
+    else()
+        set(DEPS CONAN_PKG::gtest)
+    endif()
 
     set(HEADERS
         ${CMAKE_SOURCE_DIR}/Bus.h
@@ -26,7 +27,7 @@ if(GTest_FOUND)
 
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/nestest.nes
               ${CMAKE_CURRENT_SOURCE_DIR}/nestest.txt
-         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
     add_executable(testCPU ${HEADERS} ${SRCS})
     target_link_libraries(testCPU ${DEPS})

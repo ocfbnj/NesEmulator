@@ -5,13 +5,34 @@ project(NesEmulator)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-# vcpkg install sfml
-find_package(
-    SFML
-    COMPONENTS system window graphics CONFIG
-    REQUIRED)
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup(TARGETS)
 
-set(DEPS sfml-system sfml-graphics sfml-window)
+    set(DEPS CONAN_PKG::sfml)
+    set(USE_CONAN true)
+
+    file(COPY ${CMAKE_SOURCE_DIR}/test/nestest.nes
+              ${CMAKE_SOURCE_DIR}/test/nestest.txt
+         DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+    message("-- Using Conan")
+else()
+    # vcpkg install sfml
+    find_package(
+        SFML
+        COMPONENTS system window graphics CONFIG
+        REQUIRED)
+
+    # vcpkg install gtest
+    find_package(GTest CONFIG)
+
+    set(DEPS sfml-system sfml-graphics sfml-window)
+
+    file(COPY ${CMAKE_SOURCE_DIR}/test/nestest.nes
+              ${CMAKE_SOURCE_DIR}/test/nestest.txt
+         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 set(HEADERS
     Bus.h

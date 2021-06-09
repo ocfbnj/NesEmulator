@@ -1,0 +1,8 @@
+# conan remote add bincrafters "https://api.bintray.com/conan/bincrafters/public-conan"
+
+[requires]
+gtest/1.10.0
+sfml/2.5.1@bincrafters/stable
+
+[generators]
+cmake
