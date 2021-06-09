@@ -1,36 +1,19 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1.2)
 
 project(NesEmulator)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 
-if(MSVC)
-    # See https://stackoverflow.com/questions/14172856/compile-with-mt-instead-of-md-using-cmake
-    set(CompilerFlags
-        CMAKE_CXX_FLAGS
-        CMAKE_CXX_FLAGS_DEBUG
-        CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_C_FLAGS
-        CMAKE_C_FLAGS_DEBUG
-        CMAKE_C_FLAGS_RELEASE)
-
-    foreach(CompilerFlag ${CompilerFlags})
-        string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
-    endforeach()
-endif(MSVC)
-
-add_subdirectory(test)
-
 # vcpkg install sfml
-find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
+find_package(
+    SFML
+    COMPONENTS system window graphics CONFIG
+    REQUIRED)
 
-set(deps
-    sfml-system
-    sfml-graphics
-    sfml-window)
+set(DEPS sfml-system sfml-graphics sfml-window)
 
-set(headers
+set(HEADERS
     Bus.h
     Cartridge.h
     CPU.h
@@ -42,7 +25,7 @@ set(headers
     PPU.h
     Emulator.h)
 
-set(srcs
+set(SRCS
     Bus.cpp
     Cartridge.cpp
     CPU.cpp
@@ -54,5 +37,7 @@ set(srcs
     PPU.cpp
     Emulator.cpp)
 
-add_executable(${CMAKE_PROJECT_NAME} ${headers} ${srcs})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${deps})
+add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SRCS})
+target_link_libraries(${CMAKE_PROJECT_NAME} ${DEPS})
+
+add_subdirectory(test)
