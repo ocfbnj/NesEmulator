@@ -5,7 +5,7 @@
 # MSVC
 /.vs
 /out
-CMakeSettings.json
+/CMakeSettings.json
 
 # CLion
 /.idea
