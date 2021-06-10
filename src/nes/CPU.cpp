@@ -1,9 +1,4 @@
-#ifdef NES_DEBUG
 #include <iomanip>
-#include <sstream>
-
-extern std::ostringstream oss;
-#endif
 
 #include "Bus.h"
 #include "CPU.h"
@@ -273,10 +268,6 @@ std::array<CPU::Operate, 256> CPU::opTable{
 
 CPU::CPU(Bus& bus) : bus(bus) {
     reset();
-
-#ifdef NES_DEBUG
-    pc = 0xC000;
-#endif
 }
 
 void CPU::clock() {
@@ -336,6 +327,11 @@ void CPU::nmi() {
     cycles = 8;
 }
 
+void CPU::testCPU(std::ostringstream* oss, uint16_t pc) {
+    this->oss = oss;
+    this->pc = pc;
+}
+
 uint8_t CPU::read(uint16_t addr) const {
     return bus.read(addr);
 }
@@ -356,17 +352,17 @@ void CPU::step() {
     uint8_t opcode = read(pc++);
     Operate& op = opTable[opcode];
 
-#ifdef NES_DEBUG
-    oss << std::hex << std::uppercase << std::right << std::setfill('0');
-    oss << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
-    oss << " A:" << std::setw(2) << +a
-        << " X:" << std::setw(2) << +x
-        << " Y:" << std::setw(2) << +y
-        << " P:" << std::setw(2) << +getStatus()
-        << " SP:" << std::setw(2) << +sp
-        << " CYC:" << std::dec << totalCycles
-        << "\n";
-#endif
+    if (oss) {
+        *oss << std::hex << std::uppercase << std::right << std::setfill('0');
+        *oss << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
+        *oss << " A:" << std::setw(2) << +a
+             << " X:" << std::setw(2) << +x
+             << " Y:" << std::setw(2) << +y
+             << " P:" << std::setw(2) << +getStatus()
+             << " SP:" << std::setw(2) << +sp
+             << " CYC:" << std::dec << totalCycles
+             << "\n";
+    }
 
     uint16_t address = 0;
     bool pageCrossed = false;
@@ -438,9 +434,7 @@ void CPU::step() {
         cycles += op.pageCycle;
     }
 
-#ifdef NES_DEBUG
     totalCycles += cycles;
-#endif
 }
 
 void CPU::push(uint8_t data) {

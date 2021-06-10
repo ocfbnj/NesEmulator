@@ -11,8 +11,6 @@
 #include "NesEmulator/nes/NesFile.h"
 #include "NesEmulator/nes/PPU.h"
 
-std::ostringstream oss;
-
 GTEST_TEST(Nes, CPU) {
     auto cartridge = loadNesFile("nestest.nes");
     ASSERT_TRUE(cartridge != nullptr);
@@ -22,6 +20,9 @@ GTEST_TEST(Nes, CPU) {
 
     Bus bus{std::move(mapper)};
     CPU& cpu{bus.getCPU()};
+
+    std::ostringstream oss;
+    cpu.testCPU(&oss);
 
     int cycles = 15274 + 3;
 

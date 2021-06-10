@@ -21,7 +21,6 @@ endif()
 
 add_subdirectory(src)
 
-# TODO
 if(BUILD_TEST)
-    # add_subdirectory(test)
+    add_subdirectory(test)
 endif()
