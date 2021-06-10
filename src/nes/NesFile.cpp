@@ -3,8 +3,9 @@
 #include <iostream>
 #include <vector>
 
+#include "NesEmulator/literals.h"
+
 #include "NesFile.h"
-#include "literals.h"
 
 // NesFileHeader represents an iNES file header.
 // See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format

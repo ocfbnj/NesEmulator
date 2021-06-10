@@ -5,11 +5,11 @@
 
 #include <gtest/gtest.h>
 
-#include "Bus.h"
-#include "CPU.h"
-#include "Mapper.h"
-#include "NesFile.h"
-#include "PPU.h"
+#include "NesEmulator/nes/Bus.h"
+#include "NesEmulator/nes/CPU.h"
+#include "NesEmulator/nes/Mapper.h"
+#include "NesEmulator/nes/NesFile.h"
+#include "NesEmulator/nes/PPU.h"
 
 std::ostringstream oss;
 
@@ -36,6 +36,5 @@ GTEST_TEST(Nes, CPU) {
     file >> std::noskipws;
     std::copy(std::istream_iterator<char>{file}, std::istream_iterator<char>{},
               std::back_inserter(expect));
-
     ASSERT_TRUE(expect == oss.str());
 }

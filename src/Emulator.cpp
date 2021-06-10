@@ -1,6 +1,7 @@
+#include "NesEmulator/nes/Mapper.h"
+#include "NesEmulator/nes/NesFile.h"
+
 #include "Emulator.h"
-#include "Mapper.h"
-#include "NesFile.h"
 
 Emulator::Emulator(std::string_view nesFile) : bus(Mapper::create(loadNesFile(nesFile))) {}
 

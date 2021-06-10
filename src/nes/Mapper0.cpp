@@ -1,5 +1,6 @@
+#include "NesEmulator/literals.h"
+
 #include "Mapper0.h"
-#include "literals.h"
 
 Mapper0::Mapper0(std::unique_ptr<Cartridge> c)
     : Mapper(std::move(c)),

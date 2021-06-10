@@ -5,10 +5,11 @@
 #include <cstdint>
 #include <memory>
 
+#include "NesEmulator/literals.h"
+
 #include "CPU.h"
 #include "Mapper.h"
 #include "PPU.h"
-#include "literals.h"
 
 // CPU gets access to memory (including memory-mapped spaces) using the bus.
 // See https://bugzmanov.github.io/nes_ebook/chapter_4.html

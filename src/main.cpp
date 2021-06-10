@@ -1,6 +1,6 @@
 #include "Emulator.h"
 
 int main() {
-    Emulator emulator{"test/nestest.nes"};
+    Emulator emulator{"nestest.nes"};
     emulator.run();
 }

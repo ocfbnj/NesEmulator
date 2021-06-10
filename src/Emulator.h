@@ -3,7 +3,8 @@
 
 #include <string_view>
 
-#include "Bus.h"
+#include "NesEmulator/nes/Bus.h"
+
 #include "EmulatorWindow.h"
 
 class Emulator {
