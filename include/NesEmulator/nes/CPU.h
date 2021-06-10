@@ -3,7 +3,7 @@
 
 #include <array>
 #include <cstdint>
-#include <sstream>
+#include <ostream>
 #include <string_view>
 
 class Bus;
@@ -17,7 +17,7 @@ public:
     void irq();
     void nmi();
 
-    void testCPU(std::ostringstream* oss, uint16_t pc = 0xC000);
+    void testCPU(std::ostream* os, uint16_t pc = 0xC000);
 
 private:
     // Addressing Mode
@@ -147,8 +147,8 @@ private:
     Addressing addressingMode;
 
     // #ifdef NES_DEBUG
-    uint32_t totalCycles{7};
-    std::ostringstream* oss{};
+    uint32_t totalCycles{};
+    std::ostream* os{};
     // #endif
 };
 

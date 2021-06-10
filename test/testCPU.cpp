@@ -22,7 +22,7 @@ GTEST_TEST(Nes, CPU) {
     CPU& cpu{bus.getCPU()};
 
     std::ostringstream oss;
-    cpu.testCPU(&oss);
+    cpu.testCPU(&oss, 0xC000);
 
     int cycles = 15274 + 3;
 

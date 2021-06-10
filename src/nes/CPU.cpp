@@ -327,9 +327,10 @@ void CPU::nmi() {
     cycles = 8;
 }
 
-void CPU::testCPU(std::ostringstream* oss, uint16_t pc) {
-    this->oss = oss;
+void CPU::testCPU(std::ostream* os, uint16_t pc) {
+    this->os = os;
     this->pc = pc;
+    totalCycles = 7;
 }
 
 uint8_t CPU::read(uint16_t addr) const {
@@ -352,16 +353,16 @@ void CPU::step() {
     uint8_t opcode = read(pc++);
     Operate& op = opTable[opcode];
 
-    if (oss) {
-        *oss << std::hex << std::uppercase << std::right << std::setfill('0');
-        *oss << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
-        *oss << " A:" << std::setw(2) << +a
-             << " X:" << std::setw(2) << +x
-             << " Y:" << std::setw(2) << +y
-             << " P:" << std::setw(2) << +getStatus()
-             << " SP:" << std::setw(2) << +sp
-             << " CYC:" << std::dec << totalCycles
-             << "\n";
+    if (os) {
+        *os << std::hex << std::uppercase << std::right << std::setfill('0');
+        *os << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
+        *os << " A:" << std::setw(2) << +a
+            << " X:" << std::setw(2) << +x
+            << " Y:" << std::setw(2) << +y
+            << " P:" << std::setw(2) << +getStatus()
+            << " SP:" << std::setw(2) << +sp
+            << " CYC:" << std::dec << totalCycles
+            << "\n";
     }
 
     uint16_t address = 0;
