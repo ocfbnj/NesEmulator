@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "NesEmulator/literals.h"
-
 #include "CPU.h"
 #include "Mapper.h"
 #include "PPU.h"
@@ -33,12 +31,14 @@ public:
     PPU& getPPU();
 
 private:
+    static constexpr auto Kb = 1024;
+
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
     std::unique_ptr<Mapper> mapper;
     std::unique_ptr<CPU> cpu;
     std::unique_ptr<PPU> ppu;
-    std::array<uint8_t, 2_kb> cpuRam{};
-    std::array<uint8_t, 2_kb> ppuRam{};
+    std::array<uint8_t, 2 * Kb> cpuRam{};
+    std::array<uint8_t, 2 * Kb> ppuRam{};
 };
 
 #endif
