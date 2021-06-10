@@ -9,7 +9,7 @@
 
 class Emulator {
 public:
-    Emulator(std::string_view nesFile);
+    explicit Emulator(std::string_view nesFile);
     void run();
 
 private:

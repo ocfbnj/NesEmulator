@@ -112,9 +112,9 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
 }
 
 CPU& Bus::getCPU() {
-    return *cpu.get();
+    return *cpu;
 }
 
 PPU& Bus::getPPU() {
-    return *ppu.get();
+    return *ppu;
 }
