@@ -2,7 +2,7 @@
 # conan config set general.revisions_enabled=1
 
 [requires]
-gtest/1.10.0
+gtest/cci.20210126
 sfml/2.5.1@bincrafters/stable
 
 [generators]
