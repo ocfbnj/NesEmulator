@@ -1,9 +1,0 @@
-# conan remote add bincrafters https://bincrafters.jfrog.io/artifactory/api/conan/public-conan
-# conan config set general.revisions_enabled=1
-
-[requires]
-gtest/cci.20210126
-sfml/2.5.1@bincrafters/stable
-
-[generators]
-cmake

@@ -7,7 +7,6 @@ add_library(
     Mapper0.cpp
     NesFile.cpp
     PPU.cpp)
-target_include_directories(nes
-                           PRIVATE ${CMAKE_SOURCE_DIR}/include/NesEmulator/nes)
+target_include_directories(nes PRIVATE ${CMAKE_SOURCE_DIR}/include/NesEmulator/nes)
 
 add_library(ocfbnj::nes ALIAS nes)
