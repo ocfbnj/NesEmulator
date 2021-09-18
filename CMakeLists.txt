@@ -29,6 +29,7 @@ conan_cmake_configure(
     GENERATORS
         cmake_find_package
     IMPORTS
+        "bin, *.dll -> ./src"
         "lib, *.dylib* -> ./src"
     OPTIONS
         sfml:shared=True)
