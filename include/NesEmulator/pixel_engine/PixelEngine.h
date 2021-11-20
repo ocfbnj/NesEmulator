@@ -1,0 +1,7 @@
+#ifndef NESEMULATOR_PIXELENGINE_H
+#define NESEMULATOR_PIXELENGINE_H
+
+class PixelEngine {
+};
+
+#endif // NESEMULATOR_PIXELENGINE_H
