@@ -12,7 +12,6 @@ Texture::Texture(const void* bytes, GLint width, GLint height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
     id = texture;
 }
@@ -26,6 +25,17 @@ Texture::~Texture() {
     if (id.has_value()) {
         glDeleteTextures(GL_TEXTURE_2D, &id.value());
     }
+}
+
+Texture& Texture::operator=(Texture&& other) noexcept {
+    if (this == &other) {
+        return *this;
+    }
+
+    id = other.id;
+    other.id.reset();
+
+    return *this;
 }
 
 void Texture::bind() {

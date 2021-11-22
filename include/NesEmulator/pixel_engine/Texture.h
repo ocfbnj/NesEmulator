@@ -12,6 +12,8 @@ public:
     Texture(Texture&& other) noexcept;
     ~Texture();
 
+    Texture& operator=(Texture&& other) noexcept;
+
     void bind();
     void unBind();
 

@@ -4,16 +4,15 @@
 #include <string_view>
 
 #include "NesEmulator/nes/Bus.h"
+#include "NesEmulator/pixel_engine/PixelEngine.h"
 
-#include "EmulatorWindow.h"
-
-class Emulator {
+class Emulator : public PixelEngine {
 public:
     explicit Emulator(std::string_view nesFile);
-    void run();
+
+    void onUpdate() override;
 
 private:
-    EmulatorWindow window;
     Bus bus;
 };
 
