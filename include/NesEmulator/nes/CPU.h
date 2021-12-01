@@ -7,8 +7,13 @@
 #include <string_view>
 
 class Bus;
+class CPU;
+
+std::ostream& operator<<(std::ostream& os, const CPU& cpu);
 
 class CPU {
+    friend std::ostream& operator<<(std::ostream& os, const CPU& cpu);
+
 public:
     explicit CPU(Bus& bus);
 
@@ -17,7 +22,7 @@ public:
     void irq();
     void nmi();
 
-    void testCPU(std::ostream* os, uint16_t pc = 0xC000);
+    void testCPU(std::ostream* os, uint16_t pc, uint32_t totalCycles);
 
 private:
     // Addressing Mode
@@ -143,13 +148,14 @@ private:
     uint8_t n : 1; // negative flag
 
     Bus& bus;
+
     uint8_t cycles;
+    uint8_t opcode;
     Addressing addressingMode;
 
-    // #ifdef NES_DEBUG
-    uint32_t totalCycles{};
-    std::ostream* os{};
-    // #endif
+    // for debug
+    uint32_t totalCycles = 0;
+    std::ostream* os = nullptr;
 };
 
 #endif

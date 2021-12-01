@@ -3,7 +3,20 @@
 #include "Bus.h"
 #include "CPU.h"
 
-bool isCrossed(uint16_t a, uint16_t b) {
+std::ostream& operator<<(std::ostream& os, const CPU& cpu) {
+    os << std::hex << std::uppercase << std::right << std::setfill('0');
+    os << std::setw(4) << cpu.pc - 1 << "  " << std::setw(2) << +cpu.opcode << " " << cpu.opTable[cpu.opcode].name << "         ";
+    os << " A:" << std::setw(2) << +cpu.a
+       << " X:" << std::setw(2) << +cpu.x
+       << " Y:" << std::setw(2) << +cpu.y
+       << " P:" << std::setw(2) << +cpu.getStatus()
+       << " SP:" << std::setw(2) << +cpu.sp
+       << " CYC:" << std::dec << cpu.totalCycles;
+
+    return os;
+}
+
+static bool isCrossed(uint16_t a, uint16_t b) {
     return (a & 0xFF00) != (b & 0xFF00);
 }
 
@@ -327,10 +340,10 @@ void CPU::nmi() {
     cycles = 8;
 }
 
-void CPU::testCPU(std::ostream* os, uint16_t pc) {
+void CPU::testCPU(std::ostream* os, uint16_t pc, uint32_t totalCycles) {
     this->os = os;
     this->pc = pc;
-    totalCycles = 7;
+    this->totalCycles = totalCycles;
 }
 
 uint8_t CPU::read(uint16_t addr) const {
@@ -350,24 +363,16 @@ void CPU::write16(uint16_t addr, uint16_t data) {
 }
 
 void CPU::step() {
-    uint8_t opcode = read(pc++);
-    Operate& op = opTable[opcode];
+    opcode = read(pc++);
 
     if (os) {
-        *os << std::hex << std::uppercase << std::right << std::setfill('0');
-        *os << std::setw(4) << pc - 1 << "  " << std::setw(2) << +opcode << " " << op.name << "         ";
-        *os << " A:" << std::setw(2) << +a
-            << " X:" << std::setw(2) << +x
-            << " Y:" << std::setw(2) << +y
-            << " P:" << std::setw(2) << +getStatus()
-            << " SP:" << std::setw(2) << +sp
-            << " CYC:" << std::dec << totalCycles
-            << "\n";
+        *os << *this << "\n";
     }
 
     uint16_t address = 0;
     bool pageCrossed = false;
 
+    Operate& op = opTable[opcode];
     addressingMode = op.addressing;
     switch (addressingMode) {
     case Addressing::Imp:
