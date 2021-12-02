@@ -95,7 +95,7 @@ uint8_t Bus::ppuRead(uint16_t addr) {
     } else if (addr < 0x3000) {
         // PPU RAM
         // TODO Mirroring
-        return ppuRam[addr - 0x3000];
+        return ppuRam[addr - 0x2000];
     }
 
     return 0;
@@ -107,7 +107,7 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
         mapper->writeChrRom(addr, data);
     } else if (addr < 0x3000) {
         // PPU RAM
-        ppuRam[addr - 0x3000] = data;
+        ppuRam[addr - 0x2000] = data;
     }
 }
 
