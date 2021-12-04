@@ -4,7 +4,7 @@
 #include "Shader.h"
 
 static std::string readFile(std::string_view fileName) {
-    std::ifstream is{fileName, std::ifstream::binary};
+    std::ifstream is{fileName.data(), std::ifstream::binary};
     is.seekg(0, std::ifstream::end);
 
     std::string contents(is.tellg(), '\0');
