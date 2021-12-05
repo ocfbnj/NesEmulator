@@ -22,7 +22,7 @@ public:
     ~PixelEngine();
 
     void run();
-    void drawPixel(int row, int col, Pixel pixel);
+    void drawPixel(int x, int y, Pixel pixel);
 
     virtual void onUpdate();
 
