@@ -39,7 +39,7 @@ PixelEngine::PixelEngine(int width, int height, std::string_view title)
     : width(width),
       height(height),
       window(nullptr),
-      glLoader(width, height, "Nes Emulator", &window),
+      glLoader(width, height, title, &window),
       shader("shaders/default.vert", "shaders/default.frag"),
       vao(),
       vbo(vertices, sizeof vertices),
@@ -78,6 +78,7 @@ void PixelEngine::onUpdate() {
     // do nothing
 }
 
-void PixelEngine::drawPixel(int row, int col, Pixel pixel) {
-    pixels[row * width + col] = pixel;
+void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
+    y = height - y;
+    pixels[y * width + x] = pixel;
 }

@@ -71,6 +71,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
 
     // chr rom data
     std::vector<uint8_t> chrRom(static_cast<const int>(header.chrSize * 8_kb));
+    nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
     if (!nesFile) {
         std::clog << "Read the chr rom data failed\n";
         return {};
