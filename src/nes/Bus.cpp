@@ -88,6 +88,16 @@ void Bus::write(uint16_t addr, uint8_t data) {
         write(mirrorDownAddr, data);
     } else if (addr < 0x4018) {
         // TODO	NES APU and I/O registers
+        if (addr == 0x4014) {
+            // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM
+            std::array<uint8_t, 256> buffer{};
+            uint16_t hi = uint16_t(data) << 8;
+            for (int i = 0x00; i != 0xFF; i++) {
+                buffer[i] = read(hi | i);
+            }
+
+            ppu->writeOAMDMA(buffer);
+        }
     } else if (addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode

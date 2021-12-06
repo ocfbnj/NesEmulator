@@ -83,6 +83,12 @@ void PPU::writeData(uint8_t data) {
     incrementAddr();
 }
 
+void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
+    for (uint8_t data : buffer) {
+        oamData[oamAddr++] = data;
+    }
+}
+
 void PPU::incrementAddr() {
     address.increment(control.addrIncrement());
 }

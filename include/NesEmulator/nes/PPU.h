@@ -25,6 +25,7 @@ public:
     void writeScroll(uint8_t data);
     void writeAddr(uint8_t data);
     void writeData(uint8_t data);
+    void writeOAMDMA(const std::array<uint8_t, 256>& buffer);
 
 private:
     struct ControlRegister {
