@@ -62,7 +62,7 @@ private:
         uint8_t p : 1 {}; // PPU master/slave select
         uint8_t v : 1 {}; // Generate an NMI at the start of the vertical blanking interval
     };
-    static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 bytes");
+    static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 byte");
 
     struct MaskRegister {
         [[nodiscard]] bool isGreyScale() const {
@@ -105,7 +105,7 @@ private:
         uint8_t G : 1 {}; // Emphasize green (red on PAL/Dendy)
         uint8_t B : 1 {}; // Emphasize blue
     };
-    static_assert(sizeof(MaskRegister) == 1, "The MaskRegister is not 1 bytes");
+    static_assert(sizeof(MaskRegister) == 1, "The MaskRegister is not 1 byte");
 
     struct StatusRegister {
         [[nodiscard]] uint8_t read() const {
@@ -134,7 +134,7 @@ private:
         uint8_t s : 1 {};  // Sprite 0 Hit
         uint8_t v : 1 {1}; // Vertical blank has started (0: not in vblank; 1: in vblank)
     };
-    static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 bytes");
+    static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 byte");
 
     struct ScrollRegister {
         void write(uint8_t data) {
