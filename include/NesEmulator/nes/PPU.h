@@ -199,11 +199,11 @@ private:
     MaskRegister mask;
     StatusRegister status;
     uint8_t oamAddr{};
-    std::array<uint8_t, 256> oamData;
+    std::array<uint8_t, 256> oamData{};
     ScrollRegister scroll;
     AddressRegister address;
 
-    uint8_t internalReadBuf;
+    uint8_t internalReadBuf{};
 };
 
 #endif
