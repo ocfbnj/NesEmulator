@@ -14,3 +14,7 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
 }
 
 Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartridge)) {}
+
+const std::vector<uint8_t>& Mapper::chrRom() const {
+    return cartridge->chrRom;
+}

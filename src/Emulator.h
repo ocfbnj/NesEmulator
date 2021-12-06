@@ -14,6 +14,8 @@ public:
 
 private:
     Bus bus;
+
+    void render();
 };
 
 #endif

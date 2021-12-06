@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "CPU.h"
 #include "Mapper.h"
@@ -12,6 +13,8 @@
 // CPU gets access to memory (including memory-mapped spaces) using the bus.
 // See https://bugzmanov.github.io/nes_ebook/chapter_4.html
 class Bus {
+    static constexpr auto Kb = 1024;
+
 public:
     explicit Bus(std::unique_ptr<Mapper> mapper);
 
@@ -27,12 +30,13 @@ public:
     uint8_t ppuRead(uint16_t addr);
     void ppuWrite(uint16_t addr, uint8_t data);
 
-    CPU& getCPU();
-    PPU& getPPU();
+    [[nodiscard]] CPU& getCPU();
+    [[nodiscard]] PPU& getPPU();
+
+    [[nodiscard]] const std::array<uint8_t, 2 * Kb>& vRam() const;
+    [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
 
 private:
-    static constexpr auto Kb = 1024;
-
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
     std::unique_ptr<Mapper> mapper;
     std::unique_ptr<CPU> cpu;

@@ -21,6 +21,8 @@ public:
     virtual uint8_t readPrgRom(uint16_t addr) = 0;
     virtual void writePrgRom(uint16_t addr, uint8_t data) = 0;
 
+    [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
+
 protected:
     std::unique_ptr<Cartridge> cartridge;
 };
