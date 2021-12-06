@@ -57,10 +57,12 @@ private:
     void write16(uint16_t addr, uint16_t data);
 
     void step();
+
     void push(uint8_t data);
     void push16(uint16_t data);
     uint8_t pop();
     uint16_t pop16();
+
     [[nodiscard]] uint8_t getStatus() const;
     void setStatus(uint8_t status);
 
@@ -123,9 +125,7 @@ private:
     void TXA(uint16_t address);
     void TXS(uint16_t address);
     void TYA(uint16_t address);
-
-    // unimplemented
-    void NIL(uint16_t address);
+    void NIL(uint16_t address); // unimplemented
 
     // Instruction Set
     // See https://www.masswerk.at/6502/6502_instruction_set.html
