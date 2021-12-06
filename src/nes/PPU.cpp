@@ -3,6 +3,27 @@
 
 PPU::PPU(Bus& bus) : bus(bus) {}
 
+void PPU::clock() {
+    cycles++;
+
+    if (cycles >= 341) {
+        cycles -= 341;
+        scanline++;
+
+        if (scanline == 241) {
+            if (control.isGenerateVblankNMI()) {
+                status.setVblank();
+                bus.getCPU().nmi();
+            }
+        }
+
+        if (scanline >= 262) {
+            scanline = 0;
+            status.resetVblank();
+        }
+    }
+}
+
 uint16_t PPU::spritePatternAddr() const {
     return control.spritePatternAddr();
 }
@@ -46,7 +67,12 @@ uint8_t PPU::readData() {
 }
 
 void PPU::writeCtrl(uint8_t data) {
+    bool prev = control.isGenerateVblankNMI();
     control.write(data);
+
+    if (!prev && control.isGenerateVblankNMI() && status.isInVblank()) {
+        bus.getCPU().nmi();
+    }
 }
 
 void PPU::writeMask(uint8_t data) {

@@ -11,6 +11,8 @@ class PPU {
 public:
     explicit PPU(Bus& bus);
 
+    void clock();
+
     [[nodiscard]] uint16_t spritePatternAddr() const;
     [[nodiscard]] uint16_t backgroundPatternAddr() const;
 
@@ -43,6 +45,10 @@ private:
 
         [[nodiscard]] uint16_t backgroundPatternAddr() const {
             return b ? 0x0000 : 0x1000;
+        }
+
+        [[nodiscard]] bool isGenerateVblankNMI() const {
+            return v;
         }
 
         void write(uint8_t data) {
@@ -118,6 +124,14 @@ private:
                    o << 5 |
                    s << 6 |
                    v << 7;
+        }
+
+        [[nodiscard]] bool isInVblank() const {
+            return v;
+        }
+
+        void setVblank() {
+            v = 1;
         }
 
         void resetVblank() {
@@ -209,6 +223,9 @@ private:
     AddressRegister address;
 
     uint8_t internalReadBuf{};
+
+    uint16_t scanline = 0;
+    uint32_t cycles = 0;
 };
 
 #endif
