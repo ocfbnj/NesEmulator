@@ -186,6 +186,10 @@ private:
             set(get() & 0x3FFF);
         }
 
+        void resetLatch() {
+            hiPtr = true;
+        }
+
         std::array<uint8_t, 2> addr{}; // [hi, lo]
         bool hiPtr = false;
     };

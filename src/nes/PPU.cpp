@@ -17,6 +17,7 @@ uint8_t PPU::readStatus() {
     // Reading the status register will clear bit 7 and also the address latch used by scroll and addr
     status.resetVblank();
     scroll.resetLatch();
+    address.resetLatch();
 
     return res;
 }
