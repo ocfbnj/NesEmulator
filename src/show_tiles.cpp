@@ -25,16 +25,16 @@ public:
 
                 switch (index) {
                 case 0:
-                    pixel = {.r = 0x00, .g = 0x3D, .b = 0xA6, .a = 0xFF};
+                    pixel = SystemPalette[0x01];
                     break;
                 case 1:
-                    pixel = {.r = 0x69, .g = 0xA2, .b = 0xFF, .a = 0xFF};
+                    pixel = SystemPalette[0x23];
                     break;
                 case 2:
-                    pixel = {.r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF};
+                    pixel = SystemPalette[0x27];
                     break;
                 case 3:
-                    pixel = {.r = 0x0D, .g = 0x0D, .b = 0x0D, .a = 0xFF};
+                    pixel = SystemPalette[0x30];
                     break;
                 default:
                     break;
