@@ -40,11 +40,11 @@ private:
         }
 
         [[nodiscard]] uint16_t spritePatternAddr() const {
-            return s ? 0x0000 : 0x1000;
+            return s ? 0x1000 : 0x0000;
         }
 
         [[nodiscard]] uint16_t backgroundPatternAddr() const {
-            return b ? 0x0000 : 0x1000;
+            return b ? 0x1000 : 0x0000;
         }
 
         [[nodiscard]] bool isGenerateVblankNMI() const {
@@ -212,7 +212,7 @@ private:
 
     Bus& bus;
 
-    std::array<uint8_t, 32> palette;
+    std::array<uint8_t, 32> paletteTable;
 
     ControlRegister control;
     MaskRegister mask;

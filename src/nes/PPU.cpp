@@ -60,7 +60,7 @@ uint8_t PPU::readData() {
         internalReadBuf = bus.ppuRead(addr);
     } else {
         // Palette Table
-        res = palette[addr - 0x3F00];
+        res = paletteTable[addr - 0x3F00];
     }
 
     return res;
@@ -104,7 +104,7 @@ void PPU::writeData(uint8_t data) {
         bus.ppuWrite(addr, data);
     } else {
         // Palette Table
-        palette[addr - 0x3F00] = data;
+        paletteTable[addr - 0x3F00] = data;
     }
 
     incrementAddr();
