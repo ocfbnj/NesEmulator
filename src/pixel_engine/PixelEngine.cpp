@@ -79,6 +79,6 @@ void PixelEngine::onUpdate() {
 }
 
 void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
-    y = height - y;
+    y = height - y - 1;
     pixels[y * width + x] = pixel;
 }
