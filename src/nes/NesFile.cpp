@@ -45,10 +45,24 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         return {};
     }
 
+    // mapper number
     uint8_t lowerMapper = header.flag6 >> 4;
     uint8_t upperMapper = header.flag7 >> 4;
     uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
     std::clog << "The mapper number is " << int(mapperNum) << "\n";
+
+    // mirroring type
+    Mirroring mirroringType = Mirroring::Undefined;
+    if ((header.flag6 >> 3) & 1) {
+        mirroringType = Mirroring::FourScreen;
+    } else {
+        if (header.flag6 & 1) {
+            mirroringType = Mirroring::Vertical;
+        } else {
+            mirroringType = Mirroring::Horizontal;
+        }
+    }
+    assert(mirroringType != Mirroring::Undefined);
 
     // trainer, if present
     if (header.flag6 & (1u << 2)) {
@@ -77,5 +91,5 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         return {};
     }
 
-    return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum);
+    return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum, mirroringType);
 }

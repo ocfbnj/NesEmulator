@@ -18,3 +18,7 @@ Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartr
 const std::vector<uint8_t>& Mapper::chrRom() const {
     return cartridge->chrRom;
 }
+
+Mirroring Mapper::mirroring() const {
+    return cartridge->mirroring;
+}
