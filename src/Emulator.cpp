@@ -8,53 +8,52 @@ Emulator::Emulator(std::string_view nesFile)
       bus(Mapper::create(loadNesFile(nesFile))) {}
 
 void Emulator::onUpdate() {
-    bus.getCPU().clock();
+    for (int i = 0; i != 1024; i++) {
+        bus.getPPU().clock();
+        bus.getPPU().clock();
+        bus.getPPU().clock();
+        bus.getCPU().clock();
+    }
+
     render();
 }
 
 void Emulator::render() {
-    PPU& ppu = bus.getPPU();
+    renderBackground();
+}
 
-    const uint16_t bank = ppu.backgroundPatternAddr();
+void Emulator::renderBackground() {
+    const uint16_t bank = bus.getPPU().backgroundPatternAddr();
     const auto& vRam = bus.vRam();
-    const auto& chrRom = bus.chrRom();
 
     for (int i = 0; i != 960; i++) {
-        uint8_t n = vRam[i];
-        int tileX = i % 32;
-        int tileY = i / 32;
+        renderTile(bank, vRam[i], i % 32, i / 32);
+    }
+}
 
-        auto begin = std::next(chrRom.begin(), bank + n * 16);
-        auto end = std::next(begin, 16);
-        std::vector<uint8_t> tile{begin, end};
+void Emulator::renderTile(uint16_t bank, uint8_t n, int tileX, int tileY) {
+    // auto begin = std::next(bus.chrRom().begin(), bank + n * 16);
+    // auto end = std::next(begin, 16);
+    // std::vector<uint8_t> tile{begin, end};
 
-        for (int y = 0; y != 8; y++) {
-            uint8_t hi = tile[y];
-            uint8_t lo = tile[y + 8];
+    if (tileX == 9 && tileY == 18) {
+        tileY = tileY;
+    }
 
-            for (int x = 0; x != 8; x++) {
-                uint8_t index = (((hi >> (7 - x)) & 1) << 1) | ((lo >> (7 - x)) & 1);
-                Pixel pixel{.r = 255, .g = 255, .b = 255, .a = 255};
+    auto it = std::next(bus.chrRom().begin(), bank + n * 16);
+    auto tile = &(*it);
+    auto palette = bus.getPPU().backgroundPaletteFor(tileX, tileY);
 
-                switch (index) {
-                case 0:
-                    pixel = {.r = 0x00, .g = 0x3D, .b = 0xA6, .a = 0xFF};
-                    break;
-                case 1:
-                    pixel = {.r = 0x69, .g = 0xA2, .b = 0xFF, .a = 0xFF};
-                    break;
-                case 2:
-                    pixel = {.r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF};
-                    break;
-                case 3:
-                    pixel = {.r = 0x0D, .g = 0x0D, .b = 0x0D, .a = 0xFF};
-                    break;
-                default:
-                    break;
-                }
+    for (int y = 0; y != 8; y++) {
+        uint8_t lo = tile[y];
+        uint8_t hi = tile[y + 8];
 
-                drawPixel(tileX * 8 + x, tileY * 8 + y, pixel);
-            }
+        for (int x = 0; x != 8; x++) {
+            uint8_t index = (((hi >> (7 - x)) & 1) << 1) | ((lo >> (7 - x)) & 1);
+            uint8_t colorIndex = palette[index];
+            Pixel pixel = SystemPalette[colorIndex];
+
+            drawPixel(tileX * 8 + x, tileY * 8 + y, pixel);
         }
     }
 }

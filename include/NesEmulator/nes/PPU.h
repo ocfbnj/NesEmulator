@@ -20,6 +20,8 @@ public:
     [[nodiscard]] uint8_t readOAMData() const;
     [[nodiscard]] uint8_t readData();
 
+    [[nodiscard]] std::array<uint8_t, 4> backgroundPaletteFor(int tileX, int tileY) const;
+
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
     void writeOAMAddr(uint8_t data);
@@ -146,7 +148,7 @@ private:
         uint8_t _4 : 1 {};
 
         uint8_t o : 1 {}; // Sprite overflow
-        uint8_t s : 1 {};  // Sprite 0 Hit
+        uint8_t s : 1 {}; // Sprite 0 Hit
         uint8_t v : 1 {}; // Vertical blank has started (0: not in vblank; 1: in vblank)
     };
     static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 byte");
