@@ -214,7 +214,7 @@ private:
 
     Bus& bus;
 
-    std::array<uint8_t, 32> paletteTable;
+    std::array<uint8_t, 32> paletteTable{};
 
     ControlRegister control;
     MaskRegister mask;
