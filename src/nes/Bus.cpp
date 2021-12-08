@@ -36,9 +36,12 @@ uint8_t Bus::read(uint16_t addr) {
     } else if (addr < 0x4000) {
         // PPU registers mirrors
         uint16_t mirrorDownAddr = addr & 0x2007;
-        read(mirrorDownAddr);
+        return read(mirrorDownAddr);
     } else if (addr < 0x4018) {
         // TODO	NES APU and I/O registers
+        if (addr == 0x4016) {
+            return joypad.read();
+        }
     } else if (addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode
@@ -97,6 +100,8 @@ void Bus::write(uint16_t addr, uint8_t data) {
             }
 
             ppu->writeOAMDMA(buffer);
+        } else if (addr == 0x4016) {
+            joypad.write(data);
         }
     } else if (addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.

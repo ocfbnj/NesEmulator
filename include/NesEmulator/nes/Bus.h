@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CPU.h"
+#include "Joypad.h"
 #include "Mapper.h"
 #include "PPU.h"
 
@@ -47,6 +48,8 @@ private:
     std::unique_ptr<PPU> ppu;
     std::array<uint8_t, 2 * Kb> cpuRam{};
     std::array<uint8_t, 2 * Kb> ppuRam{};
+
+    Joypad joypad;
 };
 
 #endif

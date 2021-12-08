@@ -4,6 +4,7 @@ add_library(
     Bus.cpp
     Cartridge.cpp
     CPU.cpp
+    Joypad.cpp
     Mapper.cpp
     Mapper0.cpp
     NesFile.cpp
