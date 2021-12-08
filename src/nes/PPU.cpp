@@ -1,5 +1,7 @@
-#include "PPU.h"
+#include <cassert>
+
 #include "Bus.h"
+#include "PPU.h"
 
 PPU::PPU(Bus& bus) : bus(bus) {}
 
