@@ -26,6 +26,9 @@ public:
 
     [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
 
+    [[nodiscard]] bool showBackground();
+    [[nodiscard]] bool showSprites();
+
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
     void writeOAMAddr(uint8_t data);

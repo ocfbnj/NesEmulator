@@ -98,6 +98,14 @@ const std::array<uint8_t, 256>& PPU::getOamData() const {
     return oamData;
 }
 
+bool PPU::showBackground() {
+    return mask.showBackground();
+}
+
+bool PPU::showSprites() {
+    return mask.showSprites();
+}
+
 void PPU::writeCtrl(uint8_t data) {
     bool prev = control.isGenerateVblankNMI();
     control.write(data);

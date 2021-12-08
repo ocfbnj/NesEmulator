@@ -29,8 +29,13 @@ void Emulator::onUpdate(float elapsedTime) {
 }
 
 void Emulator::render() {
-    renderBackground();
-    renderSprites();
+    if (bus.getPPU().showBackground()) {
+        renderBackground();
+    }
+
+    if (bus.getPPU().showSprites()) {
+        renderSprites();
+    }
 }
 
 void Emulator::renderBackground() {
