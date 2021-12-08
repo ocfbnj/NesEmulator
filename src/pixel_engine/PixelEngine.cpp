@@ -95,6 +95,10 @@ void PixelEngine::run() {
     }
 }
 
+GLFWwindow* PixelEngine::getWindow() {
+    return window;
+}
+
 void PixelEngine::onUpdate(float elapsedTime) {
     // do nothing
 }

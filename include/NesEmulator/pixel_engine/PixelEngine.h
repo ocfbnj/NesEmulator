@@ -1,10 +1,10 @@
 #ifndef NESEMULATOR_PIXELENGINE_H
 #define NESEMULATOR_PIXELENGINE_H
 
+#include <chrono>
+#include <string>
 #include <string_view>
 #include <vector>
-#include <string>
-#include <chrono>
 
 // clang-format off
 #include <glad/glad.h>
@@ -25,6 +25,8 @@ public:
 
     void run();
     void drawPixel(int x, int y, Pixel pixel);
+
+    GLFWwindow* getWindow();
 
     virtual void onUpdate(float elapsedTime);
 

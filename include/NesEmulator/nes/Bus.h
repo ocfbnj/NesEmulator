@@ -33,6 +33,7 @@ public:
 
     [[nodiscard]] CPU& getCPU();
     [[nodiscard]] PPU& getPPU();
+    [[nodiscard]] Joypad& getJoypad();
 
     [[nodiscard]] const std::array<uint8_t, 2 * Kb>& vRam() const;
     [[nodiscard]] const std::vector<uint8_t>& chrRom() const;

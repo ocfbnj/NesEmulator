@@ -18,6 +18,8 @@ private:
     void renderSprites();
     void renderBackgroundTile(uint16_t bank, uint8_t n, int tileX, int tileY);
 
+    void checkKeyboard();
+
     Bus bus;
 };
 

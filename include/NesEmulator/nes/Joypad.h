@@ -5,25 +5,22 @@
 
 class Joypad {
 public:
-    void write(uint8_t data) {
-        strobe = data & 1;
-        if (strobe) {
-            index = 0;
-        }
-    }
+    enum class Button : uint8_t {
+        Right = 0b10000000,
+        Left = 0b01000000,
+        Down = 0b00100000,
+        Up = 0b00010000,
+        Start = 0b00001000,
+        Select = 0b00000100,
+        B = 0b00000010,
+        A = 0b00000001,
+    };
 
-    [[nodiscard]] uint8_t read() {
-        if (index > 7) {
-            return 1;
-        }
+    void press(Button btn);
+    void release(Button btn);
 
-        uint8_t res = (button & (1 << index)) >> index;
-        if (!strobe && index <= 7) {
-            index++;
-        }
-
-        return res;
-    }
+    void write(uint8_t data);
+    [[nodiscard]] uint8_t read();
 
 private:
     bool strobe = false;

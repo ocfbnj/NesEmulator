@@ -155,6 +155,10 @@ PPU& Bus::getPPU() {
     return *ppu;
 }
 
+Joypad& Bus::getJoypad() {
+    return joypad;
+}
+
 auto Bus::vRam() const -> const std::array<uint8_t, 2 * Kb>& {
     return ppuRam;
 }

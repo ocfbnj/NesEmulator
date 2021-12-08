@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <unordered_map>
 
 #include "NesEmulator/nes/Mapper.h"
 #include "NesEmulator/nes/NesFile.h"
@@ -9,7 +10,10 @@
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
       bus(Mapper::create(loadNesFile(nesFile))) {
-    bus.getPPU().vblankCallback = [this] { render(); };
+    bus.getPPU().vblankCallback = [this] {
+        checkKeyboard();
+        render();
+    };
 }
 
 void Emulator::onUpdate(float elapsedTime) {
@@ -99,6 +103,28 @@ void Emulator::renderBackgroundTile(uint16_t bank, uint8_t n, int tileX, int til
             Pixel pixel = SystemPalette[colorIndex];
 
             drawPixel(tileX * 8 + x, tileY * 8 + y, pixel);
+        }
+    }
+}
+
+void Emulator::checkKeyboard() {
+    static const std::unordered_map<int, Joypad::Button> keyMap{
+        {GLFW_KEY_J, Joypad::Button::A},
+        {GLFW_KEY_K, Joypad::Button::B},
+        {GLFW_KEY_SPACE, Joypad::Button::Select},
+        {GLFW_KEY_ENTER, Joypad::Button::Start},
+        {GLFW_KEY_W, Joypad::Button::Up},
+        {GLFW_KEY_S, Joypad::Button::Down},
+        {GLFW_KEY_A, Joypad::Button::Left},
+        {GLFW_KEY_D, Joypad::Button::Right},
+    };
+
+    for (auto [glfwKey, btn] : keyMap) {
+        int status = glfwGetKey(getWindow(), glfwKey);
+        if (status == GLFW_PRESS) {
+            bus.getJoypad().press(btn);
+        } else if (status == GLFW_RELEASE) {
+            bus.getJoypad().release(btn);
         }
     }
 }
