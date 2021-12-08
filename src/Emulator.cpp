@@ -39,11 +39,33 @@ void Emulator::render() {
 }
 
 void Emulator::renderBackground() {
-    const uint16_t bank = bus.getPPU().backgroundPatternAddr();
-    const auto& vRam = bus.vRam();
+    uint8_t scrollX = bus.getPPU().scrollX();
+    uint8_t scrollY = bus.getPPU().scrollY();
+    assert(scrollX + scrollY == scrollX || scrollX + scrollY == scrollY);
 
-    for (int i = 0; i != 960; i++) {
-        renderBackgroundTile(bank, vRam[i], i % 32, i / 32);
+    uint16_t baseNameTableAddr = bus.getPPU().baseNameTableAddr();
+    int n = (baseNameTableAddr - 0x2000) / 0x400;
+    assert(n >= 0 && n <= 3);
+
+    if (bus.mirroring() == Mirroring::Vertical) {
+        int firstNametable;
+        int secondNametable;
+
+        if (n == 0) {
+            firstNametable = 0;
+            secondNametable = 1;
+        } else if (n == 1) {
+            firstNametable = 1;
+            secondNametable = 0;
+        } else {
+            assert(0);
+        }
+
+        renderNametable(firstNametable, {.x1 = scrollX, .y1 = 0, .x2 = 256, .y2 = 240}, -scrollX, 0);
+        renderNametable(secondNametable, {.x1 = 0, .y1 = 0, .x2 = scrollX, .y2 = 240}, 256 - scrollX, 0);
+    } else {
+        // TODO horizontal mirroring
+        renderNametable(0);
     }
 }
 
@@ -89,25 +111,33 @@ void Emulator::renderSprites() {
     assert(spriteIndex == 0x40);
 }
 
-void Emulator::renderBackgroundTile(uint16_t bank, uint8_t n, int tileX, int tileY) {
-    // auto begin = std::next(bus.chrRom().begin(), bank + n * 16);
-    // auto end = std::next(begin, 16);
-    // std::vector<uint8_t> tile{begin, end};
+void Emulator::renderNametable(int n, Rect viewport, int shiftX, int shiftY) {
+    const uint16_t bank = bus.getPPU().backgroundPatternAddr();
+    const uint8_t* nametable = &(*std::next(bus.vRam().begin(), n * 0x400));
 
-    auto it = std::next(bus.chrRom().begin(), bank + n * 16);
-    auto tile = &(*it);
-    auto palette = bus.getPPU().backgroundPaletteFor(tileX, tileY);
+    for (int i = 0; i != 960; i++) {
+        int tileX = i % 32;
+        int tileY = i / 32;
 
-    for (int y = 0; y != 8; y++) {
-        uint8_t lo = tile[y];
-        uint8_t hi = tile[y + 8];
+        const uint8_t* tile = &(*std::next(bus.chrRom().begin(), bank + nametable[i] * 16));
+        auto palette = bus.getPPU().backgroundPaletteFor(n, tileX, tileY);
 
-        for (int x = 0; x != 8; x++) {
-            uint8_t index = (((hi >> (7 - x)) & 1) << 1) | ((lo >> (7 - x)) & 1);
-            uint8_t colorIndex = palette[index];
-            Pixel pixel = SystemPalette[colorIndex];
+        for (int y = 0; y != 8; y++) {
+            uint8_t lo = tile[y];
+            uint8_t hi = tile[y + 8];
 
-            drawPixel(tileX * 8 + x, tileY * 8 + y, pixel);
+            for (int x = 0; x != 8; x++) {
+                uint8_t index = (((hi >> (7 - x)) & 1) << 1) | ((lo >> (7 - x)) & 1);
+                uint8_t colorIndex = palette[index];
+                Pixel pixel = SystemPalette[colorIndex];
+
+                int drawX = tileX * 8 + x;
+                int drawY = tileY * 8 + y;
+
+                if (viewport.isInside(drawX, drawY)) {
+                    drawPixel(drawX + shiftX, drawY + shiftY, pixel);
+                }
+            }
         }
     }
 }

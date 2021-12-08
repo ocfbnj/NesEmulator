@@ -14,6 +14,8 @@ public:
 
     void clock();
 
+    [[nodiscard]] uint16_t baseNameTableAddr() const;
+
     [[nodiscard]] uint16_t spritePatternAddr() const;
     [[nodiscard]] uint16_t backgroundPatternAddr() const;
 
@@ -21,13 +23,16 @@ public:
     [[nodiscard]] uint8_t readOAMData() const;
     [[nodiscard]] uint8_t readData();
 
-    [[nodiscard]] std::array<uint8_t, 4> backgroundPaletteFor(int tileX, int tileY) const;
+    [[nodiscard]] std::array<uint8_t, 4> backgroundPaletteFor(int nametable, int tileX, int tileY) const;
     [[nodiscard]] std::array<uint8_t, 4> spritePalette(int index) const;
-
-    [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
 
     [[nodiscard]] bool showBackground() const;
     [[nodiscard]] bool showSprites() const;
+
+    [[nodiscard]] uint8_t scrollX() const;
+    [[nodiscard]] uint8_t scrollY() const;
+
+    [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
 
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
@@ -179,6 +184,8 @@ private:
             } else {
                 x = data;
             }
+
+            latch = !latch;
         }
 
         void resetLatch() {

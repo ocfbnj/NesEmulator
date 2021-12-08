@@ -6,31 +6,38 @@
 PPU::PPU(Bus& bus) : bus(bus) {}
 
 void PPU::clock() {
-    cycles++;
+    // The PPU renders 262 scanlines per frame.
+    // Each scanline lasts for 341 PPU clock cycles (113.667 CPU clock cycles; 1 CPU cycle = 3 PPU cycles),
+    // with each clock cycle producing one pixel.
 
-    if (cycles >= 341) {
+    if (cycles == 341) {
         if (isSprite0Hit()) {
             status.setSprite0Hit();
         }
 
-        cycles -= 341;
+        cycles = 0;
         scanline++;
 
         if (scanline == 241) {
             status.setVblank();
             status.resetSprite0Hit();
-            
-            if (control.isGenerateVblankNMI()) {
-                bus.getCPU().nmi();
-                vblankCallback();
-            }
-        }
 
-        if (scanline >= 262) {
+            if (control.isGenerateVblankNMI()) {
+                vblankCallback();
+                bus.getCPU().nmi();
+            }
+        } else if (scanline == 262) {
             scanline = 0;
+            status.resetSprite0Hit();
             status.resetVblank();
         }
     }
+
+    cycles++;
+}
+
+uint16_t PPU::baseNameTableAddr() const {
+    return control.baseNameTableAddr();
 }
 
 uint16_t PPU::spritePatternAddr() const {
@@ -79,9 +86,12 @@ uint8_t PPU::readData() {
     return res;
 }
 
-std::array<uint8_t, 4> PPU::backgroundPaletteFor(int tileX, int tileY) const {
-    uint16_t attrTableIndex = 960 + tileY / 4 * 8 + tileX / 4;
-    assert(attrTableIndex >= 960 && attrTableIndex <= 1024);
+std::array<uint8_t, 4> PPU::backgroundPaletteFor(int nametable, int tileX, int tileY) const {
+    uint16_t nametableOffset = nametable * 0x400;
+    uint16_t attrTableOffset = nametableOffset + 960;
+    uint16_t attrTableIndex = attrTableOffset + tileY / 4 * 8 + tileX / 4;
+    assert(attrTableIndex >= attrTableOffset && attrTableIndex <= attrTableOffset + 64);
+
     uint8_t attrByte = bus.vRam()[attrTableIndex]; // There are 960 bytes for 960 tiles
 
     uint8_t i = ((((tileY % 4) / 2) << 1) & 0b10) | (((tileX % 4) / 2) & 0b01);
@@ -100,16 +110,23 @@ std::array<uint8_t, 4> PPU::spritePalette(int index) const {
     return {0, paletteTable[start], paletteTable[start + 1], paletteTable[start + 2]};
 }
 
-const std::array<uint8_t, 256>& PPU::getOamData() const {
-    return oamData;
-}
-
 bool PPU::showBackground() const {
     return mask.showBackground();
 }
 
 bool PPU::showSprites() const {
     return mask.showSprites();
+}
+
+uint8_t PPU::scrollX() const {
+    return scroll.x;
+}
+uint8_t PPU::scrollY() const {
+    return scroll.y;
+}
+
+const std::array<uint8_t, 256>& PPU::getOamData() const {
+    return oamData;
 }
 
 void PPU::writeCtrl(uint8_t data) {
