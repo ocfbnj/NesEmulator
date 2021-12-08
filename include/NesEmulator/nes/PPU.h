@@ -3,8 +3,8 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
 #include <functional>
+#include <vector>
 
 class Bus;
 
@@ -26,8 +26,8 @@ public:
 
     [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
 
-    [[nodiscard]] bool showBackground();
-    [[nodiscard]] bool showSprites();
+    [[nodiscard]] bool showBackground() const;
+    [[nodiscard]] bool showSprites() const;
 
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
@@ -41,6 +41,8 @@ public:
     std::function<void()> vblankCallback;
 
 private:
+    [[nodiscard]] bool isSprite0Hit() const;
+
     struct ControlRegister {
         [[nodiscard]] uint16_t baseNameTableAddr() const {
             return 0x2000 + 0x400 * n;
@@ -147,6 +149,14 @@ private:
 
         void resetVblank() {
             v = 0;
+        }
+
+        void setSprite0Hit() {
+            s = 1;
+        }
+
+        void resetSprite0Hit() {
+            s = 0;
         }
 
         // unused (0 ~ 4)

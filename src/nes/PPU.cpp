@@ -9,14 +9,20 @@ void PPU::clock() {
     cycles++;
 
     if (cycles >= 341) {
+        if (isSprite0Hit()) {
+            status.setSprite0Hit();
+        }
+
         cycles -= 341;
         scanline++;
 
         if (scanline == 241) {
             status.setVblank();
-            vblankCallback();
+            status.resetSprite0Hit();
+            
             if (control.isGenerateVblankNMI()) {
                 bus.getCPU().nmi();
+                vblankCallback();
             }
         }
 
@@ -98,11 +104,11 @@ const std::array<uint8_t, 256>& PPU::getOamData() const {
     return oamData;
 }
 
-bool PPU::showBackground() {
+bool PPU::showBackground() const {
     return mask.showBackground();
 }
 
-bool PPU::showSprites() {
+bool PPU::showSprites() const {
     return mask.showSprites();
 }
 
@@ -163,4 +169,11 @@ void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
 
 void PPU::incrementAddr() {
     address.increment(control.addrIncrement());
+}
+
+bool PPU::isSprite0Hit() const {
+    int y = oamData[0];
+    int x = oamData[3];
+
+    return y == scanline && x <= cycles && showSprites();
 }
