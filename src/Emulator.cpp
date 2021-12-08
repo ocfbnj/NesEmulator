@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "NesEmulator/nes/Mapper.h"
 #include "NesEmulator/nes/NesFile.h"
 
@@ -5,17 +7,20 @@
 
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
-      bus(Mapper::create(loadNesFile(nesFile))) {}
+      bus(Mapper::create(loadNesFile(nesFile))) {
+    bus.getPPU().vblankCallback = [this] { render(); };
+}
 
 void Emulator::onUpdate(float elapsedTime) {
-    for (int i = 0; i != 1024; i++) {
+    // CPU clock frequency is 1.789773 MHz (~559 ns per cycle)
+    int cpuCycles = std::floor(elapsedTime * 1000 / 559);
+
+    for (int i = 0; i != cpuCycles; i++) {
         bus.getPPU().clock();
         bus.getPPU().clock();
         bus.getPPU().clock();
         bus.getCPU().clock();
     }
-
-    render();
 }
 
 void Emulator::render() {

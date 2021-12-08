@@ -14,6 +14,7 @@ void PPU::clock() {
 
         if (scanline == 241) {
             status.setVblank();
+            vblankCallback();
             if (control.isGenerateVblankNMI()) {
                 bus.getCPU().nmi();
             }
