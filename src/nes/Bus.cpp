@@ -127,8 +127,7 @@ uint8_t Bus::ppuRead(uint16_t addr) {
         return mapper->readChrRom(addr);
     } else if (addr < 0x3000) {
         // PPU RAM
-        // TODO Mirroring
-        return ppuRam[addr - 0x2000];
+        return ppuRam[mirrorVramAddr(addr)];
     }
 
     return 0;
@@ -139,8 +138,7 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
         // CHR ROM (readData-only)
     } else if (addr < 0x3000) {
         // PPU RAM
-        // TODO Mirroring
-        ppuRam[addr - 0x2000] = data;
+        ppuRam[mirrorVramAddr(addr)] = data;
     }
 }
 
@@ -158,4 +156,26 @@ auto Bus::vRam() const -> const std::array<uint8_t, 2 * Kb>& {
 
 const std::vector<uint8_t>& Bus::chrRom() const {
     return mapper->chrRom();
+}
+
+Mirroring Bus::mirroring() const {
+    return mapper->mirroring();
+}
+
+uint16_t Bus::mirrorVramAddr(uint16_t addr) const {
+    uint16_t mirroredVram = addr & 0x2fff;
+    uint16_t vramIndex = mirroredVram - 0x2000;
+    uint16_t nameTable = vramIndex / 0x0400;
+
+    if (mirroring() == Mirroring::Vertical && (nameTable == 2 || nameTable == 3)) {
+        vramIndex -= 0x0800;
+    } else if (mirroring() == Mirroring::Horizontal) {
+        if (nameTable == 1 || nameTable == 2) {
+            vramIndex -= 0x0400;
+        } else if (nameTable == 3) {
+            vramIndex -= 0x0800;
+        }
+    }
+
+    return vramIndex;
 }
