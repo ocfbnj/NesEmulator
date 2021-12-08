@@ -4,10 +4,10 @@
 #include "Emulator.h"
 
 Emulator::Emulator(std::string_view nesFile)
-    : PixelEngine(256, 240, "Nes Emulator"),
+    : PixelEngine(256, 240, "Nes Emulator", 3),
       bus(Mapper::create(loadNesFile(nesFile))) {}
 
-void Emulator::onUpdate() {
+void Emulator::onUpdate(float elapsedTime) {
     for (int i = 0; i != 1024; i++) {
         bus.getPPU().clock();
         bus.getPPU().clock();

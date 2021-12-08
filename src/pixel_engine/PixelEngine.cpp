@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "PixelEngine.h"
 
 static GLfloat vertices[] = {
@@ -35,11 +37,12 @@ PixelEngine::GLLoader::GLLoader(int width, int height, std::string_view title, G
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 }
 
-PixelEngine::PixelEngine(int width, int height, std::string_view title)
+PixelEngine::PixelEngine(int width, int height, std::string_view title, int scale)
     : width(width),
       height(height),
+      title(title),
       window(nullptr),
-      glLoader(width, height, title, &window),
+      glLoader(width * scale, height * scale, title, &window),
       shader("shaders/default.vert", "shaders/default.frag"),
       vao(),
       vbo(vertices, sizeof vertices),
@@ -56,7 +59,11 @@ PixelEngine::~PixelEngine() {
 }
 
 void PixelEngine::run() {
+    tp = std::chrono::high_resolution_clock::now();
+
     while (!glfwWindowShouldClose(window)) {
+        frameStart = std::chrono::high_resolution_clock::now();
+
         glClearColor(0, 0, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -64,17 +71,31 @@ void PixelEngine::run() {
         texture.bind();
         vao.bind();
 
-        onUpdate();
+        std::chrono::duration<float, std::micro> elapsedTime = std::chrono::high_resolution_clock::now() - tp;
+        onUpdate(elapsedTime.count());
+        tp = std::chrono::high_resolution_clock::now();
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
         glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        std::chrono::duration<float, std::micro> frameTime = std::chrono::high_resolution_clock::now() - frameStart;
+        float realFps = std::chrono::seconds(1) / frameTime;
+
+        if (realFps > fps) {
+            realFps = fps;
+            std::chrono::duration<float, std::micro> sleepTime =
+                std::chrono::microseconds((long long)(1.0f / fps * 1000 * 1000)) - frameTime;
+            std::this_thread::sleep_for(sleepTime);
+        }
+
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(realFps) + "]").data());
     }
 }
 
-void PixelEngine::onUpdate() {
+void PixelEngine::onUpdate(float elapsedTime) {
     // do nothing
 }
 

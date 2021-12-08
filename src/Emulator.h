@@ -10,7 +10,7 @@ class Emulator : public PixelEngine {
 public:
     explicit Emulator(std::string_view nesFile);
 
-    void onUpdate() override;
+    void onUpdate(float elapsedTime) override;
 
 private:
     void render();

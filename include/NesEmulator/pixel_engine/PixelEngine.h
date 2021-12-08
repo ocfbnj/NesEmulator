@@ -3,6 +3,8 @@
 
 #include <string_view>
 #include <vector>
+#include <string>
+#include <chrono>
 
 // clang-format off
 #include <glad/glad.h>
@@ -18,17 +20,19 @@
 
 class PixelEngine {
 public:
-    PixelEngine(int width, int height, std::string_view title);
+    PixelEngine(int width, int height, std::string_view title, int scale);
     ~PixelEngine();
 
     void run();
     void drawPixel(int x, int y, Pixel pixel);
 
-    virtual void onUpdate();
+    virtual void onUpdate(float elapsedTime);
 
 private:
     int width;
     int height;
+
+    std::string title;
 
     GLFWwindow* window;
 
@@ -44,6 +48,11 @@ private:
 
     std::vector<Pixel> pixels;
     Texture texture;
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> frameStart;
+    std::chrono::time_point<std::chrono::high_resolution_clock> tp;
+
+    float fps = 120;
 };
 
 #endif // NESEMULATOR_PIXELENGINE_H
