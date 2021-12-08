@@ -28,7 +28,7 @@ static_assert(sizeof(NesFileHeader) == 16, "The header is not 16 bytes");
 std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::ifstream nesFile{path.data(), std::ifstream::in | std::ifstream::binary};
     if (!nesFile) {
-        std::clog << "Cannot open the nes file from " << path << "\n";
+        std::cerr << "Cannot open the nes file from " << path << "\n";
         return {};
     }
 
@@ -36,12 +36,12 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     NesFileHeader header{};
     nesFile.read(reinterpret_cast<char*>(&header), sizeof(NesFileHeader));
     if (!nesFile) {
-        std::clog << "Read the nes file header failed\n";
+        std::cerr << "Read the nes file header failed\n";
         return {};
     }
 
     if (header.constant != NesFileHeader::Constant) {
-        std::clog << "Not a valid .nes file: the constant is "
+        std::cerr << "Not a valid .nes file: the constant is "
                   << header.constant << ", expect " << NesFileHeader::Constant << "\n";
         return {};
     }
@@ -50,28 +50,35 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     uint8_t lowerMapper = header.flag6 >> 4;
     uint8_t upperMapper = header.flag7 >> 4;
     uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
-    std::clog << "The mapper number is " << int(mapperNum) << "\n";
+    std::cout << "The mapper number is " << int(mapperNum) << "\n";
 
     // mirroring type
     Mirroring mirroringType = Mirroring::Undefined;
+    std::string_view mirroringTypeDescription = "undefined";
+
     if ((header.flag6 >> 3) & 1) {
         mirroringType = Mirroring::FourScreen;
+        mirroringTypeDescription = "four screen";
     } else {
         if (header.flag6 & 1) {
             mirroringType = Mirroring::Vertical;
+            mirroringTypeDescription = "vertical";
         } else {
             mirroringType = Mirroring::Horizontal;
+            mirroringTypeDescription = "horizontal";
         }
     }
+
     assert(mirroringType != Mirroring::Undefined);
+    std::cout << "The mirroring type is " << mirroringTypeDescription << "\n";
 
     // trainer, if present
     if (header.flag6 & (1u << 2)) {
-        std::clog << "Hava trainer\n";
+        std::cout << "Hava trainer\n";
         std::vector<uint8_t> trainer(static_cast<const int>(512_b)); // unused
         nesFile.read(reinterpret_cast<char*>(trainer.data()), trainer.size());
         if (!nesFile) {
-            std::clog << "Read the trainer failed\n";
+            std::cerr << "Read the trainer failed\n";
             return {};
         }
     }
@@ -80,7 +87,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::vector<uint8_t> prgRom(static_cast<const int>(header.prgSize * 16_kb));
     nesFile.read(reinterpret_cast<char*>(prgRom.data()), prgRom.size());
     if (!nesFile) {
-        std::clog << "Read the prg rom data failed\n";
+        std::cerr << "Read the prg rom data failed\n";
         return {};
     }
 
@@ -88,7 +95,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::vector<uint8_t> chrRom(static_cast<const int>(header.chrSize * 8_kb));
     nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
     if (!nesFile) {
-        std::clog << "Read the chr rom data failed\n";
+        std::cerr << "Read the chr rom data failed\n";
         return {};
     }
 
