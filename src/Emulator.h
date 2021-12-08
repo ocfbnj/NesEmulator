@@ -15,7 +15,8 @@ public:
 private:
     void render();
     void renderBackground();
-    void renderTile(uint16_t bank, uint8_t n, int tileX, int tileY);
+    void renderSprites();
+    void renderBackgroundTile(uint16_t bank, uint8_t n, int tileX, int tileY);
 
     Bus bus;
 };

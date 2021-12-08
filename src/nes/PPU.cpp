@@ -88,6 +88,16 @@ std::array<uint8_t, 4> PPU::backgroundPaletteFor(int tileX, int tileY) const {
     return {paletteTable[0], paletteTable[paletteStart + 1], paletteTable[paletteStart + 2], paletteTable[paletteStart + 3]};
 }
 
+std::array<uint8_t, 4> PPU::spritePalette(int index) const {
+    assert(index >= 0 && index <= 3);
+    uint16_t start = 0x11 + index * 4;
+    return {0, paletteTable[start], paletteTable[start + 1], paletteTable[start + 2]};
+}
+
+const std::array<uint8_t, 256>& PPU::getOamData() const {
+    return oamData;
+}
+
 void PPU::writeCtrl(uint8_t data) {
     bool prev = control.isGenerateVblankNMI();
     control.write(data);
