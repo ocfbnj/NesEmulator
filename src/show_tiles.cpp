@@ -5,7 +5,7 @@
 
 class ShowTiles : public PixelEngine {
 public:
-    explicit ShowTiles(std::string_view nesFile) : PixelEngine(256, 240, "Show Tiles") {
+    explicit ShowTiles(std::string_view nesFile) : PixelEngine(256, 240, "Show Tiles", 3) {
         auto cartridge = loadNesFile(nesFile);
         chrRom = std::move(cartridge->chrRom);
     }
@@ -47,7 +47,7 @@ public:
         }
     }
 
-    void onUpdate() override {
+    void onUpdate(float elapsedTime) override {
         for (int i = 0; i != 512; i++) {
             showTile(i);
         }
