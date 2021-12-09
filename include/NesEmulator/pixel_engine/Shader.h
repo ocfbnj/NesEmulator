@@ -8,7 +8,7 @@
 
 class Shader {
 public:
-    Shader(std::string_view vertexFile, std::string_view fragmentFile);
+    Shader(std::string_view vertexFile = "", std::string_view fragmentFile = "");
     Shader(const Shader& other) = delete;
     Shader(Shader&& other) noexcept;
     ~Shader();

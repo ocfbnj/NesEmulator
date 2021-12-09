@@ -44,7 +44,7 @@ PixelEngine::PixelEngine(int width, int height, std::string_view title, int scal
       title(title),
       window(nullptr),
       glLoader(width * scale, height * scale, title, &window),
-      shader("shaders/default.vert", "shaders/default.frag"),
+      shader(),
       vao(),
       vbo(vertices, sizeof vertices),
       ebo(indices, sizeof indices),
