@@ -33,6 +33,7 @@ public:
     [[nodiscard]] uint8_t scrollY() const;
 
     [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
+    [[nodiscard]] const std::array<uint8_t, 32>& getPaletteTable() const;
 
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);

@@ -66,3 +66,7 @@ std::array<Pixel, 64> SystemPalette = {
     Pixel{.r = 0x11, .g = 0x11, .b = 0x11, .a = 0xFF},
     Pixel{.r = 0x11, .g = 0x11, .b = 0x11, .a = 0xFF},
 };
+
+bool operator==(const Pixel& l, const Pixel& r) {
+    return l.r == r.r && l.g == r.g && l.b == r.b && l.a == r.a;
+}

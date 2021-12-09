@@ -129,6 +129,10 @@ const std::array<uint8_t, 256>& PPU::getOamData() const {
     return oamData;
 }
 
+const std::array<uint8_t, 32>& PPU::getPaletteTable() const {
+    return paletteTable;
+}
+
 void PPU::writeCtrl(uint8_t data) {
     bool prev = control.isGenerateVblankNMI();
     control.write(data);

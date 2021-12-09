@@ -104,6 +104,14 @@ void PixelEngine::onUpdate(float elapsedTime) {
     // do nothing
 }
 
+Pixel PixelEngine::getPixel(int x, int y) const {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
+    y = height - y - 1;
+    return pixels[y * width + x];
+}
+
 void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
     assert(x >= 0 && x < width);
     assert(y >= 0 && y < height);

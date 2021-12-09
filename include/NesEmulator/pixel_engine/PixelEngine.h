@@ -24,6 +24,8 @@ public:
     ~PixelEngine();
 
     void run();
+
+    [[nodiscard]] Pixel getPixel(int x, int y) const;
     void drawPixel(int x, int y, Pixel pixel);
 
     GLFWwindow* getWindow();
@@ -54,7 +56,7 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> frameStart;
     std::chrono::time_point<std::chrono::high_resolution_clock> tp;
 
-    float fps = 120;
+    float fps = 60;
 };
 
 #endif // NESEMULATOR_PIXELENGINE_H

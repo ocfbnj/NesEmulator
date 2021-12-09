@@ -11,6 +11,8 @@ struct Pixel {
     uint8_t a;
 };
 
+bool operator==(const Pixel& l, const Pixel& r);
+
 extern std::array<Pixel, 64> SystemPalette;
 
 #endif // NESEMULATOR_PIXEL_H

@@ -80,6 +80,7 @@ void Emulator::renderSprites() {
 
         bool flipVertical = (oamData[i + 2] >> 7) & 1;
         bool flipHorizontal = (oamData[i + 2] >> 6) & 1;
+        bool behindBackground = (oamData[i + 2] >> 5) & 1;
 
         int paletteIndex = oamData[i + 2] & 0b11;
         auto spritePalette = bus.getPPU().spritePalette(paletteIndex);
@@ -106,6 +107,10 @@ void Emulator::renderSprites() {
                 int drawY = tileY + (flipVertical ? 7 - y : y);
 
                 if (drawX >= 0 && drawX < 256 && drawY >= 0 && drawY < 240) {
+                    if (behindBackground && getPixel(drawX, drawY) != SystemPalette[bus.getPPU().getPaletteTable()[0]]) {
+                        continue;
+                    }
+
                     drawPixel(drawX, drawY, pixel);
                 }
             }
