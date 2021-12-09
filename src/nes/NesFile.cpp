@@ -90,6 +90,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         std::cerr << "Read the prg rom data failed\n";
         return {};
     }
+    std::cout << "The PRG ROM size is " << prgRom.size() / 1024 << "KB\n";
 
     // chr rom data
     std::vector<uint8_t> chrRom(static_cast<const int>(header.chrSize * 8_kb));
@@ -98,6 +99,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         std::cerr << "Read the chr rom data failed\n";
         return {};
     }
+    std::cout << "The CHR ROM size is " << chrRom.size() / 1024 << "KB\n";
 
     return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum, mirroringType);
 }
