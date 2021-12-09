@@ -159,7 +159,7 @@ Joypad& Bus::getJoypad() {
     return joypad;
 }
 
-auto Bus::vRam() const -> const std::array<uint8_t, 2 * Kb>& {
+const std::array<uint8_t, 2048>& Bus::vRam() const {
     return ppuRam;
 }
 

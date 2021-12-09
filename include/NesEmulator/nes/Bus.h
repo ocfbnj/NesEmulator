@@ -1,5 +1,5 @@
-#ifndef BUS_H
-#define BUS_H
+#ifndef NES_EMULATOR_BUS_H
+#define NES_EMULATOR_BUS_H
 
 #include <array>
 #include <cstdint>
@@ -14,8 +14,6 @@
 // CPU gets access to memory (including memory-mapped spaces) using the bus.
 // See https://bugzmanov.github.io/nes_ebook/chapter_4.html
 class Bus {
-    static constexpr auto Kb = 1024;
-
 public:
     explicit Bus(std::unique_ptr<Mapper> mapper);
 
@@ -31,11 +29,11 @@ public:
     uint8_t ppuRead(uint16_t addr);
     void ppuWrite(uint16_t addr, uint8_t data);
 
-    [[nodiscard]] CPU& getCPU();
-    [[nodiscard]] PPU& getPPU();
-    [[nodiscard]] Joypad& getJoypad();
+    CPU& getCPU();
+    PPU& getPPU();
+    Joypad& getJoypad();
 
-    [[nodiscard]] const std::array<uint8_t, 2 * Kb>& vRam() const;
+    [[nodiscard]] const std::array<uint8_t, 2048>& vRam() const;
     [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
 
     [[nodiscard]] Mirroring mirroring() const;
@@ -47,8 +45,8 @@ private:
     std::unique_ptr<Mapper> mapper;
     std::unique_ptr<CPU> cpu;
     std::unique_ptr<PPU> ppu;
-    std::array<uint8_t, 2 * Kb> cpuRam{};
-    std::array<uint8_t, 2 * Kb> ppuRam{};
+    std::array<uint8_t, 2048> cpuRam{};
+    std::array<uint8_t, 2048> ppuRam{};
 
     Joypad joypad;
 };
