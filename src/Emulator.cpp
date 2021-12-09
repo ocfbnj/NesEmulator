@@ -104,7 +104,10 @@ void Emulator::renderSprites() {
 
                 int drawX = tileX + (flipHorizontal ? 7 - x : x);
                 int drawY = tileY + (flipVertical ? 7 - y : y);
-                drawPixel(drawX, drawY, pixel);
+
+                if (drawX >= 0 && drawX < 256 && drawY >= 0 && drawY < 240) {
+                    drawPixel(drawX, drawY, pixel);
+                }
             }
         }
     }

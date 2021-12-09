@@ -1,3 +1,4 @@
+#include <cassert>
 #include <thread>
 
 #include "PixelEngine.h"
@@ -104,6 +105,9 @@ void PixelEngine::onUpdate(float elapsedTime) {
 }
 
 void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
+    assert(x >= 0 && x < width);
+    assert(y >= 0 && y < height);
+
     y = height - y - 1;
     pixels[y * width + x] = pixel;
 }
