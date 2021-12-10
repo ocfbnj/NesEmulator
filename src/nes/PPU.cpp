@@ -22,7 +22,7 @@ void PPU::clock() {
             status.setVblank();
             status.resetSprite0Hit();
 
-            if (control.isGenerateVblankNMI()) {
+            if (control.generateNMI()) {
                 vblankCallback();
                 bus.getCPU().nmi();
             }
@@ -134,10 +134,13 @@ const std::array<uint8_t, 32>& PPU::getPaletteTable() const {
 }
 
 void PPU::writeCtrl(uint8_t data) {
-    bool prev = control.isGenerateVblankNMI();
+    bool prev = control.generateNMI();
     control.write(data);
 
-    if (!prev && control.isGenerateVblankNMI() && status.isInVblank()) {
+    // If the PPU is currently in vertical blank,
+    // and the PPUSTATUS ($2002) vblank flag is still set (1),
+    // changing the NMI flag in bit 7 of $2000 from 0 to 1 will immediately generate an NMI.
+    if (status.isInVblank() && !prev && control.generateNMI()) {
         bus.getCPU().nmi();
     }
 }

@@ -49,6 +49,7 @@ public:
 private:
     [[nodiscard]] bool isSprite0Hit() const;
 
+    // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
         [[nodiscard]] uint16_t baseNameTableAddr() const {
             return 0x2000 + 0x400 * n;
@@ -66,7 +67,7 @@ private:
             return b ? 0x1000 : 0x0000;
         }
 
-        [[nodiscard]] bool isGenerateVblankNMI() const {
+        [[nodiscard]] bool generateNMI() const {
             return v;
         }
 
@@ -80,29 +81,17 @@ private:
             v = (data >> 7) & 1;
         }
 
-        uint8_t n : 2 {}; // Base nametable address
-        uint8_t i : 1 {}; // VRAM address increment per CPU readData/writeData of PPUDATA
-        uint8_t s : 1 {}; // Sprite pattern table address for 8x8 sprites
-        uint8_t b : 1 {}; // Background pattern table address
-        uint8_t h : 1 {}; // Sprite size
-        uint8_t p : 1 {}; // PPU master/slave select
-        uint8_t v : 1 {}; // Generate an NMI at the start of the vertical blanking interval
+        uint8_t n : 2 {}; // Base nametable address (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
+        uint8_t i : 1 {}; // VRAM address increment per CPU readData/writeData of PPUDATA (0: add 1, going across; 1: add 32, going down)
+        uint8_t s : 1 {}; // Sprite pattern table address for 8x8 sprites (0: $0000; 1: $1000; ignored in 8x16 mode)
+        uint8_t b : 1 {}; // Background pattern table address (0: $0000; 1: $1000)
+        uint8_t h : 1 {}; // TODO Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
+        uint8_t p : 1 {}; // TODO PPU master/slave select (0: read backdrop from EXT pins; 1: output color on EXT pins)
+        uint8_t v : 1 {}; // Generate an NMI at the start of the vertical blanking interval (0: off; 1: on)
     };
     static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 byte");
 
     struct MaskRegister {
-        [[nodiscard]] bool isGreyScale() const {
-            return g;
-        }
-
-        [[nodiscard]] bool showLeftmostBackground() const {
-            return m;
-        }
-
-        [[nodiscard]] bool showLeftmostSprites() const {
-            return M;
-        }
-
         [[nodiscard]] bool showBackground() const {
             return b;
         }
@@ -122,24 +111,20 @@ private:
             B = (data >> 7) & 1;
         }
 
-        uint8_t g : 1 {}; // Greyscale (0: normal color, 1: produce a greyscale display)
-        uint8_t m : 1 {}; // 1: Show background in leftmost 8 pixels of screen, 0: Hide
-        uint8_t M : 1 {}; // 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+        uint8_t g : 1 {}; // TODO Greyscale (0: normal color, 1: produce a greyscale display)
+        uint8_t m : 1 {}; // TODO 1: Show background in leftmost 8 pixels of screen, 0: Hide
+        uint8_t M : 1 {}; // TODO 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
         uint8_t b : 1 {}; // 1: Show background
         uint8_t s : 1 {}; // 1: Show sprites
-        uint8_t R : 1 {}; // Emphasize red (green on PAL/Dendy)
-        uint8_t G : 1 {}; // Emphasize green (red on PAL/Dendy)
-        uint8_t B : 1 {}; // Emphasize blue
+        uint8_t R : 1 {}; // TODO Emphasize red (green on PAL/Dendy)
+        uint8_t G : 1 {}; // TODO Emphasize green (red on PAL/Dendy)
+        uint8_t B : 1 {}; // TODO Emphasize blue
     };
     static_assert(sizeof(MaskRegister) == 1, "The MaskRegister is not 1 byte");
 
     struct StatusRegister {
         [[nodiscard]] uint8_t read() const {
-            return _0 << 0 |
-                   _1 << 1 |
-                   _2 << 2 |
-                   _3 << 3 |
-                   _4 << 4 |
+            return unused |
                    o << 5 |
                    s << 6 |
                    v << 7;
@@ -147,14 +132,6 @@ private:
 
         [[nodiscard]] bool isInVblank() const {
             return v;
-        }
-
-        void setVblank() {
-            v = 1;
-        }
-
-        void resetVblank() {
-            v = 0;
         }
 
         void setSprite0Hit() {
@@ -165,16 +142,18 @@ private:
             s = 0;
         }
 
-        // unused (0 ~ 4)
-        uint8_t _0 : 1 {};
-        uint8_t _1 : 1 {};
-        uint8_t _2 : 1 {};
-        uint8_t _3 : 1 {};
-        uint8_t _4 : 1 {};
+        void setVblank() {
+            v = 1;
+        }
 
-        uint8_t o : 1 {}; // Sprite overflow
-        uint8_t s : 1 {}; // Sprite 0 Hit
-        uint8_t v : 1 {}; // Vertical blank has started (0: not in vblank; 1: in vblank)
+        void resetVblank() {
+            v = 0;
+        }
+
+        uint8_t unused : 5 {}; // TODO Least significant bits previously written into a PPU register
+        uint8_t o : 1 {};      // TODO Sprite overflow
+        uint8_t s : 1 {};      // Sprite 0 Hit
+        uint8_t v : 1 {};      // Vertical blank has started (0: not in vblank; 1: in vblank)
     };
     static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 byte");
 
