@@ -32,8 +32,6 @@ conan_cmake_configure(
     IMPORTS
         "bin, *.dll -> ./src"
         "lib, *.dylib* -> ./src"
-    OPTIONS
-        sfml:shared=True
 )
 
 conan_cmake_autodetect(settings)
