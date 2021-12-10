@@ -19,7 +19,7 @@ private:
         int x2; // right
         int y2; // bottom
 
-        [[nodiscard]] bool isInside(int x, int y) {
+        [[nodiscard]] bool isInside(int x, int y) const {
             return x >= x1 && x < x2 && y >= y1 && y < y2;
         }
     };
@@ -36,6 +36,8 @@ private:
     void checkKeyboard();
 
     Bus bus;
+
+    float freeTime = 0.0f;
 };
 
 #endif

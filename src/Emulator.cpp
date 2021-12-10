@@ -1,5 +1,5 @@
 #include <cassert>
-#include <cmath>
+#include <iostream>
 #include <unordered_map>
 
 #include "NesEmulator/nes/Mapper.h"
@@ -17,14 +17,19 @@ Emulator::Emulator(std::string_view nesFile)
 }
 
 void Emulator::onUpdate(float elapsedTime) {
-    // CPU clock frequency is 1.789773 MHz (~559 ns per cycle)
-    int cpuCycles = std::floor(elapsedTime * 1000 / 559);
+    // CPU clock frequency is 1.789773 MHz
+    // PPU clock frequency is three times CPU (~5.369319 MHz)
+    // A frame has 341 x 262 = 89,342 clock cycles
+    // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
 
-    for (int i = 0; i != cpuCycles; i++) {
-        bus.getPPU().clock();
-        bus.getPPU().clock();
-        bus.getPPU().clock();
-        bus.getCPU().clock();
+    if (freeTime > 0.0f) {
+        freeTime -= elapsedTime;
+    } else {
+        freeTime += (1.0f / 60.0f) - elapsedTime;
+
+        do {
+            bus.clock();
+        } while (!bus.getPPU().isFrameComplete());
     }
 }
 

@@ -147,6 +147,18 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
     }
 }
 
+void Bus::clock() {
+    static size_t i = 0;
+
+    ppu->clock();
+
+    if (i % 3) {
+        cpu->clock();
+    }
+
+    i++;
+}
+
 CPU& Bus::getCPU() {
     return *cpu;
 }

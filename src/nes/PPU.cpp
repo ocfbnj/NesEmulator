@@ -6,34 +6,49 @@
 PPU::PPU(Bus& bus) : bus(bus) {}
 
 void PPU::clock() {
+    frameComplete = false;
+
     // The PPU renders 262 scanlines per frame.
     // Each scanline lasts for 341 PPU clock cycles (113.667 CPU clock cycles; 1 CPU cycle = 3 PPU cycles),
     // with each clock cycle producing one pixel.
 
-    if (cycles == 341) {
-        if (isSprite0Hit()) {
-            status.setSprite0Hit();
-        }
-
-        cycles = 0;
-        scanline++;
-
-        if (scanline == 241) {
+    if (scanline >= 0 && scanline < 240) {
+        // visible scanlines
+    } else if (scanline == 240) {
+        // post-render scanline
+    } else if (scanline >= 241 && scanline < 261) {
+        // vertical blanking lines
+        if (scanline == 241 && cycles == 1) {
             status.setVblank();
-            status.resetSprite0Hit();
 
             if (control.generateNMI()) {
                 vblankCallback();
                 bus.getCPU().nmi();
             }
-        } else if (scanline == 262) {
-            scanline = 0;
+        }
+    } else if (scanline == 261) {
+        // pre-render scanline
+        if (cycles == 1) {
             status.resetSprite0Hit();
             status.resetVblank();
         }
+    } else {
+        assert(0);
     }
 
-    cycles++;
+    if (++cycles == 341) {
+        // TODO delete
+        if (isSprite0Hit()) {
+            status.setSprite0Hit();
+        }
+
+        cycles = 0;
+
+        if (++scanline == 262) {
+            scanline = 0;
+            frameComplete = true;
+        }
+    }
 }
 
 uint16_t PPU::baseNameTableAddr() const {
@@ -131,6 +146,10 @@ const std::array<uint8_t, 256>& PPU::getOamData() const {
 
 const std::array<uint8_t, 32>& PPU::getPaletteTable() const {
     return paletteTable;
+}
+
+bool PPU::isFrameComplete() const {
+    return frameComplete;
 }
 
 void PPU::writeCtrl(uint8_t data) {

@@ -35,6 +35,8 @@ public:
     [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
     [[nodiscard]] const std::array<uint8_t, 32>& getPaletteTable() const;
 
+    [[nodiscard]] bool isFrameComplete() const;
+
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
     void writeOAMAddr(uint8_t data);
@@ -234,6 +236,8 @@ private:
 
     uint16_t scanline = 0;
     uint32_t cycles = 0;
+
+    bool frameComplete = false;
 };
 
 #endif

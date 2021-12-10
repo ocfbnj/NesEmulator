@@ -29,6 +29,8 @@ public:
     uint8_t ppuRead(uint16_t addr);
     void ppuWrite(uint16_t addr, uint8_t data);
 
+    void clock();
+
     CPU& getCPU();
     PPU& getPPU();
     Joypad& getJoypad();
