@@ -53,8 +53,8 @@ private:
     std::vector<Pixel> pixels;
     Texture texture;
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> frameStart;
-    std::chrono::time_point<std::chrono::high_resolution_clock> tp;
+    std::chrono::time_point<std::chrono::steady_clock> frameStart;
+    std::chrono::time_point<std::chrono::steady_clock> tp;
 
     float fps = 60;
 };

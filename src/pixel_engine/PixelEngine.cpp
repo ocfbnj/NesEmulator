@@ -60,10 +60,10 @@ PixelEngine::~PixelEngine() {
 }
 
 void PixelEngine::run() {
-    tp = std::chrono::high_resolution_clock::now();
+    tp = std::chrono::steady_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
-        frameStart = std::chrono::high_resolution_clock::now();
+        frameStart = std::chrono::steady_clock::now();
 
         glClearColor(0, 0, 0, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -72,9 +72,9 @@ void PixelEngine::run() {
         texture.bind();
         vao.bind();
 
-        std::chrono::duration<float, std::micro> elapsedTime = std::chrono::high_resolution_clock::now() - tp;
+        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - tp;
+        tp = std::chrono::steady_clock::now();
         onUpdate(elapsedTime.count());
-        tp = std::chrono::high_resolution_clock::now();
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
         glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
@@ -82,17 +82,16 @@ void PixelEngine::run() {
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        std::chrono::duration<float, std::micro> frameTime = std::chrono::high_resolution_clock::now() - frameStart;
-        float realFps = std::chrono::seconds(1) / frameTime;
+        std::chrono::duration<float> frameTime = std::chrono::steady_clock::now() - frameStart;
+        float realFps = std::chrono::duration<float>(1.0f) / frameTime;
 
         if (realFps > fps) {
             realFps = fps;
-            std::chrono::duration<float, std::micro> sleepTime =
-                std::chrono::microseconds((long long)(1.0f / fps * 1000 * 1000)) - frameTime;
+            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / (fps + 0.5f)) - frameTime;
             std::this_thread::sleep_for(sleepTime);
         }
 
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(realFps) + "]").data());
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(realFps)) + "]").data());
     }
 }
 
