@@ -4,12 +4,49 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <vector>
 
 class Bus;
 
 class PPU {
 public:
+    struct Pixel {
+        std::uint8_t r;
+        std::uint8_t g;
+        std::uint8_t b;
+        std::uint8_t a;
+    };
+
+    class Frame {
+        static constexpr auto Width = 256;
+        static constexpr auto Height = 240;
+
+    public:
+        [[nodiscard]] std::span<const Pixel> getPixels() const {
+            return std::span{pixels.data(), pixels.size()};
+        }
+
+        [[nodiscard]] Pixel getPixel(int x, int y) const {
+            assert(x >= 0 && x < Width);
+            assert(y >= 0 && y < Height);
+
+            y = Height - y - 1;
+            return pixels[y * Width + x];
+        }
+
+        void setPixel(int x, int y, Pixel pixel) {
+            assert(x >= 0 && x < Width);
+            assert(y >= 0 && y < Height);
+
+            y = Height - y - 1;
+            pixels[y * Width + x] = pixel;
+        }
+
+    private:
+        std::array<Pixel, Width * Height> pixels{};
+    };
+
     explicit PPU(Bus& bus);
 
     void clock();
@@ -22,6 +59,7 @@ public:
     [[nodiscard]] uint8_t readStatus();
     [[nodiscard]] uint8_t readOAMData() const;
     [[nodiscard]] uint8_t readData();
+    [[nodiscard]] uint8_t readPalette(uint16_t addr) const;
 
     [[nodiscard]] std::array<uint8_t, 4> backgroundPaletteFor(int nametable, int tileX, int tileY) const;
     [[nodiscard]] std::array<uint8_t, 4> spritePalette(int index) const;
@@ -45,11 +83,13 @@ public:
     void writeAddr(uint8_t data);
     void writeData(uint8_t data);
     void writeOAMDMA(const std::array<uint8_t, 256>& buffer);
+    void writePalette(uint16_t addr, uint8_t data);
 
     std::function<void()> vblankCallback;
 
 private:
     [[nodiscard]] bool isSprite0Hit() const;
+    void incrementAddr();
 
     // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
@@ -94,6 +134,10 @@ private:
     static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 byte");
 
     struct MaskRegister {
+        [[nodiscard]] bool isGreyscale() const {
+            return g;
+        }
+
         [[nodiscard]] bool showBackground() const {
             return b;
         }
@@ -108,7 +152,7 @@ private:
 
         union {
             struct {
-                uint8_t g : 1; // TODO Greyscale (0: normal color, 1: produce a greyscale display)
+                uint8_t g : 1; // Greyscale (0: normal color, 1: produce a greyscale display)
                 uint8_t m : 1; // TODO 1: Show background in leftmost 8 pixels of screen, 0: Hide
                 uint8_t M : 1; // TODO 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
                 uint8_t b : 1; // 1: Show background
@@ -192,12 +236,12 @@ private:
         }
 
         void update(uint8_t data) {
-            if (hiPtr) {
+            if (latch) {
                 addr[0] = data & 0x00FF;
             } else {
                 addr[1] = data & 0x00FF;
             }
-            hiPtr = !hiPtr;
+            latch = !latch;
 
             set(get() & 0x3FFF);
         }
@@ -213,14 +257,27 @@ private:
         }
 
         void resetLatch() {
-            hiPtr = true;
+            latch = true;
         }
 
         std::array<uint8_t, 2> addr{}; // [hi, lo]
-        bool hiPtr = false;
+        bool latch = false;
     };
 
-    void incrementAddr();
+    struct LoopyRegister {
+        union {
+            struct {
+                uint16_t coarseX : 5;
+                uint16_t coarseY : 5;
+                uint16_t nametableX : 1;
+                uint16_t nametableY : 1;
+                uint16_t fineY : 3;
+                uint16_t unused : 1;
+            };
+
+            uint16_t reg = 0x0000;
+        };
+    };
 
     Bus& bus;
 
@@ -233,13 +290,13 @@ private:
     std::array<uint8_t, 256> oamData{};
     ScrollRegister scroll;
     AddressRegister address;
-
     uint8_t internalReadBuf{};
 
     uint16_t scanline = 0;
-    uint32_t cycles = 0;
+    uint16_t cycle = 0;
 
     bool frameComplete = false;
+    Frame frame;
 };
 
 #endif

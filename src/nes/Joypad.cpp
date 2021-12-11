@@ -15,7 +15,7 @@ void Joypad::write(uint8_t data) {
     }
 }
 
-uint8_t Joypad::read() {
+uint8_t Joypad::read() const {
     if (index > 7) {
         return 1;
     }

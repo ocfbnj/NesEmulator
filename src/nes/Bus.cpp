@@ -1,3 +1,4 @@
+#include <cassert>
 #include <utility>
 
 #include "Bus.h"
@@ -7,7 +8,7 @@ Bus::Bus(std::unique_ptr<Mapper> mapper)
       cpu(std::make_unique<CPU>(*this)),
       ppu(std::make_unique<PPU>(*this)) {}
 
-uint8_t Bus::read(uint16_t addr) {
+uint8_t Bus::read(uint16_t addr) const {
     if (addr < 0x2000) {
         // CPU RAM
         return cpuRam[addr & 0x07FF];
@@ -114,7 +115,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
     }
 }
 
-uint16_t Bus::read16(uint16_t addr) {
+uint16_t Bus::read16(uint16_t addr) const {
     uint16_t lo = read(addr);
     uint16_t hi = read(addr + 1);
 
@@ -126,24 +127,45 @@ void Bus::write16(uint16_t addr, uint16_t data) {
     write(addr + 1, (data >> 8) & 0xFF);
 }
 
-uint8_t Bus::ppuRead(uint16_t addr) {
-    if (addr < 0x2000) {
-        // CHR ROM (readData-only)
-        return mapper->readChrRom(addr);
-    } else if (addr < 0x3000) {
-        // PPU RAM
-        return ppuRam[mirrorVramAddr(addr)];
+uint8_t Bus::ppuRead(uint16_t addr) const {
+    uint8_t data = 0;
+
+    if (addr >= 0x0000 && addr < 0x2000) {
+        // CHR ROM (aka pattern table)
+        data = mapper->readChrRom(addr);
+    } else if (addr >= 0x2000 && addr < 0x3F00) {
+        addr &= 0x2FFF;
+
+        // PPU RAM (aka name table)
+        data = ppuRam[mirrorVramAddr(addr) - 0x2000];
+    } else if (addr >= 0x3F00 && addr < 0x4000) {
+        addr &= 0x3F1F;
+
+        // palette RAM indexes
+        data = ppu->readPalette(mirrorPaletteAddr(addr));
+    } else {
+        assert(0);
     }
 
-    return 0;
+    return data;
 }
 
 void Bus::ppuWrite(uint16_t addr, uint8_t data) {
-    if (addr < 0x2000) {
-        // CHR ROM (readData-only)
-    } else if (addr < 0x3000) {
-        // PPU RAM
-        ppuRam[mirrorVramAddr(addr)] = data;
+    if (addr >= 0x0000 && addr < 0x2000) {
+        // CHR ROM (aka pattern table)
+        mapper->writeChrRom(addr, data);
+    } else if (addr >= 0x2000 && addr < 0x3F00) {
+        addr &= 0x2FFF;
+
+        // PPU RAM (aka name table)
+        ppuRam[mirrorVramAddr(addr) - 0x2000] = data;
+    } else if (addr >= 0x3F00 && addr < 0x4000) {
+        addr &= 0x3F1F;
+
+        // palette RAM indexes
+        ppu->writePalette(mirrorPaletteAddr(addr), data);
+    } else {
+        assert(0);
     }
 }
 
@@ -183,20 +205,41 @@ Mirroring Bus::mirroring() const {
     return mapper->mirroring();
 }
 
-uint16_t Bus::mirrorVramAddr(uint16_t addr) const {
-    uint16_t mirroredVram = addr & 0x2fff;
-    uint16_t vramIndex = mirroredVram - 0x2000;
-    uint16_t nameTable = vramIndex / 0x0400;
-
-    if (mirroring() == Mirroring::Vertical && (nameTable == 2 || nameTable == 3)) {
-        vramIndex -= 0x0800;
-    } else if (mirroring() == Mirroring::Horizontal) {
-        if (nameTable == 1 || nameTable == 2) {
-            vramIndex -= 0x0400;
-        } else if (nameTable == 3) {
-            vramIndex -= 0x0800;
-        }
+uint16_t Bus::mirrorPaletteAddr(uint16_t addr) const {
+    // addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
+    if (addr == 0x3F10 || addr == 0x3F14 || addr == 0x3F18 || addr == 0x3F1C) {
+        addr -= 0x10;
     }
 
-    return vramIndex;
+    assert(addr >= 0x3F00 && addr < 0x3F20);
+    return addr;
+}
+
+uint16_t Bus::mirrorVramAddr(uint16_t addr) const {
+    const uint16_t vramIndex = addr - 0x2000;
+    assert(vramIndex >= 0 && vramIndex < 0x1000);
+
+    const uint8_t nameTable = vramIndex / 0x0400;
+    assert(nameTable >= 0 && nameTable < 4);
+
+    const Mirroring mirror = mapper->mirroring();
+
+    if (mirror == Mirroring::Vertical) {
+        if (nameTable == 0 || nameTable == 2) {
+            addr = addr & 0x23FF;
+        } else if (nameTable == 1 || nameTable == 3) {
+            addr = 0x2400 + (addr & 0x03FF);
+        }
+    } else if (mirror == Mirroring::Horizontal) {
+        if (nameTable == 0 || nameTable == 1) {
+            addr = addr & 0x23FF;
+        } else if (nameTable == 2 || nameTable == 3) {
+            addr = 0x2400 + (addr & 0x03FF);
+        }
+    } else {
+        assert(0);
+    }
+
+    assert(addr >= 0x2000 && addr < 0x2800);
+    return addr;
 }

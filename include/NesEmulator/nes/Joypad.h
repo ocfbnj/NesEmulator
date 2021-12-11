@@ -20,11 +20,11 @@ public:
     void release(Button btn);
 
     void write(uint8_t data);
-    [[nodiscard]] uint8_t read();
+    [[nodiscard]] uint8_t read() const;
 
 private:
     bool strobe = false;
-    int index = 0;
+    mutable int index = 0;
     uint8_t button = 0;
 };
 

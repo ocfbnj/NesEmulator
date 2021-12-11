@@ -19,14 +19,14 @@ public:
 
     // CPU and PPU have different buses.
 
-    // cpu read from and write to the bus
-    uint8_t read(uint16_t addr);
+    // CPU read from and write to the MAIN bus
+    [[nodiscard]] uint8_t read(uint16_t addr) const;
     void write(uint16_t addr, uint8_t data);
-    uint16_t read16(uint16_t addr);
+    [[nodiscard]] uint16_t read16(uint16_t addr) const;
     void write16(uint16_t addr, uint16_t data);
 
-    // ppu read from and write to the bus
-    uint8_t ppuRead(uint16_t addr);
+    // PPU read from and write to the PPU bus
+    [[nodiscard]] uint8_t ppuRead(uint16_t addr) const;
     void ppuWrite(uint16_t addr, uint8_t data);
 
     void clock();
@@ -41,6 +41,7 @@ public:
     [[nodiscard]] Mirroring mirroring() const;
 
 private:
+    [[nodiscard]] uint16_t mirrorPaletteAddr(uint16_t addr) const;
     [[nodiscard]] uint16_t mirrorVramAddr(uint16_t addr) const;
 
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
