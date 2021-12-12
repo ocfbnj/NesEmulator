@@ -444,7 +444,7 @@ void CPU::step() {
 }
 
 void CPU::push(uint8_t data) {
-    bus.write(0x0100 + sp--, data);
+    write(0x0100 + sp--, data);
 }
 
 void CPU::push16(uint16_t data) {
@@ -513,7 +513,7 @@ void CPU::ASL(uint16_t address) {
         uint8_t m = read(address);
         c = (m >> 7) & 1;
         m <<= 1;
-        bus.write(address, m);
+        write(address, m);
         z = (m == 0 ? 1 : 0);
         n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
@@ -649,7 +649,7 @@ void CPU::CPY(uint16_t address) {
 void CPU::DEC(uint16_t address) {
     uint8_t m = read(address);
     m--;
-    bus.write(address, m);
+    write(address, m);
 
     z = (m == 0 ? 1 : 0);
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
@@ -676,7 +676,7 @@ void CPU::EOR(uint16_t address) {
 void CPU::INC(uint16_t address) {
     uint8_t m = read(address);
     m++;
-    bus.write(address, m);
+    write(address, m);
 
     z = (m == 0 ? 1 : 0);
     n = (((m >> 7) & 1) == 1 ? 1 : 0);
@@ -731,7 +731,7 @@ void CPU::LSR(uint16_t address) {
         uint8_t m = read(address);
         c = m & 1;
         m >>= 1;
-        bus.write(address, m);
+        write(address, m);
         z = (m == 0 ? 1 : 0);
         n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
@@ -777,7 +777,7 @@ void CPU::ROL(uint16_t address) {
         uint8_t oldC = c;
         c = (m >> 7) & 1;
         m = (m << 1) | oldC;
-        bus.write(address, m);
+        write(address, m);
         z = (m == 0 ? 1 : 0);
         n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
@@ -795,7 +795,7 @@ void CPU::ROR(uint16_t address) {
         uint8_t oldC = c;
         c = m & 1;
         m = (m >> 1) | (oldC << 7);
-        bus.write(address, m);
+        write(address, m);
         z = (m == 0 ? 1 : 0);
         n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
@@ -835,15 +835,15 @@ void CPU::SEI(uint16_t) {
 }
 
 void CPU::STA(uint16_t address) {
-    bus.write(address, a);
+    write(address, a);
 }
 
 void CPU::STX(uint16_t address) {
-    bus.write(address, x);
+    write(address, x);
 }
 
 void CPU::STY(uint16_t address) {
-    bus.write(address, y);
+    write(address, y);
 }
 
 void CPU::TAX(uint16_t) {
