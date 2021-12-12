@@ -9,88 +9,80 @@ Bus::Bus(std::unique_ptr<Mapper> mapper)
       ppu(std::make_unique<PPU>(*this)) {}
 
 uint8_t Bus::read(uint16_t addr) const {
-    if (addr < 0x2000) {
+    uint8_t data = 0;
+
+    if (addr >= 0x0000 && addr < 0x2000) {
         // CPU RAM
-        return cpuRam[addr & 0x07FF];
-    } else if (addr < 0x2008) {
+        data = cpuRam[addr & 0x07FF];
+    } else if (addr >= 0x2000 && addr < 0x4000) {
+        addr &= 0x2007;
+
         // The PPU exposes eight memory-mapped registers to the CPU
-        if (addr == 0x2000) {
-            // PPU Controller Register (writeData-only)
-        } else if (addr == 0x2001) {
-            // PPU Mask Register (writeData-only)
-        } else if (addr == 0x2002) {
-            // PPU Status Register (readData-only)
-            return ppu->readStatus();
-        } else if (addr == 0x2003) {
-            // PPU OAM Address Register (writeData-only)
+        if (addr == 0x2002) {
+            // PPU Status Register
+            data = ppu->readStatus();
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
-            return ppu->readOAMData();
-        } else if (addr == 0x2005) {
-            // PPU Scroll Data Register (writeData-only)
-        } else if (addr == 0x2006) {
-            // PPU Address Register (writeData-only)
+            data = ppu->readOAMData();
         } else if (addr == 0x2007) {
             // PPU Data Register
-            return ppu->readData();
+            data = ppu->readData();
+        } else {
+            // These are write-only registers
+            assert(0);
         }
-    } else if (addr < 0x4000) {
-        // PPU registers mirrors
-        uint16_t mirrorDownAddr = addr & 0x2007;
-        return read(mirrorDownAddr);
-    } else if (addr < 0x4018) {
-        // TODO	NES APU and I/O registers
+    } else if (addr >= 0x4000 && addr < 0x4018) {
+        // TODO NES APU and I/O registers
         if (addr == 0x4016) {
             return joypad.read();
         }
-    } else if (addr < 0x4020) {
+    } else if (addr >= 0x4018 && addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode
-    } else if (addr < 0x6000) {
-        // TODO Expansion Rom
+        assert(0);
     } else {
-        // Save RAM and PRG ROM that stored in cartridge
+        // Cartridge space: PRG ROM, PRG RAM, and mapper registers.
+        // See https://wiki.nesdev.org/w/index.php?title=CPU_memory_map
         return mapper->readPrgRom(addr);
     }
 
-    return 0;
+    return data;
 }
 
 void Bus::write(uint16_t addr, uint8_t data) {
-    if (addr < 0x2000) {
+    if (addr >= 0x0000 && addr < 0x2000) {
         // CPU RAM
         cpuRam[addr & 0x07FF] = data;
-    } else if (addr < 0x2008) {
+    } else if (addr >= 0x2000 && addr < 0x4000) {
+        addr &= 0x2007;
+
         // The PPU exposes eight memory-mapped registers to the CPU
         if (addr == 0x2000) {
-            // PPU Controller Register (writeData-only)
+            // PPU Controller Register
             ppu->writeCtrl(data);
         } else if (addr == 0x2001) {
-            // PPU Mask Register (writeData-only)
+            // PPU Mask Register
             ppu->writeMask(data);
-        } else if (addr == 0x2002) {
-            // PPU Status Register (readData-only)
         } else if (addr == 0x2003) {
-            // PPU OAM Address Register (writeData-only)
+            // PPU OAM Address Register
             ppu->writeOAMAddr(data);
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
             ppu->writeOAMData(data);
         } else if (addr == 0x2005) {
-            // PPU Scroll Data Register (writeData-only)
+            // PPU Scroll Data Register
             ppu->writeScroll(data);
         } else if (addr == 0x2006) {
-            // PPU Address Register (writeData-only)
+            // PPU Address Register
             ppu->writeAddr(data);
         } else if (addr == 0x2007) {
             // PPU Data Register
             ppu->writeData(data);
+        } else {
+            // PPU Status Register is read-only
+            assert(0);
         }
-    } else if (addr < 0x4000) {
-        // PPU registers mirrors
-        uint16_t mirrorDownAddr = addr & 0x2007;
-        write(mirrorDownAddr, data);
-    } else if (addr < 0x4018) {
+    } else if (addr >= 0x4000 && addr < 0x4018) {
         // TODO	NES APU and I/O registers
         if (addr == 0x4014) {
             // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM
@@ -104,11 +96,10 @@ void Bus::write(uint16_t addr, uint8_t data) {
         } else if (addr == 0x4016) {
             joypad.write(data);
         }
-    } else if (addr < 0x4020) {
+    } else if (addr >= 0x4018 && addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode
-    } else if (addr < 0x6000) {
-        // TODO Expansion Rom
+        assert(0);
     } else {
         // Save RAM and PRG ROM that stored in cartridge
         mapper->writePrgRom(addr, data);
