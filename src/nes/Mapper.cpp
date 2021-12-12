@@ -8,7 +8,7 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
     case 0:
         return std::make_unique<Mapper0>(std::move(cartridge));
     default:
-        std::clog << "No mapper available\n";
+        std::cerr << "No mapper available\n";
         return {};
     }
 }
