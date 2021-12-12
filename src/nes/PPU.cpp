@@ -80,114 +80,19 @@ void PPU::clock() {
     // with each clock cycle producing one pixel.
 
     if (scanline >= -1 && scanline < 240) {
-        if (scanline == -1) {
-            // pre-render scanline
-            if (cycle == 1) {
-                status.resetSprite0Hit();
-                status.resetVblank();
-            } else if (cycle >= 280 && cycle < 305) {
-                // If rendering is enabled, at the end of vblank,
-                // shortly after the horizontal bits are copied from t to v at dot 257,
-                // the PPU will repeatedly copy the vertical bits from t to v from dots 280 to 304,
-                // completing the full initialization of v from t:
-                // v: GHIA.BC DEF..... <- t: GHIA.BC DEF.....
-                transferVerticalBits();
-            }
-        }
-
-        if (cycle >= 1 && cycle < 257 || cycle >= 321 && cycle < 337) {
-            updateShifters();
-
-            switch ((cycle - 1) % 8) {
-            case 0:
-                loadShifters();
-                ntByte = bus.ppuRead(0x2000 | vramAddr.reg & 0x0FFF);
-                break;
-            case 2:
-                atByte = bus.ppuRead(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
-
-                if (vramAddr.coarseY & 0x02) {
-                    atByte >>= 4;
-                }
-                if (vramAddr.coarseX & 0x02) {
-                    atByte >>= 2;
-                }
-
-                atByte &= 0x03;
-                break;
-            case 4:
-                bgTileByteLSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 0);
-                break;
-            case 6:
-                bgTileByteMSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 8);
-                break;
-            case 7:
-                incrementHorizontal();
-                break;
-            default:
-                break;
-            }
-        }
-
-        if (cycle == 256) {
-            // If rendering is enabled, the PPU increments the vertical position in v.
-            incrementVertical();
-        } else if (cycle == 257) {
-            // If rendering is enabled, the PPU copies all bits related to horizontal position from t to v:
-            // v: ....A.. ...BCDEF <- t: ....A.. ...BCDEF
-            transferHorizontalBits();
-        } else if (cycle == 338 || cycle == 340) {
-            // unused NT fetches
-            ntByte = bus.ppuRead(0x2000 | (vramAddr.reg & 0x0FFF));
-        }
+        visibleFrameAndPreRender();
     } else if (scanline == 240) {
         // post-render scanline
         // do nothing
     } else if (scanline >= 241 && scanline < 261) {
-        // vertical blanking lines
-        if (scanline == 241 && cycle == 1) {
-            status.setVblank();
-
-            if (control.generateNMI()) {
-                bus.getCPU().nmi();
-            }
-        }
+        verticalBlanking();
     } else {
         assert(0);
     }
 
-    if (showBackground()) {
-        uint16_t bit = 0x8000 >> fineX;
+    renderBackground();
 
-        uint8_t bgPixelHi = (patternShifterHi & bit) > 0;
-        uint8_t bgPixelLo = (patternShifterLo & bit) > 0;
-        uint8_t bgPixel = (bgPixelHi << 1) | bgPixelLo;
-
-        uint8_t bgPaletteHi = (attributeShifterHi & bit) > 0;
-        uint8_t bgPaletteLo = (attributeShifterLo & bit) > 0;
-        uint8_t bgPalette = (bgPaletteHi << 1) | bgPaletteLo;
-
-        int finalX = cycle - 1;
-        int finalY = scanline;
-
-        if (finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240) {
-            frame.setPixel(finalX, finalY, getColor(bgPalette, bgPixel));
-        }
-    }
-
-    if (++cycle == 341) {
-        // TODO delete
-        if (isSprite0Hit()) {
-            status.setSprite0Hit();
-        }
-
-        cycle = 0;
-
-        if (++scanline == 261) {
-            scanline = -1;
-            frameComplete = true;
-        }
-    }
+    incrementCycle();
 }
 
 uint16_t PPU::spritePatternAddr() const {
@@ -394,19 +299,6 @@ void PPU::transferVerticalBits() {
     }
 }
 
-PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) {
-    if (pixel == 0) {
-        if (!((palette >> 3) & 1)) {
-            return DefaultPalette[bus.ppuRead(0x3F00)];
-        }
-    }
-
-    uint8_t index = bus.ppuRead(0x3F00 + ((palette << 2) | pixel));
-    assert(index >= 0 && index < 64);
-
-    return DefaultPalette[index];
-}
-
 void PPU::loadShifters() {
     patternShifterLo = (patternShifterLo & 0xFF00) | bgTileByteLSB;
     patternShifterHi = (patternShifterHi & 0xFF00) | bgTileByteMSB;
@@ -423,5 +315,132 @@ void PPU::updateShifters() {
 
         attributeShifterLo <<= 1;
         attributeShifterHi <<= 1;
+    }
+}
+
+PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) {
+    if (pixel == 0) {
+        if (!((palette >> 3) & 1)) {
+            return DefaultPalette[bus.ppuRead(0x3F00)];
+        }
+    }
+
+    uint8_t index = bus.ppuRead(0x3F00 + ((palette << 2) | pixel));
+    assert(index >= 0 && index < 64);
+
+    return DefaultPalette[index];
+}
+
+void PPU::visibleFrameAndPreRender() {
+    assert(scanline >= -1 && scanline < 240);
+
+    if (scanline == -1) {
+        // pre-render scanline
+        if (cycle == 1) {
+            status.resetSprite0Hit();
+            status.resetVblank();
+        } else if (cycle >= 280 && cycle < 305) {
+            // If rendering is enabled, at the end of vblank,
+            // shortly after the horizontal bits are copied from t to v at dot 257,
+            // the PPU will repeatedly copy the vertical bits from t to v from dots 280 to 304,
+            // completing the full initialization of v from t:
+            // v: GHIA.BC DEF..... <- t: GHIA.BC DEF.....
+            transferVerticalBits();
+        }
+    }
+
+    if (cycle >= 1 && cycle < 257 || cycle >= 321 && cycle < 337) {
+        updateShifters();
+
+        switch ((cycle - 1) % 8) {
+        case 0:
+            loadShifters();
+            ntByte = bus.ppuRead(0x2000 | vramAddr.reg & 0x0FFF);
+            break;
+        case 2:
+            atByte = bus.ppuRead(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
+
+            if (vramAddr.coarseY & 0x02) {
+                atByte >>= 4;
+            }
+            if (vramAddr.coarseX & 0x02) {
+                atByte >>= 2;
+            }
+
+            atByte &= 0x03;
+            break;
+        case 4:
+            bgTileByteLSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 0);
+            break;
+        case 6:
+            bgTileByteMSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 8);
+            break;
+        case 7:
+            incrementHorizontal();
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (cycle == 256) {
+        // If rendering is enabled, the PPU increments the vertical position in v.
+        incrementVertical();
+    } else if (cycle == 257) {
+        // If rendering is enabled, the PPU copies all bits related to horizontal position from t to v:
+        // v: ....A.. ...BCDEF <- t: ....A.. ...BCDEF
+        transferHorizontalBits();
+    } else if (cycle == 338 || cycle == 340) {
+        // unused NT fetches
+        ntByte = bus.ppuRead(0x2000 | (vramAddr.reg & 0x0FFF));
+    }
+}
+
+void PPU::verticalBlanking() {
+    assert(scanline >= 241 && scanline < 261);
+
+    if (scanline == 241 && cycle == 1) {
+        status.setVblank();
+
+        if (control.generateNMI()) {
+            bus.getCPU().nmi();
+        }
+    }
+}
+
+void PPU::renderBackground() {
+    if (showBackground()) {
+        uint16_t bit = 0x8000 >> fineX;
+
+        uint8_t bgPixelHi = (patternShifterHi & bit) > 0;
+        uint8_t bgPixelLo = (patternShifterLo & bit) > 0;
+        uint8_t bgPixel = (bgPixelHi << 1) | bgPixelLo;
+
+        uint8_t bgPaletteHi = (attributeShifterHi & bit) > 0;
+        uint8_t bgPaletteLo = (attributeShifterLo & bit) > 0;
+        uint8_t bgPalette = (bgPaletteHi << 1) | bgPaletteLo;
+
+        int finalX = cycle - 1;
+        int finalY = scanline;
+
+        if (finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240) {
+            frame.setPixel(finalX, finalY, getColor(bgPalette, bgPixel));
+        }
+    }
+}
+
+void PPU::incrementCycle() {
+    if (++cycle == 341) {
+        // TODO delete
+        if (isSprite0Hit()) {
+            status.setSprite0Hit();
+        }
+
+        cycle = 0;
+
+        if (++scanline == 261) {
+            scanline = -1;
+            frameComplete = true;
+        }
     }
 }

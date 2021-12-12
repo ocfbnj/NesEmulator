@@ -90,6 +90,11 @@ private:
 
     Pixel getColor(uint8_t palette, uint8_t pixel);
 
+    void visibleFrameAndPreRender();
+    void verticalBlanking();
+    void renderBackground();
+    void incrementCycle();
+
     // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
         [[nodiscard]] uint16_t baseNameTableAddr() const {
