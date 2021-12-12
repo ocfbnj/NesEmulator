@@ -5,11 +5,11 @@
 
 std::ostream& operator<<(std::ostream& os, const CPU& cpu) {
     os << std::hex << std::uppercase << std::right << std::setfill('0');
-    os << std::setw(4) << cpu.pc - 1 << "  " << std::setw(2) << +cpu.opcode << " " << cpu.opTable[cpu.opcode].name << "         ";
+    os << std::setw(4) << cpu.pc - 1 << "  " << std::setw(2) << +cpu.opcode << " " << CPU::opTable[cpu.opcode].name << "         ";
     os << " A:" << std::setw(2) << +cpu.a
        << " X:" << std::setw(2) << +cpu.x
        << " Y:" << std::setw(2) << +cpu.y
-       << " P:" << std::setw(2) << +cpu.getStatus()
+       << " P:" << std::setw(2) << +cpu.status
        << " SP:" << std::setw(2) << +cpu.sp
        << " CYC:" << std::dec << cpu.totalCycles;
 
@@ -319,7 +319,7 @@ void CPU::irq() {
         b = 0;
         u = 1;
         i = 1;
-        push(getStatus());
+        push(status);
 
         pc = read16(0xFFFE);
 
@@ -333,7 +333,7 @@ void CPU::nmi() {
     b = 0;
     u = 1;
     i = 1;
-    push(getStatus());
+    push(status);
 
     pc = read16(0xFFFA);
 
@@ -461,28 +461,6 @@ uint16_t CPU::pop16() {
     uint16_t h = pop();
 
     return (h << 8) | l;
-}
-
-uint8_t CPU::getStatus() const {
-    return c << 0 |
-           z << 1 |
-           i << 2 |
-           d << 3 |
-           b << 4 |
-           u << 5 |
-           v << 6 |
-           n << 7;
-}
-
-void CPU::setStatus(uint8_t status) {
-    c = (status >> 0) & 1;
-    z = (status >> 1) & 1;
-    i = (status >> 2) & 1;
-    d = (status >> 3) & 1;
-    b = (status >> 4) & 1;
-    u = (status >> 5) & 1;
-    v = (status >> 6) & 1;
-    n = (status >> 7) & 1;
 }
 
 void CPU::ADC(uint16_t address) {
@@ -752,7 +730,7 @@ void CPU::PHA(uint16_t) {
 }
 
 void CPU::PHP(uint16_t) {
-    push(getStatus() | 0x10);
+    push(status | 0x10);
 }
 
 void CPU::PLA(uint16_t) {
@@ -762,7 +740,7 @@ void CPU::PLA(uint16_t) {
 }
 
 void CPU::PLP(uint16_t) {
-    setStatus(pop() & 0xEF | 0x20);
+    status = pop() & 0xEF | 0x20;
 }
 
 void CPU::ROL(uint16_t address) {
@@ -802,7 +780,7 @@ void CPU::ROR(uint16_t address) {
 }
 
 void CPU::RTI(uint16_t) {
-    setStatus(pop() & 0xEF | 0x20);
+    status = pop() & 0xEF | 0x20;
     pc = pop16();
 }
 

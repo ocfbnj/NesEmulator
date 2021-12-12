@@ -63,9 +63,6 @@ private:
     uint8_t pop();
     uint16_t pop16();
 
-    [[nodiscard]] uint8_t getStatus() const;
-    void setStatus(uint8_t status);
-
     // Assembly Instructions
     // See http://obelisk.me.uk/6502/reference.html
     // The function name is capitalized because we cannot use `and` as the function name.
@@ -133,25 +130,32 @@ private:
 
     // CPU Registers
     // See http://wiki.nesdev.com/w/index.php/CPU_registers
-    uint16_t pc;   // program counter
-    uint8_t a;     // accumulator
-    uint8_t x;     // x register
-    uint8_t y;     // y register
-    uint8_t sp;    // stack pointer
-    uint8_t c : 1; // carry flag
-    uint8_t z : 1; // zero flag
-    uint8_t i : 1; // interrupt disable flag
-    uint8_t d : 1; // decimal mode flag
-    uint8_t b : 1; // break command flag
-    uint8_t u : 1; // unused flag
-    uint8_t v : 1; // overflow flag
-    uint8_t n : 1; // negative flag
+    uint16_t pc{}; // program counter
+    uint8_t a{};   // accumulator
+    uint8_t x{};   // x register
+    uint8_t y{};   // y register
+    uint8_t sp{};  // stack pointer
+
+    union {
+        struct {
+            uint8_t c : 1; // carry flag
+            uint8_t z : 1; // zero flag
+            uint8_t i : 1; // interrupt disable flag
+            uint8_t d : 1; // decimal mode flag
+            uint8_t b : 1; // break command flag
+            uint8_t u : 1; // unused flag
+            uint8_t v : 1; // overflow flag
+            uint8_t n : 1; // negative flag
+        };
+
+        uint8_t status{};
+    };
 
     Bus& bus;
 
-    uint8_t cycles;
-    uint8_t opcode;
-    Addressing addressingMode;
+    uint8_t cycles{};
+    uint8_t opcode{};
+    Addressing addressingMode{};
 
     // for debug
     uint32_t totalCycles = 0;
