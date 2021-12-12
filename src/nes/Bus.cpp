@@ -28,8 +28,8 @@ uint8_t Bus::read(uint16_t addr) const {
             // PPU Data Register
             data = ppu->readData();
         } else {
-            // These are write-only registers
-            assert(0);
+            // These are write-only registers (some games do read these registers?)
+            // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
         // TODO NES APU and I/O registers
