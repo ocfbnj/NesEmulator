@@ -128,7 +128,7 @@ void Bus::write16(uint16_t addr, uint16_t data) {
 }
 
 uint8_t Bus::ppuRead(uint16_t addr) const {
-    uint8_t data = 0;
+    uint8_t data;
 
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
@@ -193,16 +193,8 @@ Joypad& Bus::getJoypad() {
     return joypad;
 }
 
-const std::array<uint8_t, 2048>& Bus::vRam() const {
-    return ppuRam;
-}
-
 const std::vector<uint8_t>& Bus::chrRom() const {
     return mapper->chrRom();
-}
-
-Mirroring Bus::mirroring() const {
-    return mapper->mirroring();
 }
 
 uint16_t Bus::mirrorPaletteAddr(uint16_t addr) const {

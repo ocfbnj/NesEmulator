@@ -35,10 +35,7 @@ public:
     PPU& getPPU();
     Joypad& getJoypad();
 
-    [[nodiscard]] const std::array<uint8_t, 2048>& vRam() const;
     [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
-
-    [[nodiscard]] Mirroring mirroring() const;
 
 private:
     [[nodiscard]] uint16_t mirrorPaletteAddr(uint16_t addr) const;

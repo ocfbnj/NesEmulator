@@ -23,10 +23,6 @@ public:
         static constexpr auto Height = 240;
 
     public:
-        [[nodiscard]] std::span<const Pixel> getPixels() const {
-            return std::span{pixels.data(), pixels.size()};
-        }
-
         [[nodiscard]] Pixel getPixel(int x, int y) const {
             assert(x >= 0 && x < Width);
             assert(y >= 0 && y < Height);
@@ -51,27 +47,22 @@ public:
 
     void clock();
 
-    [[nodiscard]] uint16_t baseNameTableAddr() const;
-
     [[nodiscard]] uint16_t spritePatternAddr() const;
-    [[nodiscard]] uint16_t backgroundPatternAddr() const;
 
     [[nodiscard]] uint8_t readStatus();
     [[nodiscard]] uint8_t readOAMData() const;
     [[nodiscard]] uint8_t readData();
     [[nodiscard]] uint8_t readPalette(uint16_t addr) const;
 
-    [[nodiscard]] std::array<uint8_t, 4> backgroundPaletteFor(int nametable, int tileX, int tileY) const;
     [[nodiscard]] std::array<uint8_t, 4> spritePalette(int index) const;
 
     [[nodiscard]] bool showBackground() const;
     [[nodiscard]] bool showSprites() const;
-
-    [[nodiscard]] uint8_t scrollX() const;
-    [[nodiscard]] uint8_t scrollY() const;
+    [[nodiscard]] bool renderingEnabled() const;
 
     [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
     [[nodiscard]] const std::array<uint8_t, 32>& getPaletteTable() const;
+    [[nodiscard]] const Frame& getFrame() const;
 
     [[nodiscard]] bool isFrameComplete() const;
 
@@ -85,11 +76,19 @@ public:
     void writeOAMDMA(const std::array<uint8_t, 256>& buffer);
     void writePalette(uint16_t addr, uint8_t data);
 
-    std::function<void()> vblankCallback;
-
 private:
     [[nodiscard]] bool isSprite0Hit() const;
     void incrementAddr();
+
+    void incrementHorizontal();
+    void incrementVertical();
+    void transferHorizontalBits();
+    void transferVerticalBits();
+
+    void loadShifters();
+    void updateShifters();
+
+    Pixel getColor(uint8_t palette, uint8_t pixel);
 
     // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
@@ -128,7 +127,7 @@ private:
                 uint8_t v : 1; // Generate an NMI at the start of the vertical blanking interval (0: off; 1: on)
             };
 
-            uint8_t reg{};
+            uint8_t reg;
         };
     };
     static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 byte");
@@ -162,7 +161,7 @@ private:
                 uint8_t B : 1; // TODO Emphasize blue
             };
 
-            uint8_t reg{};
+            uint8_t reg;
         };
     };
     static_assert(sizeof(MaskRegister) == 1, "The MaskRegister is not 1 byte");
@@ -200,69 +199,10 @@ private:
                 uint8_t v : 1;      // Vertical blank has started (0: not in vblank; 1: in vblank)
             };
 
-            uint8_t reg{};
+            uint8_t reg;
         };
     };
     static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 byte");
-
-    struct ScrollRegister {
-        void write(uint8_t data) {
-            if (latch) {
-                y = data;
-            } else {
-                x = data;
-            }
-
-            latch = !latch;
-        }
-
-        void resetLatch() {
-            latch = false;
-        }
-
-        uint8_t x{};
-        uint8_t y{};
-        bool latch{};
-    };
-
-    struct AddressRegister {
-        [[nodiscard]] uint16_t get() const {
-            return (addr[0] << 8) | addr[1];
-        }
-
-        void set(uint16_t data) {
-            addr[0] = (data >> 8) & 0x00FF;
-            addr[1] = data & 0x00FF;
-        }
-
-        void update(uint8_t data) {
-            if (latch) {
-                addr[0] = data & 0x00FF;
-            } else {
-                addr[1] = data & 0x00FF;
-            }
-            latch = !latch;
-
-            set(get() & 0x3FFF);
-        }
-
-        void increment(uint8_t step) {
-            uint8_t lo = addr[1];
-            addr[1] += step;
-            if (lo > addr[1]) {
-                addr[0]++;
-            }
-
-            set(get() & 0x3FFF);
-        }
-
-        void resetLatch() {
-            latch = true;
-        }
-
-        std::array<uint8_t, 2> addr{}; // [hi, lo]
-        bool latch = false;
-    };
 
     struct LoopyRegister {
         union {
@@ -275,25 +215,42 @@ private:
                 uint16_t unused : 1;
             };
 
-            uint16_t reg = 0x0000;
+            uint16_t reg;
         };
     };
+
+    static std::array<PPU::Pixel, 64> DefaultPalette;
 
     Bus& bus;
 
     std::array<uint8_t, 32> paletteTable{};
 
-    ControlRegister control;
-    MaskRegister mask;
-    StatusRegister status;
+    ControlRegister control{};
+    MaskRegister mask{};
+    StatusRegister status{};
     uint8_t oamAddr{};
     std::array<uint8_t, 256> oamData{};
-    ScrollRegister scroll;
-    AddressRegister address;
     uint8_t internalReadBuf{};
 
-    uint16_t scanline = 0;
-    uint16_t cycle = 0;
+    // PPU internal registers
+    // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#PPU_internal_registers
+    LoopyRegister vramAddr{}; // current VRAM address (15 bits)
+    LoopyRegister tramAddr{}; // temporary VRAM address (15 bits)
+    uint8_t fineX{};          // fine X scroll (3 bits)
+    uint8_t latch{};          // first or second write toggle
+
+    int16_t scanline = 0;
+    int16_t cycle = 0;
+
+    // background rendering
+    uint8_t ntByte{};
+    uint8_t atByte{};
+    uint8_t bgTileByteLSB{};
+    uint8_t bgTileByteMSB{};
+    uint16_t patternShifterLo{};
+    uint16_t patternShifterHi{};
+    uint16_t attributeShifterLo{};
+    uint16_t attributeShifterHi{};
 
     bool frameComplete = false;
     Frame frame;
