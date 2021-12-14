@@ -23,9 +23,8 @@ public:
     [[nodiscard]] uint8_t read() const;
 
 private:
-    bool strobe = false;
-    mutable int index = 0;
     uint8_t button = 0;
+    mutable uint8_t shifter = 0;
 };
 
 #endif // NESEMULATOR_JOYPAD_H
