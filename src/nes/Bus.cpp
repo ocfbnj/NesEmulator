@@ -119,7 +119,7 @@ void Bus::write16(uint16_t addr, uint16_t data) {
 }
 
 uint8_t Bus::ppuRead(uint16_t addr) const {
-    uint8_t data;
+    uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
