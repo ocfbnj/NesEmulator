@@ -13,12 +13,4 @@ add_library(
 target_include_directories(pixel_engine PRIVATE ${CMAKE_SOURCE_DIR}/include/NesEmulator/pixel_engine)
 target_link_libraries(pixel_engine PRIVATE glfw::glfw glad::glad)
 
-file(
-    COPY
-        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/default.vert
-        ${CMAKE_CURRENT_SOURCE_DIR}/shaders/default.frag
-    DESTINATION
-        ${CMAKE_BINARY_DIR}/src/shaders/
-)
-
 add_library(ocfbnj::pixel_engine ALIAS pixel_engine)
