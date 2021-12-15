@@ -1,5 +1,5 @@
-#ifndef MAPPER_H
-#define MAPPER_H
+#ifndef OCFBNJ_NES_MAPPER_H
+#define OCFBNJ_NES_MAPPER_H
 
 #include <cstdint>
 #include <memory>
@@ -15,11 +15,11 @@ public:
     explicit Mapper(std::unique_ptr<Cartridge> cartridge);
     virtual ~Mapper() = default;
 
-    virtual uint8_t readChrRom(uint16_t addr) = 0;
-    virtual void writeChrRom(uint16_t addr, uint8_t data) = 0;
+    virtual uint8_t cpuRead(uint16_t addr) = 0;
+    virtual void cpuWrite(uint16_t addr, uint8_t data) = 0;
 
-    virtual uint8_t readPrgRom(uint16_t addr) = 0;
-    virtual void writePrgRom(uint16_t addr, uint8_t data) = 0;
+    virtual uint8_t ppuRead(uint16_t addr) = 0;
+    virtual void ppuWrite(uint16_t addr, uint8_t data) = 0;
 
     [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
     [[nodiscard]] Mirroring mirroring() const;

@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#ifndef OCFBNJ_NES_CPU_H
+#define OCFBNJ_NES_CPU_H
 
 #include <array>
 #include <cstdint>

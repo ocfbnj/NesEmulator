@@ -1,5 +1,5 @@
-#ifndef PPU_H
-#define PPU_H
+#ifndef OCFBNJ_NES_PPU_H
+#define OCFBNJ_NES_PPU_H
 
 #include <array>
 #include <cstdint>

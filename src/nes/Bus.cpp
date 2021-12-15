@@ -8,7 +8,7 @@ Bus::Bus(std::unique_ptr<Mapper> mapper)
       cpu(std::make_unique<CPU>(*this)),
       ppu(std::make_unique<PPU>(*this)) {}
 
-uint8_t Bus::read(uint16_t addr) const {
+uint8_t Bus::cpuRead(uint16_t addr) const {
     uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
@@ -28,7 +28,7 @@ uint8_t Bus::read(uint16_t addr) const {
             // PPU Data Register
             data = ppu->readData();
         } else {
-            // These are write-only registers (some games do read these registers?)
+            // These are cpuWrite-only registers (some games do cpuRead these registers?)
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
@@ -43,13 +43,13 @@ uint8_t Bus::read(uint16_t addr) const {
     } else {
         // Cartridge space: PRG ROM, PRG RAM, and mapper registers.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_memory_map
-        return mapper->readPrgRom(addr);
+        return mapper->cpuRead(addr);
     }
 
     return data;
 }
 
-void Bus::write(uint16_t addr, uint8_t data) {
+void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     if (addr >= 0x0000 && addr < 0x2000) {
         // CPU RAM
         cpuRam[addr & 0x07FF] = data;
@@ -79,7 +79,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
             // PPU Data Register
             ppu->writeData(data);
         } else {
-            // PPU Status Register is read-only
+            // PPU Status Register is cpuRead-only
             assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
@@ -89,7 +89,7 @@ void Bus::write(uint16_t addr, uint8_t data) {
             std::array<uint8_t, 256> buffer{};
             uint16_t hi = uint16_t(data) << 8;
             for (int i = 0x00; i <= 0xFF; i++) {
-                buffer[i] = read(hi | i);
+                buffer[i] = cpuRead(hi | i);
             }
 
             ppu->writeOAMDMA(buffer);
@@ -102,20 +102,20 @@ void Bus::write(uint16_t addr, uint8_t data) {
         assert(0);
     } else {
         // Save RAM and PRG ROM that stored in cartridge
-        mapper->writePrgRom(addr, data);
+        mapper->cpuWrite(addr, data);
     }
 }
 
-uint16_t Bus::read16(uint16_t addr) const {
-    uint16_t lo = read(addr);
-    uint16_t hi = read(addr + 1);
+uint16_t Bus::cpuRead16(uint16_t addr) const {
+    uint16_t lo = cpuRead(addr);
+    uint16_t hi = cpuRead(addr + 1);
 
     return (hi << 8) | lo;
 }
 
-void Bus::write16(uint16_t addr, uint16_t data) {
-    write(addr, data & 0xFF);
-    write(addr + 1, (data >> 8) & 0xFF);
+void Bus::cpuWrite16(uint16_t addr, uint16_t data) {
+    cpuWrite(addr, data & 0xFF);
+    cpuWrite(addr + 1, (data >> 8) & 0xFF);
 }
 
 uint8_t Bus::ppuRead(uint16_t addr) const {
@@ -123,7 +123,7 @@ uint8_t Bus::ppuRead(uint16_t addr) const {
 
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
-        data = mapper->readChrRom(addr);
+        data = mapper->ppuRead(addr);
     } else if (addr >= 0x2000 && addr < 0x3F00) {
         addr &= 0x2FFF;
 
@@ -144,7 +144,7 @@ uint8_t Bus::ppuRead(uint16_t addr) const {
 void Bus::ppuWrite(uint16_t addr, uint8_t data) {
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
-        mapper->writeChrRom(addr, data);
+        mapper->ppuWrite(addr, data);
     } else if (addr >= 0x2000 && addr < 0x3F00) {
         addr &= 0x2FFF;
 
@@ -161,11 +161,11 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
 }
 
 void Bus::clock() {
-    static size_t i = 0;
+    static uint8_t i = 0;
 
     ppu->clock();
 
-    if (i % 3) {
+    if ((i % 3) == 0) {
         cpu->clock();
     }
 
@@ -182,10 +182,6 @@ PPU& Bus::getPPU() {
 
 Joypad& Bus::getJoypad() {
     return joypad;
-}
-
-const std::vector<uint8_t>& Bus::chrRom() const {
-    return mapper->chrRom();
 }
 
 uint16_t Bus::mirrorPaletteAddr(uint16_t addr) const {

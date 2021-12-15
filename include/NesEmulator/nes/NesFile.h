@@ -1,5 +1,5 @@
-#ifndef NES_EMULATOR_NES_FILE_H
-#define NES_EMULATOR_NES_FILE_H
+#ifndef OCFBNJ_NES_NES_FILE_H
+#define OCFBNJ_NES_NES_FILE_H
 
 #include <memory>
 #include <string_view>

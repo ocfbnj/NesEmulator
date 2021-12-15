@@ -1,5 +1,5 @@
-#ifndef NES_EMULATOR_BUS_H
-#define NES_EMULATOR_BUS_H
+#ifndef OCFBNJ_NES_BUS_H
+#define OCFBNJ_NES_BUS_H
 
 #include <array>
 #include <cstdint>
@@ -20,10 +20,10 @@ public:
     // CPU and PPU have different buses.
 
     // CPU read from and write to the MAIN bus
-    [[nodiscard]] uint8_t read(uint16_t addr) const;
-    void write(uint16_t addr, uint8_t data);
-    [[nodiscard]] uint16_t read16(uint16_t addr) const;
-    void write16(uint16_t addr, uint16_t data);
+    [[nodiscard]] uint8_t cpuRead(uint16_t addr) const;
+    void cpuWrite(uint16_t addr, uint8_t data);
+    [[nodiscard]] uint16_t cpuRead16(uint16_t addr) const;
+    void cpuWrite16(uint16_t addr, uint16_t data);
 
     // PPU read from and write to the PPU bus
     [[nodiscard]] uint8_t ppuRead(uint16_t addr) const;
@@ -34,8 +34,6 @@ public:
     CPU& getCPU();
     PPU& getPPU();
     Joypad& getJoypad();
-
-    [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
 
 private:
     [[nodiscard]] uint16_t mirrorPaletteAddr(uint16_t addr) const;

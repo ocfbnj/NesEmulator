@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_JOYPAD_H
-#define NESEMULATOR_JOYPAD_H
+#ifndef OCFBNJ_NES_JOYPAD_H
+#define OCFBNJ_NES_JOYPAD_H
 
 #include <cstdint>
 

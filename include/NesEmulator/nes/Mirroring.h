@@ -1,5 +1,5 @@
-#ifndef NES_EMULATOR_MIRRORING_H
-#define NES_EMULATOR_MIRRORING_H
+#ifndef OCFBNJ_NES_MIRRORING_H
+#define OCFBNJ_NES_MIRRORING_H
 
 enum class Mirroring {
     Vertical,

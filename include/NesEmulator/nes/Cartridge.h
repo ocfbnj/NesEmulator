@@ -1,5 +1,5 @@
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
+#ifndef OCFBNJ_NES_CARTRIDGE_H
+#define OCFBNJ_NES_CARTRIDGE_H
 
 #include <cstdint>
 #include <vector>

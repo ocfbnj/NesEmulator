@@ -347,19 +347,19 @@ void CPU::testCPU(std::ostream* os, uint16_t pc, uint32_t totalCycles) {
 }
 
 uint8_t CPU::read(uint16_t addr) const {
-    return bus.read(addr);
+    return bus.cpuRead(addr);
 }
 
 uint16_t CPU::read16(uint16_t addr) const {
-    return bus.read16(addr);
+    return bus.cpuRead16(addr);
 }
 
 void CPU::write(uint16_t addr, uint8_t data) {
-    bus.write(addr, data);
+    bus.cpuWrite(addr, data);
 }
 
 void CPU::write16(uint16_t addr, uint16_t data) {
-    bus.write16(addr, data);
+    bus.cpuWrite16(addr, data);
 }
 
 void CPU::step() {

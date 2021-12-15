@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "NesFile.h"
-#include "literals.h"
 
 // NesFileHeader represents an iNES file header.
 // See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format
@@ -75,7 +74,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     // trainer, if present
     if (header.flag6 & (1u << 2)) {
         std::cout << "Hava trainer\n";
-        std::vector<uint8_t> trainer(static_cast<const int>(512_b)); // unused
+        std::vector<uint8_t> trainer(512); // unused
         nesFile.read(reinterpret_cast<char*>(trainer.data()), trainer.size());
         if (!nesFile) {
             std::cerr << "Read the trainer failed\n";
@@ -84,7 +83,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // prg rom data
-    std::vector<uint8_t> prgRom(static_cast<const int>(header.prgSize * 16_kb));
+    std::vector<uint8_t> prgRom(header.prgSize * 16 * 1024);
     nesFile.read(reinterpret_cast<char*>(prgRom.data()), prgRom.size());
     if (!nesFile) {
         std::cerr << "Read the prg rom data failed\n";
@@ -93,7 +92,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::cout << "The PRG ROM size is " << prgRom.size() / 1024 << "KB\n";
 
     // chr rom data
-    std::vector<uint8_t> chrRom(static_cast<const int>(header.chrSize * 8_kb));
+    std::vector<uint8_t> chrRom(header.chrSize * 8 * 1024);
     nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
     if (!nesFile) {
         std::cerr << "Read the chr rom data failed\n";
