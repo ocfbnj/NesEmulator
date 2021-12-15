@@ -47,24 +47,19 @@ public:
 
     void clock();
 
-    [[nodiscard]] uint16_t spritePatternAddr() const;
-
     [[nodiscard]] uint8_t readStatus();
     [[nodiscard]] uint8_t readOAMData() const;
     [[nodiscard]] uint8_t readData();
     [[nodiscard]] uint8_t readPalette(uint16_t addr) const;
 
-    [[nodiscard]] std::array<uint8_t, 4> spritePalette(int index) const;
-
     [[nodiscard]] bool showBackground() const;
     [[nodiscard]] bool showSprites() const;
     [[nodiscard]] bool renderingEnabled() const;
 
-    [[nodiscard]] const std::array<uint8_t, 256>& getOamData() const;
-    [[nodiscard]] const std::array<uint8_t, 32>& getPaletteTable() const;
     [[nodiscard]] const Frame& getFrame() const;
-
     [[nodiscard]] bool isFrameComplete() const;
+
+    [[nodiscard]] Pixel getColor(uint8_t palette, uint8_t pixel) const;
 
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
@@ -77,7 +72,6 @@ public:
     void writePalette(uint16_t addr, uint8_t data);
 
 private:
-    [[nodiscard]] bool isSprite0Hit() const;
     void incrementAddr();
 
     void incrementHorizontal();
@@ -88,12 +82,13 @@ private:
     void loadShifters();
     void updateShifters();
 
-    Pixel getColor(uint8_t palette, uint8_t pixel);
-
     void visibleFrameAndPreRender();
     void verticalBlanking();
-    void renderBackground();
+    void renderFrame();
     void incrementCycle();
+
+    void secondaryOamClearAndSpriteEvaluation();
+    void calculateSpritesPatternAddr();
 
     // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
@@ -113,6 +108,10 @@ private:
             return b ? 0x1000 : 0x0000;
         }
 
+        [[nodiscard]] uint8_t spriteHeight() const {
+            return h ? 16 : 8;
+        }
+
         [[nodiscard]] bool generateNMI() const {
             return v;
         }
@@ -127,7 +126,7 @@ private:
                 uint8_t i : 1; // VRAM address increment per CPU readData/writeData of PPUDATA (0: add 1, going across; 1: add 32, going down)
                 uint8_t s : 1; // Sprite pattern table address for 8x8 sprites (0: $0000; 1: $1000; ignored in 8x16 mode)
                 uint8_t b : 1; // Background pattern table address (0: $0000; 1: $1000)
-                uint8_t h : 1; // TODO Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
+                uint8_t h : 1; // Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
                 uint8_t p : 1; // TODO PPU master/slave select (0: read backdrop from EXT pins; 1: output color on EXT pins)
                 uint8_t v : 1; // Generate an NMI at the start of the vertical blanking interval (0: off; 1: on)
             };
@@ -140,6 +139,14 @@ private:
     struct MaskRegister {
         [[nodiscard]] bool isGreyscale() const {
             return g;
+        }
+
+        [[nodiscard]] bool showBackgroundLeft() const {
+            return m;
+        }
+
+        [[nodiscard]] bool showSpritesLeft() const {
+            return M;
         }
 
         [[nodiscard]] bool showBackground() const {
@@ -157,8 +164,8 @@ private:
         union {
             struct {
                 uint8_t g : 1; // Greyscale (0: normal color, 1: produce a greyscale display)
-                uint8_t m : 1; // TODO 1: Show background in leftmost 8 pixels of screen, 0: Hide
-                uint8_t M : 1; // TODO 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+                uint8_t m : 1; // 1: Show background in leftmost 8 pixels of screen, 0: Hide
+                uint8_t M : 1; // 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
                 uint8_t b : 1; // 1: Show background
                 uint8_t s : 1; // 1: Show sprites
                 uint8_t R : 1; // TODO Emphasize red (green on PAL/Dendy)
@@ -180,6 +187,14 @@ private:
             return v;
         }
 
+        void setSpriteOverflow() {
+            o = 1;
+        }
+
+        void resetSpriteOverflow() {
+            o = 0;
+        }
+
         void setSprite0Hit() {
             s = 1;
         }
@@ -199,7 +214,7 @@ private:
         union {
             struct {
                 uint8_t unused : 5; // TODO Least significant bits previously written into a PPU register
-                uint8_t o : 1;      // TODO Sprite overflow
+                uint8_t o : 1;      // Sprite overflow
                 uint8_t s : 1;      // Sprite 0 Hit
                 uint8_t v : 1;      // Vertical blank has started (0: not in vblank; 1: in vblank)
             };
@@ -217,7 +232,7 @@ private:
                 uint16_t nametableX : 1;
                 uint16_t nametableY : 1;
                 uint16_t fineY : 3;
-                uint16_t unused : 1;
+                [[maybe_unused]] uint16_t unused : 1;
             };
 
             uint16_t reg;
@@ -234,7 +249,7 @@ private:
     MaskRegister mask{};
     StatusRegister status{};
     uint8_t oamAddr{};
-    std::array<uint8_t, 256> oamData{};
+    std::array<uint8_t, 256> primaryOamData{};
     uint8_t internalReadBuf{};
 
     // PPU internal registers
@@ -244,18 +259,25 @@ private:
     uint8_t fineX{};          // fine X scroll (3 bits)
     uint8_t latch{};          // first or second write toggle
 
+    // background rendering
+    uint8_t bgNtByte{};     // name table
+    uint8_t bgAtByte{};     // attribute table
+    uint8_t bgTileByteLo{}; // pattern low byte
+    uint8_t bgTileByteHi{}; // pattern high byte
+    uint16_t bgPatternShifterLo{};
+    uint16_t bgPatternShifterHi{};
+    uint16_t bgAttributeShifterLo{};
+    uint16_t bgAttributeShifterHi{};
+
+    // foreground rendering
+    std::array<uint8_t, 32> secondaryOamData{};
+    std::array<uint8_t, 8> spritePatternShifterLo{};
+    std::array<uint8_t, 8> spritePatternShifterHi{};
+    uint8_t spriteCount = 0;
+    bool sprite0HitPossible = false;
+
     int16_t scanline = 0;
     int16_t cycle = 0;
-
-    // background rendering
-    uint8_t ntByte{};
-    uint8_t atByte{};
-    uint8_t bgTileByteLSB{};
-    uint8_t bgTileByteMSB{};
-    uint16_t patternShifterLo{};
-    uint16_t patternShifterHi{};
-    uint16_t attributeShifterLo{};
-    uint16_t attributeShifterHi{};
 
     bool frameComplete = false;
     Frame frame;

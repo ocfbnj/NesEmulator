@@ -13,7 +13,7 @@ public:
     void onUpdate(float elapsedTime) override;
 
 private:
-    void renderSprites();
+    void renderFrame(const PPU::Frame& frame);
     void checkKeyboard();
 
     Bus bus;

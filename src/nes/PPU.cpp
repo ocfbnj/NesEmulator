@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 
 #include "Bus.h"
@@ -90,13 +91,9 @@ void PPU::clock() {
         assert(0);
     }
 
-    renderBackground();
+    renderFrame();
 
     incrementCycle();
-}
-
-uint16_t PPU::spritePatternAddr() const {
-    return control.spritePatternAddr();
 }
 
 uint8_t PPU::readStatus() {
@@ -110,7 +107,7 @@ uint8_t PPU::readStatus() {
 }
 
 uint8_t PPU::readOAMData() const {
-    return oamData[oamAddr];
+    return primaryOamData[oamAddr];
 }
 
 uint8_t PPU::readData() {
@@ -137,12 +134,6 @@ uint8_t PPU::readPalette(uint16_t addr) const {
     return paletteTable[addr - 0x3F00] & (mask.isGreyscale() ? 0x30 : 0x3F);
 }
 
-std::array<uint8_t, 4> PPU::spritePalette(int index) const {
-    assert(index >= 0 && index <= 3);
-    uint16_t start = 0x11 + index * 4;
-    return {0, paletteTable[start], paletteTable[start + 1], paletteTable[start + 2]};
-}
-
 bool PPU::showBackground() const {
     return mask.showBackground();
 }
@@ -155,14 +146,6 @@ bool PPU::renderingEnabled() const {
     return showBackground() || showSprites();
 }
 
-const std::array<uint8_t, 256>& PPU::getOamData() const {
-    return oamData;
-}
-
-const std::array<uint8_t, 32>& PPU::getPaletteTable() const {
-    return paletteTable;
-}
-
 const PPU::Frame& PPU::getFrame() const {
     return frame;
 }
@@ -171,8 +154,16 @@ bool PPU::isFrameComplete() const {
     return frameComplete;
 }
 
+PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) const {
+    uint8_t index = bus.ppuRead(0x3F00 + ((palette << 2) | pixel));
+    assert(index >= 0 && index < 64);
+
+    return DefaultPalette[index];
+}
+
 void PPU::writeCtrl(uint8_t data) {
-    //    bool prev = control.generateNMI();
+    bool prev = control.generateNMI();
+
     control.write(data);
     tramAddr.nametableX = data & 1;
     tramAddr.nametableY = (data >> 1) & 1;
@@ -180,9 +171,9 @@ void PPU::writeCtrl(uint8_t data) {
     // If the PPU is currently in vertical blank,
     // and the PPUSTATUS ($2002) vblank flag is still set (1),
     // changing the NMI flag in bit 7 of $2000 from 0 to 1 will immediately generate an NMI.
-    //    if (status.isInVblank() && !prev && control.generateNMI()) {
-    //        bus.getCPU().nmi();
-    //    }
+    if (status.isInVblank() && !prev && control.generateNMI()) {
+        bus.getCPU().nmi();
+    }
 }
 
 void PPU::writeMask(uint8_t data) {
@@ -195,7 +186,7 @@ void PPU::writeOAMAddr(uint8_t data) {
 
 void PPU::writeOAMData(uint8_t data) {
     // Writes will increment oamAddr after the writing
-    oamData[oamAddr++] = data;
+    primaryOamData[oamAddr++] = data;
 }
 
 void PPU::writeScroll(uint8_t data) {
@@ -232,20 +223,13 @@ void PPU::writeData(uint8_t data) {
 
 void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
     for (uint8_t data : buffer) {
-        oamData[oamAddr++] = data;
+        primaryOamData[oamAddr++] = data;
     }
 }
 
 void PPU::writePalette(uint16_t addr, uint8_t data) {
     assert(addr >= 0x3F00 && addr < 0x3F20);
     paletteTable[addr - 0x3F00] = data;
-}
-
-bool PPU::isSprite0Hit() const {
-    int y = oamData[0];
-    int x = oamData[3];
-
-    return y == scanline && x <= cycle && showSprites();
 }
 
 void PPU::incrementAddr() {
@@ -300,35 +284,37 @@ void PPU::transferVerticalBits() {
 }
 
 void PPU::loadShifters() {
-    patternShifterLo = (patternShifterLo & 0xFF00) | bgTileByteLSB;
-    patternShifterHi = (patternShifterHi & 0xFF00) | bgTileByteMSB;
+    bgPatternShifterLo = (bgPatternShifterLo & 0xFF00) | bgTileByteLo;
+    bgPatternShifterHi = (bgPatternShifterHi & 0xFF00) | bgTileByteHi;
 
     // for convenient
-    attributeShifterLo = (attributeShifterLo & 0xFF00) | ((atByte & 0b01) ? 0xFF : 0x00);
-    attributeShifterHi = (attributeShifterHi & 0xFF00) | ((atByte & 0b10) ? 0xFF : 0x00);
+    bgAttributeShifterLo = (bgAttributeShifterLo & 0xFF00) | ((bgAtByte & 0b01) ? 0xFF : 0x00);
+    bgAttributeShifterHi = (bgAttributeShifterHi & 0xFF00) | ((bgAtByte & 0b10) ? 0xFF : 0x00);
 }
 
 void PPU::updateShifters() {
-    if (showBackground()) {
-        patternShifterLo <<= 1;
-        patternShifterHi <<= 1;
+    assert(cycle >= 1 && cycle < 257 || cycle >= 321 && cycle < 337);
 
-        attributeShifterLo <<= 1;
-        attributeShifterHi <<= 1;
+    if (mask.showBackground()) {
+        bgPatternShifterLo <<= 1;
+        bgPatternShifterHi <<= 1;
+
+        bgAttributeShifterLo <<= 1;
+        bgAttributeShifterHi <<= 1;
     }
-}
 
-PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) {
-    if (pixel == 0) {
-        if (!((palette >> 3) & 1)) {
-            return DefaultPalette[bus.ppuRead(0x3F00)];
+    if (mask.showSprites() && cycle >= 2 && cycle < 257) {
+        for (int i = 0; i != spriteCount; i++) {
+            uint8_t* sprite = secondaryOamData.data() + i * 4;
+
+            if (sprite[3] > 0) {
+                sprite[3]--;
+            } else {
+                spritePatternShifterLo[i] <<= 1;
+                spritePatternShifterHi[i] <<= 1;
+            }
         }
     }
-
-    uint8_t index = bus.ppuRead(0x3F00 + ((palette << 2) | pixel));
-    assert(index >= 0 && index < 64);
-
-    return DefaultPalette[index];
 }
 
 void PPU::visibleFrameAndPreRender() {
@@ -338,6 +324,7 @@ void PPU::visibleFrameAndPreRender() {
         // pre-render scanline
         if (cycle == 1) {
             status.resetSprite0Hit();
+            status.resetSpriteOverflow();
             status.resetVblank();
         } else if (cycle >= 280 && cycle < 305) {
             // If rendering is enabled, at the end of vblank,
@@ -355,25 +342,25 @@ void PPU::visibleFrameAndPreRender() {
         switch ((cycle - 1) % 8) {
         case 0:
             loadShifters();
-            ntByte = bus.ppuRead(0x2000 | vramAddr.reg & 0x0FFF);
+            bgNtByte = bus.ppuRead(0x2000 | vramAddr.reg & 0x0FFF);
             break;
         case 2:
-            atByte = bus.ppuRead(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
+            bgAtByte = bus.ppuRead(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
 
             if (vramAddr.coarseY & 0x02) {
-                atByte >>= 4;
+                bgAtByte >>= 4;
             }
             if (vramAddr.coarseX & 0x02) {
-                atByte >>= 2;
+                bgAtByte >>= 2;
             }
 
-            atByte &= 0x03;
+            bgAtByte &= 0x03;
             break;
         case 4:
-            bgTileByteLSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 0);
+            bgTileByteLo = bus.ppuRead(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 0);
             break;
         case 6:
-            bgTileByteMSB = bus.ppuRead(control.backgroundPatternAddr() + (ntByte << 4) + vramAddr.fineY + 8);
+            bgTileByteHi = bus.ppuRead(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 8);
             break;
         case 7:
             incrementHorizontal();
@@ -392,7 +379,13 @@ void PPU::visibleFrameAndPreRender() {
         transferHorizontalBits();
     } else if (cycle == 338 || cycle == 340) {
         // unused NT fetches
-        ntByte = bus.ppuRead(0x2000 | (vramAddr.reg & 0x0FFF));
+        bgNtByte = bus.ppuRead(0x2000 | (vramAddr.reg & 0x0FFF));
+    }
+
+    if (scanline != -1) {
+        // Secondary OAM clear and sprite evaluation do not occur on the pre-render line.
+        secondaryOamClearAndSpriteEvaluation();
+        calculateSpritesPatternAddr();
     }
 }
 
@@ -408,39 +401,200 @@ void PPU::verticalBlanking() {
     }
 }
 
-void PPU::renderBackground() {
+void PPU::renderFrame() {
+    int finalX = cycle - 1;
+    int finalY = scanline;
+
+    if (!(renderingEnabled() && finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240)) {
+        return;
+    }
+
+    uint8_t bgPixel = 0x00;
+    uint8_t bgPalette = 0x00;
+
     if (showBackground()) {
         uint16_t bit = 0x8000 >> fineX;
 
-        uint8_t bgPixelHi = (patternShifterHi & bit) > 0;
-        uint8_t bgPixelLo = (patternShifterLo & bit) > 0;
-        uint8_t bgPixel = (bgPixelHi << 1) | bgPixelLo;
+        uint8_t bgPixelHi = (bgPatternShifterHi & bit) > 0;
+        uint8_t bgPixelLo = (bgPatternShifterLo & bit) > 0;
+        bgPixel = (bgPixelHi << 1) | bgPixelLo;
 
-        uint8_t bgPaletteHi = (attributeShifterHi & bit) > 0;
-        uint8_t bgPaletteLo = (attributeShifterLo & bit) > 0;
-        uint8_t bgPalette = (bgPaletteHi << 1) | bgPaletteLo;
+        uint8_t bgPaletteHi = (bgAttributeShifterHi & bit) > 0;
+        uint8_t bgPaletteLo = (bgAttributeShifterLo & bit) > 0;
+        bgPalette = (bgPaletteHi << 1) | bgPaletteLo;
+    }
 
-        int finalX = cycle - 1;
-        int finalY = scanline;
+    uint8_t fgPixel = 0x00;
+    uint8_t fgPalette = 0x00;
+    bool fgBehindBg = false;
+    bool sprite0BeingRendered = false;
 
-        if (finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240) {
-            frame.setPixel(finalX, finalY, getColor(bgPalette, bgPixel));
+    if (showSprites()) {
+        for (int i = 0; i != spriteCount; i++) {
+            uint8_t* sprite = secondaryOamData.data() + i * 4;
+            uint8_t spriteX = sprite[3];
+
+            if (spriteX == 0) {
+                uint8_t fgPixelLo = (spritePatternShifterLo[i] & 0x80) > 0;
+                uint8_t fgPixelHi = (spritePatternShifterHi[i] & 0x80) > 0;
+                fgPixel = (fgPixelHi << 1) | fgPixelLo;
+
+                fgPalette = (sprite[2] & 0b11) | (1 << 2);
+                fgBehindBg = (sprite[2] >> 5) & 1;
+
+                if (fgPixel) {
+                    if (i == 0) {
+                        sprite0BeingRendered = true;
+                    }
+
+                    break;
+                }
+            }
         }
     }
+
+    uint8_t finalPalette = 0x00;
+    uint8_t finalPixel = 0x00;
+
+    if (bgPixel) {
+        if (fgPixel) {
+            if (fgBehindBg) {
+                finalPalette = bgPalette;
+                finalPixel = bgPixel;
+            } else {
+                finalPalette = fgPalette;
+                finalPixel = fgPixel;
+            }
+
+            if (sprite0HitPossible && sprite0BeingRendered) {
+                if (mask.showBackgroundLeft() || mask.showSpritesLeft()) {
+                    status.setSprite0Hit();
+                } else {
+                    if (finalX >= 8) {
+                        status.setSprite0Hit();
+                    }
+                }
+            }
+        } else {
+            finalPalette = bgPalette;
+            finalPixel = bgPixel;
+        }
+    } else {
+        if (fgPixel) {
+            finalPalette = fgPalette;
+            finalPixel = fgPixel;
+        }
+    }
+
+    frame.setPixel(finalX, finalY, getColor(finalPalette, finalPixel));
 }
 
 void PPU::incrementCycle() {
     if (++cycle == 341) {
-        // TODO delete
-        if (isSprite0Hit()) {
-            status.setSprite0Hit();
-        }
-
         cycle = 0;
 
         if (++scanline == 261) {
             scanline = -1;
             frameComplete = true;
+        }
+    }
+}
+
+void PPU::secondaryOamClearAndSpriteEvaluation() {
+    assert(scanline >= 0 && scanline < 240);
+
+    if (cycle == 257) {
+        std::fill(secondaryOamData.begin(), secondaryOamData.end(), 0);
+        std::fill(spritePatternShifterLo.begin(), spritePatternShifterLo.end(), 0);
+        std::fill(spritePatternShifterHi.begin(), spritePatternShifterHi.end(), 0);
+
+        spriteCount = 0;
+        sprite0HitPossible = false;
+
+        for (int i = 0; i != 64 && spriteCount <= 8; i++) {
+            uint8_t* sprite = primaryOamData.data() + i * 4;
+
+            uint8_t spriteY = sprite[0];
+            size_t diff = static_cast<size_t>(scanline) - static_cast<size_t>(spriteY);
+
+            if (diff >= 0 && diff < control.spriteHeight()) {
+                if (spriteCount < 8) {
+                    if (i == 0) {
+                        sprite0HitPossible = true;
+                    }
+
+                    std::copy(sprite, sprite + 4, std::next(secondaryOamData.begin(), 4 * spriteCount));
+                }
+
+                spriteCount++;
+            }
+        }
+
+        if (spriteCount > 8) {
+            spriteCount = 8;
+            status.setSpriteOverflow();
+        }
+    }
+}
+
+void PPU::calculateSpritesPatternAddr() {
+    assert(scanline >= 0 && scanline < 240);
+
+    if (cycle == 340) {
+        for (int i = 0; i != spriteCount; i++) {
+            uint8_t* sprite = secondaryOamData.data() + i * 4;
+
+            uint8_t spriteY = sprite[0];
+            bool flipVertical = (sprite[2] >> 7) & 1;
+            bool flipHorizontal = (sprite[2] >> 6) & 1;
+
+            uint16_t patternAddrLo;
+
+            if (control.spriteHeight() == 8) {
+                // For 8x8 sprites,
+                // this is the tile number of this sprite within the pattern table selected in bit 3 of PPUCTRL ($2000).
+                uint8_t patternAddr = control.spritePatternAddr();
+                uint8_t tileNumber = sprite[1];
+                uint8_t row = flipVertical ? (7 - (scanline - spriteY)) : (scanline - spriteY);
+
+                patternAddrLo = patternAddr | (tileNumber << 4) | (row);
+            } else {
+                // For 8x16 sprites,
+                // the PPU ignores the pattern table selection and selects a pattern table from bit 0 of this number.
+                uint16_t patternAddr = (sprite[1] & 0x01) ? 0x1000 : 0x0000;
+                uint8_t tileNumber = sprite[1] & 0xFE;
+                uint8_t row = (scanline - spriteY) & 0x07;
+
+                if (scanline - spriteY < 8) {
+                    if (flipVertical) {
+                        tileNumber += 1;
+                        row = 7 - row;
+                    }
+                } else {
+                    if (!flipVertical) {
+                        tileNumber += 1;
+                    } else {
+                        row = 7 - row;
+                    }
+                }
+
+                patternAddrLo = patternAddr | (tileNumber << 4) | (row);
+            }
+
+            spritePatternShifterLo[i] = bus.ppuRead(patternAddrLo);
+            spritePatternShifterHi[i] = bus.ppuRead(patternAddrLo + 8);
+
+            if (flipHorizontal) {
+                auto flipByte = [](uint8_t b) {
+                    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+                    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+                    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+                    return b;
+                };
+
+                spritePatternShifterLo[i] = flipByte(spritePatternShifterLo[i]);
+                spritePatternShifterHi[i] = flipByte(spritePatternShifterHi[i]);
+            }
         }
     }
 }
