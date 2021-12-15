@@ -10,6 +10,7 @@
 # CLion
 /.idea
 /cmake-build-debug
+/cmake-build-debug-coverage
 /cmake-build-release
 
 # Mac OS
