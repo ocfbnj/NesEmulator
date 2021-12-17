@@ -80,6 +80,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
             std::cerr << "Read the trainer failed\n";
             return {};
         }
+        std::cout << "Has trainer";
     }
 
     // prg rom data
@@ -92,13 +93,21 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::cout << "The PRG ROM size is " << prgRom.size() / 1024 << "KB\n";
 
     // chr rom data
-    std::vector<uint8_t> chrRom(header.chrSize * 8 * 1024);
-    nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
-    if (!nesFile) {
-        std::cerr << "Read the chr rom data failed\n";
-        return {};
+    std::vector<uint8_t> chrRom;
+
+    if (header.chrSize) {
+        chrRom.resize(header.chrSize * 8 * 1024);
+        nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
+        if (!nesFile) {
+            std::cerr << "Read the chr rom data failed\n";
+            return {};
+        }
+        std::cout << "The CHR ROM size is " << chrRom.size() / 1024 << "KB\n";
+    } else {
+        chrRom.resize(8192);
+        std::cout << "The board uses CHR RAM\n";
     }
-    std::cout << "The CHR ROM size is " << chrRom.size() / 1024 << "KB\n";
+
 
     return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum, mirroringType);
 }

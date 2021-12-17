@@ -21,10 +21,12 @@ public:
     virtual uint8_t ppuRead(uint16_t addr) = 0;
     virtual void ppuWrite(uint16_t addr, uint8_t data) = 0;
 
-    [[nodiscard]] const std::vector<uint8_t>& chrRom() const;
     [[nodiscard]] Mirroring mirroring() const;
 
 protected:
+    [[nodiscard]] uint8_t prgBanks() const;
+    [[nodiscard]] uint8_t chrBanks() const;
+
     std::unique_ptr<Cartridge> cartridge;
 };
 

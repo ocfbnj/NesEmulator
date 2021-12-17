@@ -28,7 +28,7 @@ uint8_t Bus::cpuRead(uint16_t addr) const {
             // PPU Data Register
             data = ppu->readData();
         } else {
-            // These are cpuWrite-only registers (some games do cpuRead these registers?)
+            // These are write-only registers (some games do read these registers?)
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
@@ -79,8 +79,8 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
             // PPU Data Register
             ppu->writeData(data);
         } else {
-            // PPU Status Register is cpuRead-only
-            assert(0);
+            // PPU Status Register is read-only (some games do write these registers?)
+            // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
         // TODO	NES APU and I/O registers
