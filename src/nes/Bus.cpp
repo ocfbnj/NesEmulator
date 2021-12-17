@@ -215,6 +215,10 @@ uint16_t Bus::mirrorVramAddr(uint16_t addr) const {
         } else if (nameTable == 2 || nameTable == 3) {
             addr = 0x2400 + (addr & 0x03FF);
         }
+    } else if (mirror == Mirroring::OneScreenLoBank) {
+        addr = addr & 0x23FF;
+    } else if (mirror == Mirroring::OneScreenUpBank) {
+        addr = 0x2400 + (addr & 0x03FF);
     } else {
         assert(0);
     }

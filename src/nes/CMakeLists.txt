@@ -7,6 +7,7 @@ add_library(
     Joypad.cpp
     Mapper.cpp
     Mapper0.cpp
+    Mapper1.cpp
     Mapper2.cpp
     Mapper3.cpp
     NesFile.cpp

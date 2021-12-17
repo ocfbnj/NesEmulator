@@ -21,7 +21,7 @@ public:
     virtual uint8_t ppuRead(uint16_t addr) = 0;
     virtual void ppuWrite(uint16_t addr, uint8_t data) = 0;
 
-    [[nodiscard]] Mirroring mirroring() const;
+    [[nodiscard]] virtual Mirroring mirroring() const;
 
 protected:
     [[nodiscard]] uint8_t prgBanks() const;

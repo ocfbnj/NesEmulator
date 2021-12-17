@@ -2,10 +2,10 @@
 #define OCFBNJ_NES_MIRRORING_H
 
 enum class Mirroring {
+    OneScreenLoBank,
+    OneScreenUpBank,
     Vertical,
-    Horizontal,
-    FourScreen,
-    Undefined,
+    Horizontal
 };
 
 #endif // NESEMULATOR_MIRRORING_H

@@ -52,23 +52,18 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::cout << "The mapper number is " << int(mapperNum) << "\n";
 
     // mirroring type
-    Mirroring mirroringType = Mirroring::Undefined;
+    Mirroring mirroringType{};
     std::string_view mirroringTypeDescription = "undefined";
 
-    if ((header.flag6 >> 3) & 1) {
-        mirroringType = Mirroring::FourScreen;
-        mirroringTypeDescription = "four screen";
+    if (header.flag6 & 1) {
+        mirroringType = Mirroring::Vertical;
+        mirroringTypeDescription = "vertical";
     } else {
-        if (header.flag6 & 1) {
-            mirroringType = Mirroring::Vertical;
-            mirroringTypeDescription = "vertical";
-        } else {
-            mirroringType = Mirroring::Horizontal;
-            mirroringTypeDescription = "horizontal";
-        }
+        mirroringType = Mirroring::Horizontal;
+        mirroringTypeDescription = "horizontal";
     }
 
-    assert(mirroringType != Mirroring::Undefined);
+    assert(mirroringTypeDescription != "undefined");
     std::cout << "The mirroring type is " << mirroringTypeDescription << "\n";
 
     // trainer, if present
@@ -107,7 +102,6 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         chrRom.resize(8192);
         std::cout << "The board uses CHR RAM\n";
     }
-
 
     return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum, mirroringType);
 }
