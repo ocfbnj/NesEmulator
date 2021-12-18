@@ -93,6 +93,10 @@ void PPU::clock() {
 
     renderFrame();
 
+    if (cycle == 260 && scanline < 240) {
+        bus.getMapper().scanline();
+    }
+
     incrementCycle();
 }
 

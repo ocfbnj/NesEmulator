@@ -5,6 +5,7 @@
 #include "Mapper1.h"
 #include "Mapper2.h"
 #include "Mapper3.h"
+#include "Mapper4.h"
 
 std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
     switch (cartridge->mapperNum) {
@@ -16,6 +17,8 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
         return std::make_unique<Mapper2>(std::move(cartridge));
     case 3:
         return std::make_unique<Mapper3>(std::move(cartridge));
+    case 4:
+        return std::make_unique<Mapper4>(std::move(cartridge));
     default:
         std::cerr << "No mapper available\n";
         return {};
@@ -35,3 +38,11 @@ uint8_t Mapper::prgBanks() const {
 uint8_t Mapper::chrBanks() const {
     return cartridge->chrRom.size() / (8 * 1024);
 }
+
+bool Mapper::irqState() const {
+    return false;
+}
+
+void Mapper::irqClear() {}
+
+void Mapper::scanline() {}

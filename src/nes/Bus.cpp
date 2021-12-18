@@ -169,7 +169,16 @@ void Bus::clock() {
         cpu->clock();
     }
 
+    if (mapper->irqState()) {
+        mapper->irqClear();
+        cpu->irq();
+    }
+
     i++;
+}
+
+Mapper& Bus::getMapper() {
+    return *mapper;
 }
 
 CPU& Bus::getCPU() {

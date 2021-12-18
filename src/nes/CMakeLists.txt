@@ -10,6 +10,7 @@ add_library(
     Mapper1.cpp
     Mapper2.cpp
     Mapper3.cpp
+    Mapper4.cpp
     NesFile.cpp
     PPU.cpp
 )

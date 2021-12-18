@@ -31,6 +31,7 @@ public:
 
     void clock();
 
+    Mapper& getMapper();
     CPU& getCPU();
     PPU& getPPU();
     Joypad& getJoypad();

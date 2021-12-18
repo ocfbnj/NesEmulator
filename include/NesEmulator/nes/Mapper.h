@@ -23,6 +23,11 @@ public:
 
     [[nodiscard]] virtual Mirroring mirroring() const;
 
+    [[nodiscard]] virtual bool irqState() const;
+    virtual void irqClear();
+
+    virtual void scanline();
+
 protected:
     [[nodiscard]] uint8_t prgBanks() const;
     [[nodiscard]] uint8_t chrBanks() const;
