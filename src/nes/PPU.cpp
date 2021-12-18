@@ -413,7 +413,7 @@ void PPU::renderFrame() {
         return;
     }
 
-    if (finalX < 8 && (!mask.showBackgroundLeft() || !mask.showSpritesLeft())) {
+    if (finalX < 8 && (!mask.showBackgroundLeft() && !mask.showSpritesLeft())) {
         frame.setPixel(finalX, finalY, Pixel{.r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF});
         return;
     }
@@ -465,8 +465,8 @@ void PPU::renderFrame() {
     uint8_t finalPalette = 0x00;
     uint8_t finalPixel = 0x00;
 
-    if (bgPixel) {
-        if (fgPixel) {
+    if (bgPixel && (finalX >= 8 || mask.showBackgroundLeft())) {
+        if (fgPixel && (finalX >= 8 || mask.showSpritesLeft())) {
             if (fgBehindBg) {
                 finalPalette = bgPalette;
                 finalPixel = bgPixel;
