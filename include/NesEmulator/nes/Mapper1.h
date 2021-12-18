@@ -1,5 +1,5 @@
-#ifndef OCFBNJ_NES_MAPPER4_H
-#define OCFBNJ_NES_MAPPER4_H
+#ifndef OCFBNJ_NES_MAPPER1_H
+#define OCFBNJ_NES_MAPPER1_H
 
 #include "Mapper.h"
 
@@ -28,4 +28,4 @@ private:
     uint8_t prgBank{};
 };
 
-#endif // OCFBNJ_NES_MAPPER4_H
+#endif // OCFBNJ_NES_MAPPER1_H
