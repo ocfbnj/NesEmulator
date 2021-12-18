@@ -413,6 +413,11 @@ void PPU::renderFrame() {
         return;
     }
 
+    if (finalX < 8 && (!mask.showBackgroundLeft() || !mask.showSpritesLeft())) {
+        frame.setPixel(finalX, finalY, Pixel{.r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF});
+        return;
+    }
+
     uint8_t bgPixel = 0x00;
     uint8_t bgPalette = 0x00;
 
