@@ -562,7 +562,7 @@ void PPU::calculateSpritesPatternAddr() {
             if (control.spriteHeight() == 8) {
                 // For 8x8 sprites,
                 // this is the tile number of this sprite within the pattern table selected in bit 3 of PPUCTRL ($2000).
-                uint8_t patternAddr = control.spritePatternAddr();
+                uint16_t patternAddr = control.spritePatternAddr();
                 uint8_t tileNumber = sprite[1];
                 uint8_t row = flipVertical ? (7 - (scanline - spriteY)) : (scanline - spriteY);
 
