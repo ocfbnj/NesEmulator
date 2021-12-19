@@ -14,13 +14,13 @@ uint8_t Mapper4::cpuRead(uint16_t addr) {
         if (d6) {
             baseAddr = (prgBanks() * 2 - 2) * 0x2000;
         } else {
-            baseAddr = (bankRegister[6] & 0x3F) * 0x2000;
+            baseAddr = (bankRegister[6] & (prgBanks() * 2 - 1)) * 0x2000;
         }
     } else if (addr >= 0xA000 && addr < 0xC000) {
-        baseAddr = (bankRegister[7] & 0x3F) * 0x2000;
+        baseAddr = (bankRegister[7] & (prgBanks() * 2 - 1)) * 0x2000;
     } else if (addr >= 0xC000 && addr < 0xE000) {
         if (d6) {
-            baseAddr = (bankRegister[6] & 0x3F) * 0x2000;
+            baseAddr = (bankRegister[6] & (prgBanks() * 2 - 1)) * 0x2000;
         } else {
             baseAddr = (prgBanks() * 2 - 2) * 0x2000;
         }
