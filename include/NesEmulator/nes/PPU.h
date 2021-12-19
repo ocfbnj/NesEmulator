@@ -90,6 +90,8 @@ private:
     void secondaryOamClearAndSpriteEvaluation();
     void calculateSpritesPatternAddr();
 
+    void processMapper();
+
     // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
         [[nodiscard]] uint16_t baseNameTableAddr() const {

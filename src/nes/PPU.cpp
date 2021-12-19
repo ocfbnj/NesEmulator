@@ -93,9 +93,7 @@ void PPU::clock() {
 
     renderFrame();
 
-    if (cycle == 260 && scanline < 240) {
-        bus.getMapper().scanline();
-    }
+    processMapper();
 
     incrementCycle();
 }
@@ -299,7 +297,7 @@ void PPU::loadShifters() {
 void PPU::updateShifters() {
     assert(cycle >= 1 && cycle < 257 || cycle >= 321 && cycle < 337);
 
-    if (mask.showBackground()) {
+    if (showBackground()) {
         bgPatternShifterLo <<= 1;
         bgPatternShifterHi <<= 1;
 
@@ -307,7 +305,7 @@ void PPU::updateShifters() {
         bgAttributeShifterHi <<= 1;
     }
 
-    if (mask.showSprites() && cycle >= 2 && cycle < 257) {
+    if (showSprites() && cycle >= 2 && cycle < 257) {
         for (int i = 0; i != spriteCount; i++) {
             uint8_t* sprite = secondaryOamData.data() + i * 4;
 
@@ -605,5 +603,11 @@ void PPU::calculateSpritesPatternAddr() {
                 spritePatternShifterHi[i] = flipByte(spritePatternShifterHi[i]);
             }
         }
+    }
+}
+
+void PPU::processMapper() {
+    if (cycle == 260 && scanline < 240 && renderingEnabled()) {
+        bus.getMapper().scanline();
     }
 }
