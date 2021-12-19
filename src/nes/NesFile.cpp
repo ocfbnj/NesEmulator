@@ -46,14 +46,14 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // mapper number
-    uint8_t lowerMapper = header.flag6 >> 4;
-    uint8_t upperMapper = header.flag7 >> 4;
+    uint8_t lowerMapper = (header.flag6 >> 4) & 0x0F;
+    uint8_t upperMapper = (header.flag7 >> 4) & 0x0F;
     uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
-    std::cout << "The mapper number is " << int(mapperNum) << "\n";
+    std::cout << "The mapper number is " << +mapperNum << "\n";
 
     // mirroring type
-    Mirroring mirroringType{};
-    std::string_view mirroringTypeDescription = "undefined";
+    Mirroring mirroringType;
+    std::string_view mirroringTypeDescription;
 
     if (header.flag6 & 1) {
         mirroringType = Mirroring::Vertical;
@@ -62,12 +62,15 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         mirroringType = Mirroring::Horizontal;
         mirroringTypeDescription = "horizontal";
     }
-
-    assert(mirroringTypeDescription != "undefined");
     std::cout << "The mirroring type is " << mirroringTypeDescription << "\n";
 
+    // persistent memory
+    if ((header.flag6 >> 1) & 1) {
+        std::cout << "Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory\n";
+    }
+
     // trainer, if present
-    if (header.flag6 & (1u << 2)) {
+    if ((header.flag6 >> 2) & 1) {
         std::cout << "Hava trainer\n";
         std::vector<uint8_t> trainer(512); // unused
         nesFile.read(reinterpret_cast<char*>(trainer.data()), trainer.size());
@@ -76,6 +79,11 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
             return {};
         }
         std::cout << "Has trainer";
+    }
+
+    // ignore mirroring control
+    if ((header.flag6 >> 3) & 1) {
+        std::cout << "Ignore mirroring control or above mirroring bit; instead provide four-screen VRAM\n";
     }
 
     // prg rom data
