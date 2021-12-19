@@ -138,14 +138,13 @@ private:
 
     union {
         struct {
-            uint8_t c : 1; // carry flag
-            uint8_t z : 1; // zero flag
-            uint8_t i : 1; // interrupt disable flag
-            uint8_t d : 1; // decimal mode flag
-            uint8_t b : 1; // break command flag
-            uint8_t u : 1; // unused flag
-            uint8_t v : 1; // overflow flag
-            uint8_t n : 1; // negative flag
+            uint8_t c : 1;                  // carry flag
+            uint8_t z : 1;                  // zero flag
+            uint8_t i : 1;                  // interrupt disable flag
+            [[maybe_unused]] uint8_t d : 1; // decimal mode flag
+            [[maybe_unused]] uint8_t B : 2; // break command flag
+            uint8_t v : 1;                  // overflow flag
+            uint8_t n : 1;                  // negative flag
         };
 
         uint8_t status{};

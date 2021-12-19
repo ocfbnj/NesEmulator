@@ -299,15 +299,7 @@ void CPU::reset() {
     y = 0;
     sp = 0xFD;
 
-    // P(flags): 0x24
-    c = 0;
-    z = 0;
-    i = 1;
-    d = 0;
-    b = 0;
-    u = 1;
-    v = 0;
-    n = 0;
+    status = 0x24;
 
     cycles = 8;
 }
@@ -315,11 +307,9 @@ void CPU::reset() {
 void CPU::irq() {
     if (i == 0) {
         push16(pc);
-
-        b = 0;
-        u = 1;
-        i = 1;
         push(status);
+
+        i = 1;
 
         pc = read16(0xFFFE);
 
@@ -329,11 +319,9 @@ void CPU::irq() {
 
 void CPU::nmi() {
     push16(pc);
-
-    b = 0;
-    u = 1;
-    i = 1;
     push(status);
+
+    i = 1;
 
     pc = read16(0xFFFA);
 
@@ -561,7 +549,6 @@ void CPU::BPL(uint16_t address) {
 void CPU::BRK(uint16_t address) {
     push16(pc);
     PHP(address);
-    b = 1;
     pc = read16(0xFFFE);
 }
 
