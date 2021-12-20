@@ -1,5 +1,58 @@
 # NesEmulator
 
+This is a NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been tested, other games may or may not work:
+
+- Super Mario Bros.
+- Battle City
+- Contra
+- Teenage Mutant Ninja Turtles
+- Double Dragon
+- Zelda
+
+## Screenshots
+
+![Super Mario Bros](./images/Super%20Mario%20Bros.png)
+![Battle City](images/Battle%20City.png)
+![Contra](./images/Contra.png)
+![Teenage Mutant Ninja Turtles III](./images/Teenage%20Mutant%20Ninja%20Turtles%20III.png)
+![Double Dragon II](./images/Double%20Dragon%20II.png)
+![Legend of Zelda](./images/Legend%20of%20Zelda.png)
+
+## Usage
+
+~~~bash
+./NesEmulator <nes file path>
+~~~
+
+## How to build
+
+### Prerequisites
+
+- A compiler supporting C++20.
+- Python3 installed.
+- CMake installed.
+
+### Building with Conan Package Manager
+
+1. Install Conan
+
+    ~~~bash
+    pip install conan -U
+    ~~~
+
+2. Clone and Build
+
+    ~~~bash
+    git clone https://github.com/ocfbnj/NesEmulator.git
+    cd NesEmulator
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake --build .
+    ~~~
+
+Now, you can find the binary in `build/src` directory.
+
 ## References
 
 ### Nesdev Wiki
