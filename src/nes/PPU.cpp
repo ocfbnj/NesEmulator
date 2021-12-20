@@ -411,15 +411,10 @@ void PPU::renderFrame() {
         return;
     }
 
-    if (finalX < 8 && (!mask.showBackgroundLeft() && !mask.showSpritesLeft())) {
-        frame.setPixel(finalX, finalY, Pixel{.r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF});
-        return;
-    }
-
     uint8_t bgPixel = 0x00;
     uint8_t bgPalette = 0x00;
 
-    if (showBackground()) {
+    if (showBackground() && (finalX >= 8 || mask.showBackgroundLeft())) {
         uint16_t bit = 0x8000 >> fineX;
 
         uint8_t bgPixelHi = (bgPatternShifterHi & bit) > 0;
@@ -436,7 +431,7 @@ void PPU::renderFrame() {
     bool fgBehindBg = false;
     bool sprite0BeingRendered = false;
 
-    if (showSprites()) {
+    if (showSprites() && (finalX >= 8 || mask.showSpritesLeft())) {
         for (int i = 0; i != spriteCount; i++) {
             uint8_t* sprite = secondaryOamData.data() + i * 4;
             uint8_t spriteX = sprite[3];
@@ -463,8 +458,8 @@ void PPU::renderFrame() {
     uint8_t finalPalette = 0x00;
     uint8_t finalPixel = 0x00;
 
-    if (bgPixel && (finalX >= 8 || mask.showBackgroundLeft())) {
-        if (fgPixel && (finalX >= 8 || mask.showSpritesLeft())) {
+    if (bgPixel) {
+        if (fgPixel) {
             if (fgBehindBg) {
                 finalPalette = bgPalette;
                 finalPixel = bgPixel;
