@@ -56,10 +56,7 @@ uint16_t mirrorVramAddr(uint16_t addr, Mirroring mirroring) {
 }
 } // namespace
 
-Bus::Bus(std::unique_ptr<Mapper> mapper)
-    : mapper(std::move(mapper)),
-      cpu(*this),
-      ppu(*this) {}
+Bus::Bus(std::unique_ptr<Mapper> mapper) : mapper(std::move(mapper)), cpu(*this), ppu(*this) {}
 
 uint8_t Bus::cpuRead(uint16_t addr) {
     uint8_t data = 0;
@@ -221,6 +218,12 @@ void Bus::clock() {
     }
 
     i++;
+}
+
+void Bus::reset() {
+    mapper->reset();
+    cpu.reset();
+    ppu.reset();
 }
 
 Mapper& Bus::getMapper() {

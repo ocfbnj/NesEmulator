@@ -2,8 +2,6 @@
 
 #include "Mapper0.h"
 
-Mapper0::Mapper0(std::unique_ptr<Cartridge> cartridge) : Mapper(std::move(cartridge)) {}
-
 uint8_t Mapper0::cpuRead(uint16_t addr) {
     uint32_t mappedAddr = 0;
 

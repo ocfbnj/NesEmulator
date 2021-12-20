@@ -6,7 +6,6 @@
 #include "Mapper2.h"
 #include "Mapper3.h"
 #include "Mapper4.h"
-#include "literals.h"
 
 std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
     switch (cartridge->mapperNum) {
@@ -27,6 +26,10 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
 }
 
 Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartridge)) {}
+
+void Mapper::reset() {
+    // do nothing
+}
 
 Mirroring Mapper::mirroring() const {
     return cartridge->mirroring;

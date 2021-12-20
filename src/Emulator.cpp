@@ -51,6 +51,10 @@ void Emulator::checkKeyboard() {
         {GLFW_KEY_D, Joypad::Button::Right},
     };
 
+    if (glfwGetKey(getWindow(), GLFW_KEY_R) == GLFW_PRESS) {
+        bus.reset();
+    }
+
     for (auto [glfwKey, btn] : keyMap) {
         int status = glfwGetKey(getWindow(), glfwKey);
         if (status == GLFW_PRESS) {

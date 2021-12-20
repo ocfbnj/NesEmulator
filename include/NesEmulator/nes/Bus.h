@@ -31,6 +31,7 @@ public:
     void ppuWrite(uint16_t addr, uint8_t data);
 
     void clock();
+    void reset();
 
     Mapper& getMapper();
     CPU& getCPU();

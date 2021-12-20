@@ -2,8 +2,6 @@
 
 #include "Mapper2.h"
 
-Mapper2::Mapper2(std::unique_ptr<Cartridge> cartridge) : Mapper(std::move(cartridge)) {}
-
 uint8_t Mapper2::cpuRead(uint16_t addr) {
     uint32_t mappedAddr = 0;
 
@@ -32,4 +30,8 @@ void Mapper2::ppuWrite(uint16_t addr, uint8_t data) {
     assert(addr >= 0 && addr < 0x2000);
     assert(chrBanks() == 0);
     cartridge->chrRom[addr] = data;
+}
+
+void Mapper2::reset() {
+    bankSelect = 0;
 }

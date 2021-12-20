@@ -2,8 +2,6 @@
 
 #include "Mapper1.h"
 
-Mapper1::Mapper1(std::unique_ptr<Cartridge> cartridge) : Mapper(std::move(cartridge)) {}
-
 uint8_t Mapper1::cpuRead(uint16_t addr) {
     if (addr >= 0x6000 && addr < 0x8000) {
         return prgRam[addr - 0x6000];
@@ -127,6 +125,15 @@ void Mapper1::ppuWrite(uint16_t addr, uint8_t data) {
     } else {
         assert(0);
     }
+}
+
+void Mapper1::reset() {
+    loadRegister = 0;
+    controlRegister = 0x1C;
+
+    chrBank0 = 0;
+    chrBank1 = 0;
+    prgBank = 0;
 }
 
 Mirroring Mapper1::mirroring() const {

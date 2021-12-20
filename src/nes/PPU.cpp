@@ -73,6 +73,7 @@ std::array<PPU::Pixel, 64> PPU::DefaultPalette = {
 
 PPU::PPU(Bus& bus) : bus(&bus) {
     assert(this->bus != nullptr);
+    reset();
 }
 
 void PPU::clock() {
@@ -98,6 +99,36 @@ void PPU::clock() {
     processMapper();
 
     incrementCycle();
+}
+
+void PPU::reset() {
+    control.reg = 0;
+    mask.reg = 0;
+    status.reg = 0;
+    oamAddr = 0;
+    internalReadBuf = 0;
+
+    vramAddr.reg = 0;
+    tramAddr.reg = 0;
+    fineX = 0;
+    latch = 0;
+
+    bgNtByte = 0;
+    bgAtByte = 0;
+    bgTileByteLo = 0;
+    bgTileByteHi = 0;
+    bgPatternShifterLo = 0;
+    bgPatternShifterHi = 0;
+    bgAttributeShifterLo = 0;
+    bgAttributeShifterHi = 0;
+
+    spriteCount = 0;
+    sprite0HitPossible = false;
+
+    scanline = 0;
+    cycle = 0;
+
+    frameComplete = false;
 }
 
 uint8_t PPU::readStatus() {
@@ -527,14 +558,14 @@ void PPU::secondaryOamClearAndSpriteEvaluation() {
         spriteCount = 0;
         sprite0HitPossible = false;
 
-        for (int i = 0; i != 64 && spriteCount <= 8; i++) {
+        for (int i = 0; i != 64 && spriteCount <= MaximumSpriteCount; i++) {
             uint8_t* sprite = primaryOamData.data() + i * 4;
 
             uint8_t spriteY = sprite[0];
             size_t diff = static_cast<size_t>(scanline) - static_cast<size_t>(spriteY);
 
             if (diff >= 0 && diff < control.spriteHeight()) {
-                if (spriteCount < 8) {
+                if (spriteCount < MaximumSpriteCount) {
                     if (i == 0) {
                         sprite0HitPossible = true;
                     }
@@ -546,8 +577,8 @@ void PPU::secondaryOamClearAndSpriteEvaluation() {
             }
         }
 
-        if (spriteCount > 8) {
-            spriteCount = 8;
+        if (spriteCount > MaximumSpriteCount) {
+            spriteCount = MaximumSpriteCount;
             status.setSpriteOverflow();
         }
     }

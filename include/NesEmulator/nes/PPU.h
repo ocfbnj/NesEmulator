@@ -46,6 +46,7 @@ public:
     explicit PPU(Bus& bus);
 
     void clock();
+    void reset();
 
     [[nodiscard]] uint8_t readStatus();
     [[nodiscard]] uint8_t readOAMData() const;
@@ -244,6 +245,9 @@ private:
         };
     };
 
+    // Initially the maximum value is 8, doubled to eliminate flicker.
+    constexpr static auto MaximumSpriteCount = 8 * 2;
+
     static std::array<PPU::Pixel, 64> DefaultPalette;
 
     Bus* bus;
@@ -275,9 +279,9 @@ private:
     uint16_t bgAttributeShifterHi{};
 
     // foreground rendering
-    std::array<uint8_t, 32> secondaryOamData{};
-    std::array<uint8_t, 8> spritePatternShifterLo{};
-    std::array<uint8_t, 8> spritePatternShifterHi{};
+    std::array<uint8_t, MaximumSpriteCount * 4> secondaryOamData{};
+    std::array<uint8_t, MaximumSpriteCount> spritePatternShifterLo{};
+    std::array<uint8_t, MaximumSpriteCount> spritePatternShifterHi{};
     uint8_t spriteCount = 0;
     bool sprite0HitPossible = false;
 

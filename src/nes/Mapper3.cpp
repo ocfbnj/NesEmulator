@@ -2,8 +2,6 @@
 
 #include "Mapper3.h"
 
-Mapper3::Mapper3(std::unique_ptr<Cartridge> cartridge) : Mapper(std::move(cartridge)) {}
-
 uint8_t Mapper3::cpuRead(uint16_t addr) {
     uint32_t mappedAddr = 0;
 
@@ -44,4 +42,8 @@ uint8_t Mapper3::ppuRead(uint16_t addr) {
 
 void Mapper3::ppuWrite(uint16_t addr, uint8_t data) {
     assert(0);
+}
+
+void Mapper3::reset() {
+    bankSelect = 0;
 }
