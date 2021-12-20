@@ -51,10 +51,9 @@ private:
         uint8_t pageCycle;
     };
 
-    [[nodiscard]] uint8_t read(uint16_t addr) const;
-    [[nodiscard]] uint16_t read16(uint16_t addr) const;
+    uint8_t read(uint16_t addr);
+    uint16_t read16(uint16_t addr);
     void write(uint16_t addr, uint8_t data);
-    void write16(uint16_t addr, uint16_t data);
 
     void step();
 
@@ -150,7 +149,7 @@ private:
         uint8_t status{};
     };
 
-    Bus& bus;
+    Bus* bus;
 
     uint8_t cycles{};
     uint8_t opcode{};
@@ -161,4 +160,4 @@ private:
     std::ostream* os = nullptr;
 };
 
-#endif
+#endif // OCFBNJ_NES_CPU_H

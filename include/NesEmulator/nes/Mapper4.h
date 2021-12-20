@@ -4,6 +4,7 @@
 #include <array>
 
 #include "Mapper.h"
+#include "literals.h"
 
 class Mapper4 : public Mapper {
 public:
@@ -23,7 +24,7 @@ public:
     void scanline() override;
 
 private:
-    std::array<uint8_t, 8 * 1024> prgRam{};
+    std::array<uint8_t, 8_kb> prgRam{};
 
     uint8_t bankSelect{};
     std::array<uint8_t, 8> bankRegister{};

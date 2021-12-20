@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iomanip>
 
 #include "Bus.h"
@@ -16,9 +17,11 @@ std::ostream& operator<<(std::ostream& os, const CPU& cpu) {
     return os;
 }
 
-static bool isCrossed(uint16_t a, uint16_t b) {
+namespace {
+bool isCrossed(uint16_t a, uint16_t b) {
     return (a & 0xFF00) != (b & 0xFF00);
 }
+} // namespace
 
 std::array<CPU::Operate, 256> CPU::opTable{
     Operate{"BRK", Addressing::Imp, &CPU::BRK, 7, 0},
@@ -279,7 +282,7 @@ std::array<CPU::Operate, 256> CPU::opTable{
     Operate{"???", Addressing::Abx, &CPU::NIL, 7, 0},
 };
 
-CPU::CPU(Bus& bus) : bus(bus) {
+CPU::CPU(Bus& bus) : bus(&bus) {
     reset();
 }
 
@@ -334,20 +337,19 @@ void CPU::testCPU(std::ostream* os, uint16_t pc, uint32_t totalCycles) {
     this->totalCycles = totalCycles;
 }
 
-uint8_t CPU::read(uint16_t addr) const {
-    return bus.cpuRead(addr);
+uint8_t CPU::read(uint16_t addr) {
+    assert(bus != nullptr);
+    return bus->cpuRead(addr);
 }
 
-uint16_t CPU::read16(uint16_t addr) const {
-    return bus.cpuRead16(addr);
+uint16_t CPU::read16(uint16_t addr) {
+    assert(bus != nullptr);
+    return bus->cpuRead16(addr);
 }
 
 void CPU::write(uint16_t addr, uint8_t data) {
-    bus.cpuWrite(addr, data);
-}
-
-void CPU::write16(uint16_t addr, uint16_t data) {
-    bus.cpuWrite16(addr, data);
+    assert(bus != nullptr);
+    bus->cpuWrite(addr, data);
 }
 
 void CPU::step() {
@@ -360,7 +362,7 @@ void CPU::step() {
     uint16_t address = 0;
     bool pageCrossed = false;
 
-    Operate& op = opTable[opcode];
+    Operate op = opTable[opcode];
     addressingMode = op.addressing;
     switch (addressingMode) {
     case Addressing::Imp:
@@ -419,6 +421,8 @@ void CPU::step() {
         address += y;
         pageCrossed = isCrossed(address - y, address);
     } break;
+    default:
+        assert(0);
     }
 
     (this->*op.instruction)(address);

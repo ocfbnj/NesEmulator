@@ -4,6 +4,7 @@
 #include <array>
 
 #include "Mapper.h"
+#include "literals.h"
 
 class Mapper1 : public Mapper {
 public:
@@ -18,7 +19,7 @@ public:
     [[nodiscard]] Mirroring mirroring() const override;
 
 private:
-    std::array<uint8_t, 8 * 1024> prgRam{};
+    std::array<uint8_t, 8_kb> prgRam{};
 
     uint8_t loadRegister{};
     uint8_t controlRegister = 0x1C;

@@ -59,7 +59,7 @@ public:
     [[nodiscard]] const Frame& getFrame() const;
     [[nodiscard]] bool isFrameComplete() const;
 
-    [[nodiscard]] Pixel getColor(uint8_t palette, uint8_t pixel) const;
+    [[nodiscard]] Pixel getColor(uint8_t palette, uint8_t pixel);
 
     void writeCtrl(uint8_t data);
     void writeMask(uint8_t data);
@@ -72,6 +72,9 @@ public:
     void writePalette(uint16_t addr, uint8_t data);
 
 private:
+    uint8_t read(uint16_t addr);
+    void write(uint16_t addr, uint8_t data);
+
     void incrementAddr();
 
     void incrementHorizontal();
@@ -243,7 +246,7 @@ private:
 
     static std::array<PPU::Pixel, 64> DefaultPalette;
 
-    Bus& bus;
+    Bus* bus;
 
     std::array<uint8_t, 32> paletteTable{};
 
@@ -285,4 +288,4 @@ private:
     Frame frame;
 };
 
-#endif
+#endif // OCFBNJ_NES_PPU_H

@@ -146,7 +146,7 @@ void Mapper1::ppuWrite(uint16_t addr, uint8_t data) {
 }
 
 Mirroring Mapper1::mirroring() const {
-    Mirroring mirroringMode;
+    Mirroring mirroringMode{};
 
     switch (controlRegister & 0b11) {
     case 0:

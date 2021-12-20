@@ -35,4 +35,4 @@ protected:
     std::unique_ptr<Cartridge> cartridge;
 };
 
-#endif
+#endif // OCFBNJ_NES_MAPPER_H

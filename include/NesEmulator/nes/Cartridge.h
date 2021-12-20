@@ -18,4 +18,4 @@ struct Cartridge {
     Mirroring mirroring;
 };
 
-#endif
+#endif // OCFBNJ_NES_CARTRIDGE_H

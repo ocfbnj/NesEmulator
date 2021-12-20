@@ -2,13 +2,66 @@
 #include <utility>
 
 #include "Bus.h"
+#include "Mirroring.h"
+
+namespace {
+uint16_t mirrorPaletteAddr(uint16_t addr) {
+    assert(addr >= 0x3F00 && addr < 0x4000);
+
+    // addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
+    if (addr == 0x3F10 || addr == 0x3F14 || addr == 0x3F18 || addr == 0x3F1C) {
+        addr -= 0x10;
+    }
+
+    assert(addr >= 0x3F00 && addr < 0x3F20);
+    return addr;
+}
+
+uint16_t mirrorVramAddr(uint16_t addr, Mirroring mirroring) {
+    assert(addr >= 0x2000 && addr < 0x3F00);
+
+    const uint16_t vramIndex = addr - 0x2000;
+    assert(vramIndex >= 0 && vramIndex < 0x1000);
+
+    const uint8_t nameTable = vramIndex / 0x0400;
+    assert(nameTable >= 0 && nameTable < 4);
+
+    switch (mirroring) {
+    case Mirroring::OneScreenLoBank:
+        addr = addr & 0x23FF;
+        break;
+    case Mirroring::OneScreenUpBank:
+        addr = 0x2400 + (addr & 0x03FF);
+        break;
+    case Mirroring::Vertical:
+        if (nameTable == 0 || nameTable == 2) {
+            addr = addr & 0x23FF;
+        } else if (nameTable == 1 || nameTable == 3) {
+            addr = 0x2400 + (addr & 0x03FF);
+        }
+        break;
+    case Mirroring::Horizontal:
+        if (nameTable == 0 || nameTable == 1) {
+            addr = addr & 0x23FF;
+        } else if (nameTable == 2 || nameTable == 3) {
+            addr = 0x2400 + (addr & 0x03FF);
+        }
+        break;
+    default:
+        assert(0);
+    }
+
+    assert(addr >= 0x2000 && addr < 0x2800);
+    return addr;
+}
+} // namespace
 
 Bus::Bus(std::unique_ptr<Mapper> mapper)
     : mapper(std::move(mapper)),
-      cpu(std::make_unique<CPU>(*this)),
-      ppu(std::make_unique<PPU>(*this)) {}
+      cpu(*this),
+      ppu(*this) {}
 
-uint8_t Bus::cpuRead(uint16_t addr) const {
+uint8_t Bus::cpuRead(uint16_t addr) {
     uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
@@ -17,24 +70,23 @@ uint8_t Bus::cpuRead(uint16_t addr) const {
     } else if (addr >= 0x2000 && addr < 0x4000) {
         addr &= 0x2007;
 
-        // The PPU exposes eight memory-mapped registers to the CPU
+        // The PPU exposes eight memory-mapped registers to the CPU.
         if (addr == 0x2002) {
             // PPU Status Register
-            data = ppu->readStatus();
+            data = ppu.readStatus();
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
-            data = ppu->readOAMData();
+            data = ppu.readOAMData();
         } else if (addr == 0x2007) {
             // PPU Data Register
-            data = ppu->readData();
+            data = ppu.readData();
         } else {
-            // These are write-only registers (some games do read these registers?)
+            // These are write-only registers. (some games do read these registers?)
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        // TODO NES APU and I/O registers
         if (addr == 0x4016) {
-            return joypad.read();
+            data = joypad.read();
         }
     } else if (addr >= 0x4018 && addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
@@ -43,10 +95,17 @@ uint8_t Bus::cpuRead(uint16_t addr) const {
     } else {
         // Cartridge space: PRG ROM, PRG RAM, and mapper registers.
         // See https://wiki.nesdev.org/w/index.php?title=CPU_memory_map
-        return mapper->cpuRead(addr);
+        data = mapper->cpuRead(addr);
     }
 
     return data;
+}
+
+uint16_t Bus::cpuRead16(uint16_t addr) {
+    uint16_t lo = cpuRead(addr);
+    uint16_t hi = cpuRead(addr + 1);
+
+    return (hi << 8) | lo;
 }
 
 void Bus::cpuWrite(uint16_t addr, uint8_t data) {
@@ -56,43 +115,42 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     } else if (addr >= 0x2000 && addr < 0x4000) {
         addr &= 0x2007;
 
-        // The PPU exposes eight memory-mapped registers to the CPU
+        // The PPU exposes eight memory-mapped registers to the CPU.
         if (addr == 0x2000) {
             // PPU Controller Register
-            ppu->writeCtrl(data);
+            ppu.writeCtrl(data);
         } else if (addr == 0x2001) {
             // PPU Mask Register
-            ppu->writeMask(data);
+            ppu.writeMask(data);
         } else if (addr == 0x2003) {
             // PPU OAM Address Register
-            ppu->writeOAMAddr(data);
+            ppu.writeOAMAddr(data);
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
-            ppu->writeOAMData(data);
+            ppu.writeOAMData(data);
         } else if (addr == 0x2005) {
             // PPU Scroll Data Register
-            ppu->writeScroll(data);
+            ppu.writeScroll(data);
         } else if (addr == 0x2006) {
             // PPU Address Register
-            ppu->writeAddr(data);
+            ppu.writeAddr(data);
         } else if (addr == 0x2007) {
             // PPU Data Register
-            ppu->writeData(data);
+            ppu.writeData(data);
         } else {
-            // PPU Status Register is read-only (some games do write these registers?)
+            // PPU Status Register is read-only. (some games do write these registers?)
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        // TODO	NES APU and I/O registers
         if (addr == 0x4014) {
-            // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM
+            // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM.
             std::array<uint8_t, 256> buffer{};
             uint16_t hi = uint16_t(data) << 8;
             for (int i = 0x00; i <= 0xFF; i++) {
                 buffer[i] = cpuRead(hi | i);
             }
 
-            ppu->writeOAMDMA(buffer);
+            ppu.writeOAMDMA(buffer);
         } else if (addr == 0x4016) {
             joypad.write(data);
         }
@@ -101,24 +159,12 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
         // See https://wiki.nesdev.org/w/index.php?title=CPU_Test_Mode
         assert(0);
     } else {
-        // Save RAM and PRG ROM that stored in cartridge
+        // Save RAM and PRG ROM that stored in cartridge.
         mapper->cpuWrite(addr, data);
     }
 }
 
-uint16_t Bus::cpuRead16(uint16_t addr) const {
-    uint16_t lo = cpuRead(addr);
-    uint16_t hi = cpuRead(addr + 1);
-
-    return (hi << 8) | lo;
-}
-
-void Bus::cpuWrite16(uint16_t addr, uint16_t data) {
-    cpuWrite(addr, data & 0xFF);
-    cpuWrite(addr + 1, (data >> 8) & 0xFF);
-}
-
-uint8_t Bus::ppuRead(uint16_t addr) const {
+uint8_t Bus::ppuRead(uint16_t addr) {
     uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
@@ -128,12 +174,12 @@ uint8_t Bus::ppuRead(uint16_t addr) const {
         addr &= 0x2FFF;
 
         // PPU RAM (aka name table)
-        data = ppuRam[mirrorVramAddr(addr) - 0x2000];
+        data = ppuRam[mirrorVramAddr(addr, mapper->mirroring()) - 0x2000];
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x3F1F;
 
         // palette RAM indexes
-        data = ppu->readPalette(mirrorPaletteAddr(addr));
+        data = ppu.readPalette(mirrorPaletteAddr(addr));
     } else {
         assert(0);
     }
@@ -149,12 +195,12 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
         addr &= 0x2FFF;
 
         // PPU RAM (aka name table)
-        ppuRam[mirrorVramAddr(addr) - 0x2000] = data;
+        ppuRam[mirrorVramAddr(addr, mapper->mirroring()) - 0x2000] = data;
     } else if (addr >= 0x3F00 && addr < 0x4000) {
         addr &= 0x3F1F;
 
         // palette RAM indexes
-        ppu->writePalette(mirrorPaletteAddr(addr), data);
+        ppu.writePalette(mirrorPaletteAddr(addr), data);
     } else {
         assert(0);
     }
@@ -163,15 +209,15 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
 void Bus::clock() {
     static uint8_t i = 0;
 
-    ppu->clock();
+    ppu.clock();
 
     if ((i % 3) == 0) {
-        cpu->clock();
+        cpu.clock();
     }
 
     if (mapper->irqState()) {
         mapper->irqClear();
-        cpu->irq();
+        cpu.irq();
     }
 
     i++;
@@ -182,56 +228,13 @@ Mapper& Bus::getMapper() {
 }
 
 CPU& Bus::getCPU() {
-    return *cpu;
+    return cpu;
 }
 
 PPU& Bus::getPPU() {
-    return *ppu;
+    return ppu;
 }
 
 Joypad& Bus::getJoypad() {
     return joypad;
-}
-
-uint16_t Bus::mirrorPaletteAddr(uint16_t addr) const {
-    // addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
-    if (addr == 0x3F10 || addr == 0x3F14 || addr == 0x3F18 || addr == 0x3F1C) {
-        addr -= 0x10;
-    }
-
-    assert(addr >= 0x3F00 && addr < 0x3F20);
-    return addr;
-}
-
-uint16_t Bus::mirrorVramAddr(uint16_t addr) const {
-    const uint16_t vramIndex = addr - 0x2000;
-    assert(vramIndex >= 0 && vramIndex < 0x1000);
-
-    const uint8_t nameTable = vramIndex / 0x0400;
-    assert(nameTable >= 0 && nameTable < 4);
-
-    const Mirroring mirror = mapper->mirroring();
-
-    if (mirror == Mirroring::Vertical) {
-        if (nameTable == 0 || nameTable == 2) {
-            addr = addr & 0x23FF;
-        } else if (nameTable == 1 || nameTable == 3) {
-            addr = 0x2400 + (addr & 0x03FF);
-        }
-    } else if (mirror == Mirroring::Horizontal) {
-        if (nameTable == 0 || nameTable == 1) {
-            addr = addr & 0x23FF;
-        } else if (nameTable == 2 || nameTable == 3) {
-            addr = 0x2400 + (addr & 0x03FF);
-        }
-    } else if (mirror == Mirroring::OneScreenLoBank) {
-        addr = addr & 0x23FF;
-    } else if (mirror == Mirroring::OneScreenUpBank) {
-        addr = 0x2400 + (addr & 0x03FF);
-    } else {
-        assert(0);
-    }
-
-    assert(addr >= 0x2000 && addr < 0x2800);
-    return addr;
 }

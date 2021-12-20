@@ -71,7 +71,9 @@ std::array<PPU::Pixel, 64> PPU::DefaultPalette = {
     Pixel{.r = 0x11, .g = 0x11, .b = 0x11, .a = 0xFF},
 };
 
-PPU::PPU(Bus& bus) : bus(bus) {}
+PPU::PPU(Bus& bus) : bus(&bus) {
+    assert(this->bus != nullptr);
+}
 
 void PPU::clock() {
     frameComplete = false;
@@ -121,9 +123,9 @@ uint8_t PPU::readData() {
     // When reading while the VRAM address is in the range 0-$3EFF (i.e., before the palettes),
     // the read will return the contents of an internal readData buffer.
     if (addr >= 0x0000 && addr < 0x3F00) {
-        internalReadBuf = bus.ppuRead(addr);
+        internalReadBuf = read(addr);
     } else if (addr >= 0x3F00 && addr < 0x4000) {
-        res = bus.ppuRead(addr);
+        res = read(addr);
     } else {
         assert(0);
     }
@@ -156,8 +158,8 @@ bool PPU::isFrameComplete() const {
     return frameComplete;
 }
 
-PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) const {
-    uint8_t index = bus.ppuRead(0x3F00 + ((palette << 2) | pixel));
+PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) {
+    uint8_t index = read(0x3F00 + ((palette << 2) | pixel));
     assert(index >= 0 && index < 64);
 
     return DefaultPalette[index];
@@ -174,7 +176,8 @@ void PPU::writeCtrl(uint8_t data) {
     // and the PPUSTATUS ($2002) vblank flag is still set (1),
     // changing the NMI flag in bit 7 of $2000 from 0 to 1 will immediately generate an NMI.
     if (status.isInVblank() && !prev && control.generateNMI()) {
-        bus.getCPU().nmi();
+        assert(bus != nullptr);
+        bus->getCPU().nmi();
     }
 }
 
@@ -220,7 +223,7 @@ void PPU::writeData(uint8_t data) {
     incrementAddr();
 
     assert(addr >= 0x0000 && addr < 0x4000);
-    bus.ppuWrite(addr, data);
+    write(addr, data);
 }
 
 void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
@@ -232,6 +235,16 @@ void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
 void PPU::writePalette(uint16_t addr, uint8_t data) {
     assert(addr >= 0x3F00 && addr < 0x3F20);
     paletteTable[addr - 0x3F00] = data;
+}
+
+uint8_t PPU::read(uint16_t addr) {
+    assert(bus != nullptr);
+    return bus->ppuRead(addr);
+}
+
+void PPU::write(uint16_t addr, uint8_t data) {
+    assert(bus != nullptr);
+    return bus->ppuWrite(addr, data);
 }
 
 void PPU::incrementAddr() {
@@ -344,10 +357,10 @@ void PPU::visibleFrameAndPreRender() {
         switch ((cycle - 1) % 8) {
         case 0:
             loadShifters();
-            bgNtByte = bus.ppuRead(0x2000 | vramAddr.reg & 0x0FFF);
+            bgNtByte = read(0x2000 | vramAddr.reg & 0x0FFF);
             break;
         case 2:
-            bgAtByte = bus.ppuRead(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
+            bgAtByte = read(0x23C0 | (vramAddr.reg & 0x0C00) | ((vramAddr.reg >> 4) & 0x38) | ((vramAddr.reg >> 2) & 0x07));
 
             if (vramAddr.coarseY & 0x02) {
                 bgAtByte >>= 4;
@@ -359,10 +372,10 @@ void PPU::visibleFrameAndPreRender() {
             bgAtByte &= 0x03;
             break;
         case 4:
-            bgTileByteLo = bus.ppuRead(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 0);
+            bgTileByteLo = read(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 0);
             break;
         case 6:
-            bgTileByteHi = bus.ppuRead(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 8);
+            bgTileByteHi = read(control.backgroundPatternAddr() + (bgNtByte << 4) + vramAddr.fineY + 8);
             break;
         case 7:
             incrementHorizontal();
@@ -381,7 +394,7 @@ void PPU::visibleFrameAndPreRender() {
         transferHorizontalBits();
     } else if (cycle == 338 || cycle == 340) {
         // unused NT fetches
-        bgNtByte = bus.ppuRead(0x2000 | (vramAddr.reg & 0x0FFF));
+        bgNtByte = read(0x2000 | (vramAddr.reg & 0x0FFF));
     }
 
     if (scanline != -1) {
@@ -398,7 +411,8 @@ void PPU::verticalBlanking() {
         status.setVblank();
 
         if (control.generateNMI()) {
-            bus.getCPU().nmi();
+            assert(bus != nullptr);
+            bus->getCPU().nmi();
         }
     }
 }
@@ -583,8 +597,8 @@ void PPU::calculateSpritesPatternAddr() {
                 patternAddrLo = patternAddr | (tileNumber << 4) | (row);
             }
 
-            spritePatternShifterLo[i] = bus.ppuRead(patternAddrLo);
-            spritePatternShifterHi[i] = bus.ppuRead(patternAddrLo + 8);
+            spritePatternShifterLo[i] = read(patternAddrLo);
+            spritePatternShifterHi[i] = read(patternAddrLo + 8);
 
             if (flipHorizontal) {
                 auto flipByte = [](uint8_t b) {
@@ -603,6 +617,7 @@ void PPU::calculateSpritesPatternAddr() {
 
 void PPU::processMapper() {
     if (cycle == 260 && scanline < 240 && renderingEnabled()) {
-        bus.getMapper().scanline();
+        assert(bus != nullptr);
+        bus->getMapper().scanline();
     }
 }

@@ -1,10 +1,11 @@
-#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
+#include "Cartridge.h"
 #include "NesFile.h"
+#include "literals.h"
 
 // NesFileHeader represents an iNES file header.
 // See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format
@@ -53,16 +54,13 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
 
     // mirroring type
     Mirroring mirroringType;
-    std::string_view mirroringTypeDescription;
 
     if (header.flag6 & 1) {
         mirroringType = Mirroring::Vertical;
-        mirroringTypeDescription = "vertical";
     } else {
         mirroringType = Mirroring::Horizontal;
-        mirroringTypeDescription = "horizontal";
     }
-    std::cout << "The mirroring type is " << mirroringTypeDescription << "\n";
+    std::cout << "The mirroring type is " << description(mirroringType) << "\n";
 
     // persistent memory
     if ((header.flag6 >> 1) & 1) {
@@ -87,7 +85,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // prg rom data
-    std::vector<uint8_t> prgRom(header.prgSize * 16 * 1024);
+    std::vector<uint8_t> prgRom(header.prgSize * 16_kb);
     nesFile.read(reinterpret_cast<char*>(prgRom.data()), prgRom.size());
     if (!nesFile) {
         std::cerr << "Read the prg rom data failed\n";
@@ -99,7 +97,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::vector<uint8_t> chrRom;
 
     if (header.chrSize) {
-        chrRom.resize(header.chrSize * 8 * 1024);
+        chrRom.resize(header.chrSize * 8_kb);
         nesFile.read(reinterpret_cast<char*>(chrRom.data()), chrRom.size());
         if (!nesFile) {
             std::cerr << "Read the chr rom data failed\n";
@@ -107,7 +105,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         }
         std::cout << "The CHR ROM size is " << chrRom.size() / 1024 << "KB\n";
     } else {
-        chrRom.resize(8192);
+        chrRom.resize(8_kb);
         std::cout << "The board uses CHR RAM\n";
     }
 

@@ -4,8 +4,8 @@
 #include <memory>
 #include <string_view>
 
-#include "Cartridge.h"
+struct Cartridge;
 
 std::unique_ptr<Cartridge> loadNesFile(std::string_view path);
 
-#endif
+#endif // OCFBNJ_NES_NES_FILE_H

@@ -6,6 +6,7 @@
 #include "Mapper2.h"
 #include "Mapper3.h"
 #include "Mapper4.h"
+#include "literals.h"
 
 std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
     switch (cartridge->mapperNum) {
@@ -32,11 +33,11 @@ Mirroring Mapper::mirroring() const {
 }
 
 uint8_t Mapper::prgBanks() const {
-    return cartridge->prgRom.size() / (16 * 1024);
+    return cartridge->prgRom.size() / (16_kb);
 }
 
 uint8_t Mapper::chrBanks() const {
-    return cartridge->chrRom.size() / (8 * 1024);
+    return cartridge->chrRom.size() / (8_kb);
 }
 
 bool Mapper::irqState() const {

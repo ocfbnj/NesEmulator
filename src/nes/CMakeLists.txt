@@ -11,6 +11,7 @@ add_library(
     Mapper2.cpp
     Mapper3.cpp
     Mapper4.cpp
+    Mirroring.cpp
     NesFile.cpp
     PPU.cpp
 )

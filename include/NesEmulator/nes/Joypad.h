@@ -19,12 +19,12 @@ public:
     void press(Button btn);
     void release(Button btn);
 
+    uint8_t read();
     void write(uint8_t data);
-    [[nodiscard]] uint8_t read() const;
 
 private:
     uint8_t button = 0;
-    mutable uint8_t shifter = 0;
+    uint8_t shifter = 0;
 };
 
-#endif // NESEMULATOR_JOYPAD_H
+#endif // OCFBNJ_NES_JOYPAD_H
