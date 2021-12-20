@@ -15,17 +15,3 @@ target_link_libraries(
     glfw::glfw
     glad::glad
 )
-
-add_executable(
-    show_tiles
-    show_tiles.cpp
-)
-
-target_link_libraries(
-    show_tiles
-    PRIVATE
-    ocfbnj::nes
-    ocfbnj::pixel_engine
-    glfw::glfw
-    glad::glad
-)
