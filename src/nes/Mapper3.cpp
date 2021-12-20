@@ -43,14 +43,5 @@ uint8_t Mapper3::ppuRead(uint16_t addr) {
 }
 
 void Mapper3::ppuWrite(uint16_t addr, uint8_t data) {
-    assert(addr >= 0 && addr < 0x2000);
-
-    uint32_t mappedAddr = 0;
-
-    if (addr >= 0 && addr < 0x2000) {
-        mappedAddr = bankSelect * 0x2000 + addr;
-    }
-
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->chrRom.size());
-    cartridge->chrRom[mappedAddr] = data;
+    assert(0);
 }

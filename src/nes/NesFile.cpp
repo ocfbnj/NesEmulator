@@ -109,5 +109,5 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         std::cout << "The board uses CHR RAM\n";
     }
 
-    return std::make_unique<Cartridge>(std::move(prgRom), std::move(chrRom), mapperNum, mirroringType);
+    return std::make_unique<Cartridge>(header.prgSize, header.chrSize, mapperNum, mirroringType, std::move(prgRom), std::move(chrRom));
 }

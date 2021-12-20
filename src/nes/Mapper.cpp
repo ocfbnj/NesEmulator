@@ -33,17 +33,21 @@ Mirroring Mapper::mirroring() const {
 }
 
 uint8_t Mapper::prgBanks() const {
-    return cartridge->prgRom.size() / (16_kb);
+    return cartridge->prgBanks;
 }
 
 uint8_t Mapper::chrBanks() const {
-    return cartridge->chrRom.size() / (8_kb);
+    return cartridge->chrBanks;
 }
 
 bool Mapper::irqState() const {
     return false;
 }
 
-void Mapper::irqClear() {}
+void Mapper::irqClear() {
+    // do nothing
+}
 
-void Mapper::scanline() {}
+void Mapper::scanline() {
+    // do nothing
+}

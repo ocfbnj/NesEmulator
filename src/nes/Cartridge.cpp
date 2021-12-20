@@ -2,8 +2,15 @@
 
 #include "Cartridge.h"
 
-Cartridge::Cartridge(std::vector<uint8_t> prgRom, std::vector<uint8_t> chrRom, uint8_t mapperNum, Mirroring mirroring)
-    : prgRom(std::move(prgRom)),
-      chrRom(std::move(chrRom)),
+Cartridge::Cartridge(uint8_t prgBanks,
+                     uint8_t chrBanks,
+                     uint8_t mapperNum,
+                     Mirroring mirroring,
+                     std::vector<uint8_t> prgRom,
+                     std::vector<uint8_t> chrRom)
+    : prgBanks(prgBanks),
+      chrBanks(chrBanks),
       mapperNum(mapperNum),
-      mirroring(mirroring) {}
+      mirroring(mirroring),
+      prgRom(std::move(prgRom)),
+      chrRom(std::move(chrRom)) {}

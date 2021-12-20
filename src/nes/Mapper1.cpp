@@ -88,6 +88,10 @@ void Mapper1::cpuWrite(uint16_t addr, uint8_t data) {
 uint8_t Mapper1::ppuRead(uint16_t addr) {
     assert(addr >= 0 && addr < 0x2000);
 
+    if (chrBanks() == 0) {
+        return cartridge->chrRom[addr];
+    }
+
     uint32_t mappedAddr = 0;
     if (addr >= 0 && addr < 0x2000) {
         // CHR ROM bank mode
@@ -118,31 +122,11 @@ uint8_t Mapper1::ppuRead(uint16_t addr) {
 void Mapper1::ppuWrite(uint16_t addr, uint8_t data) {
     assert(addr >= 0 && addr < 0x2000);
 
-    uint32_t mappedAddr = 0;
-    if (addr >= 0 && addr < 0x2000) {
-        // CHR ROM bank mode
-        uint8_t mode = (controlRegister >> 4) & 0b1;
-
-        if (mode == 0) {
-            // 0: switch 8 KB at a time
-            uint8_t selectedChrBank = (chrBank0 >> 1) & 0b1111;
-            mappedAddr = (selectedChrBank * 0x2000) + (addr & 0x1FFF);
-        } else if (mode == 1) {
-            // 1: switch two separate 4 KB banks
-            if (addr >= 0x0000 && addr < 0x1000) {
-                uint8_t selectedChrBank = chrBank0 & 0b1'1111;
-                mappedAddr = (selectedChrBank * 0x1000) + (addr & 0x0FFF);
-            } else if (addr >= 0x1000 && addr < 0x2000) {
-                uint8_t selectedChrBank = chrBank1 & 0b1'1111;
-                mappedAddr = (selectedChrBank * 0x1000) + (addr & 0x0FFF);
-            }
-        } else {
-            assert(0);
-        }
+    if (chrBanks() == 0) {
+        cartridge->chrRom[addr] = data;
+    } else {
+        assert(0);
     }
-
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->chrRom.size());
-    cartridge->chrRom[mappedAddr] = data;
 }
 
 Mirroring Mapper1::mirroring() const {

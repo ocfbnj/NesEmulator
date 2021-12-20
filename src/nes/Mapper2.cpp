@@ -30,5 +30,6 @@ uint8_t Mapper2::ppuRead(uint16_t addr) {
 
 void Mapper2::ppuWrite(uint16_t addr, uint8_t data) {
     assert(addr >= 0 && addr < 0x2000);
+    assert(chrBanks() == 0);
     cartridge->chrRom[addr] = data;
 }
