@@ -43,8 +43,8 @@ conan_cmake_install(
 )
 
 # Add `find_package` here
-find_package(gtest)
-find_package(glfw REQUIRED)
+find_package(GTest)
+find_package(glfw3 REQUIRED)
 find_package(glad REQUIRED)
 
 #############################################################################################

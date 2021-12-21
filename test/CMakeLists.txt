@@ -1,6 +1,6 @@
-if(TARGET gtest::gtest)
+if(TARGET GTest::GTest)
     add_executable(testCPU testCPU.cpp)
-    target_link_libraries(testCPU gtest::gtest ocfbnj::nes)
+    target_link_libraries(testCPU GTest::GTest ocfbnj::nes)
 
     file(
         COPY
