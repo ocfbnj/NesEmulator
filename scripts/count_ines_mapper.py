@@ -1,33 +1,34 @@
-import aiohttp
 import asyncio
 
+import aiohttp
 
-async def search(ines: int) -> int:
+
+async def search(session: aiohttp.ClientSession, ines: int) -> int:
     url = f"https://nesdir.github.io/mapper{ines}.html"
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            html = await response.text()
-            count = html.count("<tr>") - 1
-            return count
+    async with session.get(url) as response:
+        html = await response.text()
+        count = html.count("<tr>") - 1
+        return count
 
 
 async def main():
-    tasks = []
+    async with aiohttp.ClientSession() as session:
+        tasks = []
 
-    for i in range(256):
-        task = search(i)
-        tasks.append(task)
+        for i in range(256):
+            task = search(session, i)
+            tasks.append(task)
 
-    counts = await asyncio.gather(*tasks)
+        counts = await asyncio.gather(*tasks)
 
-    for (i, count) in enumerate(counts):
-        print(f"ines {i}: {count}")
+        for (i, count) in enumerate(counts):
+            print(f"ines {i}: {count}")
 
-    total = sum(counts)
-    print(f"total: {total}")
+        total = sum(counts)
+        print(f"total: {total}")
 
-    print(f"mapper0-4 cover {(sum(counts[0:5]) / total) * 100:.2f}% games")
+        print(f"mapper0-4 cover {(sum(counts[0:5]) / total) * 100:.2f}% games")
 
 
 if __name__ == '__main__':

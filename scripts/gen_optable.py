@@ -33,8 +33,10 @@ def map_addressing(addressing_modes):
 
 
 def get_result(names, addressing_modes, instructions, cycles, page_cycles):
-    table = ["ADC", "AND", "ASL", "BCC", "BCS", "BEQ", "BIT", "BMI", "BNE", "BPL", "BRK", "BVC", "BVS", "CLC", "CLD", "CLI", "CLV", "CMP", "CPX", "CPY", "DEC", "DEX", "DEY", "EOR", "INC", "INX", "INY", "JMP",
-             "JSR", "LDA", "LDX", "LDY", "LSR", "NOP", "ORA", "PHA", "PHP", "PLA", "PLP", "ROL", "ROR", "RTI", "RTS", "SBC", "SEC", "SED", "SEI", "STA", "STX", "STY", "TAX", "TAY", "TSX", "TXA", "TXS", "TYA"]
+    table = ["ADC", "AND", "ASL", "BCC", "BCS", "BEQ", "BIT", "BMI", "BNE", "BPL", "BRK", "BVC", "BVS", "CLC", "CLD",
+             "CLI", "CLV", "CMP", "CPX", "CPY", "DEC", "DEX", "DEY", "EOR", "INC", "INX", "INY", "JMP",
+             "JSR", "LDA", "LDX", "LDY", "LSR", "NOP", "ORA", "PHA", "PHP", "PLA", "PLP", "ROL", "ROR", "RTI", "RTS",
+             "SBC", "SEC", "SED", "SEI", "STA", "STX", "STY", "TAX", "TAY", "TSX", "TXA", "TXS", "TYA"]
 
     res = ""
     for i in range(256):
@@ -57,7 +59,7 @@ def get_result(names, addressing_modes, instructions, cycles, page_cycles):
 # };
 if __name__ == "__main__":
     # this file is partly copied from https://github.com/fogleman/nes/blob/master/nes/cpu.go
-    with open(r"./temp") as file:
+    with open(r"./cpu.go") as file:
         f = file.read()
         f = f.replace("\n", "")
         f = f.replace("\t", "")
