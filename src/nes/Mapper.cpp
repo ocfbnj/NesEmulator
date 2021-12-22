@@ -27,6 +27,14 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
 
 Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartridge)) {}
 
+void Mapper::serialize(std::ostream& os) {
+    // do nothing
+}
+
+void Mapper::deserialize(std::istream& is) {
+    // do nothing
+}
+
 void Mapper::reset() {
     // do nothing
 }

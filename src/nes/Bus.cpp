@@ -58,6 +58,22 @@ uint16_t mirrorVramAddr(uint16_t addr, Mirroring mirroring) {
 
 Bus::Bus(std::unique_ptr<Mapper> mapper) : mapper(std::move(mapper)), cpu(*this), ppu(*this) {}
 
+void Bus::serialize(std::ostream& os) {
+    mapper->serialize(os);
+    cpu.serialize(os);
+    ppu.serialize(os);
+    os.write((char*)cpuRam.data(), cpuRam.size());
+    os.write((char*)ppuRam.data(), ppuRam.size());
+}
+
+void Bus::deserialize(std::istream& is) {
+    mapper->deserialize(is);
+    cpu.deserialize(is);
+    ppu.deserialize(is);
+    is.read((char*)cpuRam.data(), cpuRam.size());
+    is.read((char*)ppuRam.data(), ppuRam.size());
+}
+
 uint8_t Bus::cpuRead(uint16_t addr) {
     uint8_t data = 0;
 

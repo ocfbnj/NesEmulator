@@ -1,6 +1,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <sstream>
 #include <string_view>
 
 #include "NesEmulator/nes/Bus.h"
@@ -15,6 +16,8 @@ public:
 private:
     void renderFrame(const PPU::Frame& frame);
     void checkKeyboard();
+    void checkReset();
+    void checkSerialization();
 
     Bus bus;
 

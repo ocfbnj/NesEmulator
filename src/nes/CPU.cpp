@@ -286,6 +286,20 @@ CPU::CPU(Bus& bus) : bus(&bus) {
     reset();
 }
 
+void CPU::serialize(std::ostream& os) {
+    constexpr auto offset = offsetof(CPU, pc);
+    constexpr auto size = sizeof(CPU) - offset;
+    auto begin = (char*)this + offset;
+    os.write(begin, size);
+}
+
+void CPU::deserialize(std::istream& is) {
+    constexpr auto offset = offsetof(CPU, pc);
+    constexpr auto size = sizeof(CPU) - offset;
+    auto begin = (char*)this + offset;
+    is.read(begin, size);
+}
+
 void CPU::clock() {
     // execute the operation at last cycle
     if (cycles == 0) {

@@ -1,5 +1,29 @@
 #include "Mapper4.h"
 
+void Mapper4::serialize(std::ostream& os) {
+    os.write((char*)prgRam.data(), prgRam.size());
+    os.write((char*)&bankSelect, sizeof bankSelect);
+    os.write((char*)bankRegister.data(), bankRegister.size());
+    os.write((char*)&mirror, sizeof mirror);
+    os.write((char*)&prgRamProtect, sizeof prgRamProtect);
+    os.write((char*)&irqReload, sizeof irqReload);
+    os.write((char*)&irqCounter, sizeof irqCounter);
+    os.write((char*)&irqEnable, sizeof irqEnable);
+    os.write((char*)&irqActive, sizeof irqActive);
+}
+
+void Mapper4::deserialize(std::istream& is) {
+    is.read((char*)prgRam.data(), prgRam.size());
+    is.read((char*)&bankSelect, sizeof bankSelect);
+    is.read((char*)bankRegister.data(), bankRegister.size());
+    is.read((char*)&mirror, sizeof mirror);
+    is.read((char*)&prgRamProtect, sizeof prgRamProtect);
+    is.read((char*)&irqReload, sizeof irqReload);
+    is.read((char*)&irqCounter, sizeof irqCounter);
+    is.read((char*)&irqEnable, sizeof irqEnable);
+    is.read((char*)&irqActive, sizeof irqActive);
+}
+
 uint8_t Mapper4::cpuRead(uint16_t addr) {
     if (addr >= 0x6000 && addr < 0x8000) {
         return prgRam[addr & 0x1FFF];

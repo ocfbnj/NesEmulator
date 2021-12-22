@@ -2,6 +2,30 @@
 
 #include "Mapper1.h"
 
+void Mapper1::serialize(std::ostream& os) {
+    os.write((char*)prgRam.data(), prgRam.size());
+    if (chrBanks() == 0) {
+        os.write((char*)cartridge->chrRom.data(), cartridge->chrRom.size());
+    }
+    os.write((char*)&loadRegister, sizeof loadRegister);
+    os.write((char*)&controlRegister, sizeof controlRegister);
+    os.write((char*)&chrBank0, sizeof chrBank0);
+    os.write((char*)&chrBank1, sizeof chrBank1);
+    os.write((char*)&prgBank, sizeof prgBank);
+}
+
+void Mapper1::deserialize(std::istream& is) {
+    is.read((char*)prgRam.data(), prgRam.size());
+    if (chrBanks() == 0) {
+        is.read((char*)cartridge->chrRom.data(), cartridge->chrRom.size());
+    }
+    is.read((char*)&loadRegister, sizeof loadRegister);
+    is.read((char*)&controlRegister, sizeof controlRegister);
+    is.read((char*)&chrBank0, sizeof chrBank0);
+    is.read((char*)&chrBank1, sizeof chrBank1);
+    is.read((char*)&prgBank, sizeof prgBank);
+}
+
 uint8_t Mapper1::cpuRead(uint16_t addr) {
     if (addr >= 0x6000 && addr < 0x8000) {
         return prgRam[addr - 0x6000];

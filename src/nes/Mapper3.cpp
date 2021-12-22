@@ -2,6 +2,14 @@
 
 #include "Mapper3.h"
 
+void Mapper3::serialize(std::ostream& os) {
+    os.write((char*)&bankSelect, sizeof bankSelect);
+}
+
+void Mapper3::deserialize(std::istream& is) {
+    is.read((char*)&bankSelect, sizeof bankSelect);
+}
+
 uint8_t Mapper3::cpuRead(uint16_t addr) {
     uint32_t mappedAddr = 0;
 

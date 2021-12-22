@@ -76,6 +76,54 @@ PPU::PPU(Bus& bus) : bus(&bus) {
     reset();
 }
 
+void PPU::serialize(std::ostream& os) {
+    constexpr auto offset = offsetof(PPU, paletteTable);
+    constexpr auto size = sizeof(PPU) - offset;
+    auto begin = (char*)this + offset;
+    os.write(begin, size);
+    return;
+
+    std::for_each(paletteTable.begin(), paletteTable.end(), [&os](auto& e) { os << e; });
+
+    os << control.reg << mask.reg << status.reg << oamAddr;
+
+    std::for_each(primaryOamData.begin(), primaryOamData.end(), [&os](auto& e) { os << e; });
+
+    os << internalReadBuf << vramAddr.reg << tramAddr.reg << fineX << latch;
+    os << bgNtByte << bgAtByte << bgTileByteLo << bgTileByteHi;
+    os << bgPatternShifterLo << bgPatternShifterHi << bgAttributeShifterLo << bgAttributeShifterHi;
+
+    std::for_each(secondaryOamData.begin(), secondaryOamData.end(), [&os](auto& e) { os << e; });
+    std::for_each(spritePatternShifterLo.begin(), spritePatternShifterLo.end(), [&os](auto& e) { os << e; });
+    std::for_each(spritePatternShifterHi.begin(), spritePatternShifterHi.end(), [&os](auto& e) { os << e; });
+
+    os << spriteCount << sprite0HitPossible << scanline << cycle;
+}
+
+void PPU::deserialize(std::istream& is) {
+    constexpr auto offset = offsetof(PPU, paletteTable);
+    constexpr auto size = sizeof(PPU) - offset;
+    auto begin = (char*)this + offset;
+    is.read(begin, size);
+    return;
+
+    is >> cycle >> scanline >> sprite0HitPossible >> spriteCount;
+
+    std::for_each(spritePatternShifterHi.rbegin(), spritePatternShifterHi.rend(), [&is](auto& e) { is >> e; });
+    std::for_each(spritePatternShifterLo.rbegin(), spritePatternShifterLo.rend(), [&is](auto& e) { is >> e; });
+    std::for_each(secondaryOamData.rbegin(), secondaryOamData.rend(), [&is](auto& e) { is >> e; });
+
+    is >> bgAttributeShifterHi >> bgAttributeShifterLo >> bgPatternShifterHi >> bgPatternShifterLo;
+    is >> bgTileByteHi >> bgTileByteLo >> bgAtByte >> bgNtByte;
+    is >> latch >> fineX >> tramAddr.reg >> vramAddr.reg >> internalReadBuf;
+
+    std::for_each(primaryOamData.rbegin(), primaryOamData.rend(), [&is](auto& e) { is >> e; });
+
+    is >> oamAddr >> status.reg >> mask.reg >> control.reg;
+
+    std::for_each(paletteTable.rbegin(), paletteTable.rend(), [&is](auto& e) { is >> e; });
+}
+
 void PPU::clock() {
     frameComplete = false;
 

@@ -4,6 +4,8 @@
 #include <array>
 #include <cstdint>
 #include <functional>
+#include <istream>
+#include <ostream>
 #include <span>
 #include <vector>
 
@@ -44,6 +46,9 @@ public:
     };
 
     explicit PPU(Bus& bus);
+
+    void serialize(std::ostream& os);
+    void deserialize(std::istream& is);
 
     void clock();
     void reset();
@@ -252,6 +257,11 @@ private:
 
     Bus* bus;
 
+    bool frameComplete = false;
+    Frame frame;
+
+    // The following member variables are PPU components, they can be used to serialize and deserialize.
+
     std::array<uint8_t, 32> paletteTable{};
 
     ControlRegister control{};
@@ -287,9 +297,6 @@ private:
 
     int16_t scanline = 0;
     int16_t cycle = 0;
-
-    bool frameComplete = false;
-    Frame frame;
 };
 
 #endif // OCFBNJ_NES_PPU_H

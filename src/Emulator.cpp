@@ -1,3 +1,4 @@
+#include <iostream>
 #include <unordered_map>
 
 #include "NesEmulator/nes/Mapper.h"
@@ -51,9 +52,8 @@ void Emulator::checkKeyboard() {
         {GLFW_KEY_D, Joypad::Button::Right},
     };
 
-    if (glfwGetKey(getWindow(), GLFW_KEY_R) == GLFW_PRESS) {
-        bus.reset();
-    }
+    checkReset();
+    checkSerialization();
 
     for (auto [glfwKey, btn] : keyMap) {
         int status = glfwGetKey(getWindow(), glfwKey);
@@ -62,5 +62,44 @@ void Emulator::checkKeyboard() {
         } else if (status == GLFW_RELEASE) {
             bus.getJoypad().release(btn);
         }
+    }
+}
+
+void Emulator::checkReset() {
+    static bool pressedReset = false;
+
+    if (int status = glfwGetKey(getWindow(), GLFW_KEY_R); !pressedReset && status == GLFW_PRESS) {
+        pressedReset = true;
+        bus.reset();
+    } else if (status == GLFW_RELEASE) {
+        pressedReset = false;
+    }
+}
+
+void Emulator::checkSerialization() {
+    static std::string dump;
+
+    static bool pressedSave = false;
+    static bool pressedLoad = false;
+
+    if (int statusI = glfwGetKey(getWindow(), GLFW_KEY_I); !pressedSave && statusI == GLFW_PRESS) {
+        pressedSave = true;
+
+        std::ostringstream oss;
+        bus.serialize(oss);
+        dump = oss.str();
+    } else if (statusI == GLFW_RELEASE) {
+        pressedSave = false;
+    }
+
+    if (int statusL = glfwGetKey(getWindow(), GLFW_KEY_L); !pressedLoad && statusL == GLFW_PRESS) {
+        pressedLoad = true;
+
+        if (!dump.empty()) {
+            std::istringstream iss{dump};
+            bus.deserialize(iss);
+        }
+    } else if (statusL == GLFW_RELEASE) {
+        pressedLoad = false;
     }
 }

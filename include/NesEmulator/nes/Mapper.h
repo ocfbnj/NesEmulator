@@ -2,7 +2,9 @@
 #define OCFBNJ_NES_MAPPER_H
 
 #include <cstdint>
+#include <istream>
 #include <memory>
+#include <ostream>
 
 #include "Cartridge.h"
 
@@ -14,6 +16,9 @@ public:
 
     explicit Mapper(std::unique_ptr<Cartridge> cartridge);
     virtual ~Mapper() = default;
+
+    virtual void serialize(std::ostream& os);
+    virtual void deserialize(std::istream& is);
 
     virtual uint8_t cpuRead(uint16_t addr) = 0;
     virtual void cpuWrite(uint16_t addr, uint8_t data) = 0;

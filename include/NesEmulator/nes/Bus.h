@@ -19,6 +19,9 @@ class Bus {
 public:
     explicit Bus(std::unique_ptr<Mapper> mapper);
 
+    void serialize(std::ostream& os);
+    void deserialize(std::istream& is);
+
     // CPU and PPU have different buses.
 
     // CPU read from and write to the MAIN bus.

@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <istream>
 #include <ostream>
 #include <string_view>
 
@@ -16,6 +17,9 @@ class CPU {
 
 public:
     explicit CPU(Bus& bus);
+
+    void serialize(std::ostream& os);
+    void deserialize(std::istream& is);
 
     void clock();
     void reset();
@@ -123,9 +127,17 @@ private:
     void TYA(uint16_t address);
     void NIL(uint16_t address); // unimplemented
 
+    Bus* bus;
+
+    // for debug
+    uint32_t totalCycles = 0;
+    std::ostream* os = nullptr;
+
     // Instruction Set
     // See https://www.masswerk.at/6502/6502_instruction_set.html
     static std::array<Operate, 256> opTable;
+
+    // The following member variables are CPU components, they can be used to serialize and deserialize.
 
     // CPU Registers
     // See http://wiki.nesdev.com/w/index.php/CPU_registers
@@ -149,15 +161,9 @@ private:
         uint8_t status{};
     };
 
-    Bus* bus;
-
     uint8_t cycles{};
     uint8_t opcode{};
     Addressing addressingMode{};
-
-    // for debug
-    uint32_t totalCycles = 0;
-    std::ostream* os = nullptr;
 };
 
 #endif // OCFBNJ_NES_CPU_H

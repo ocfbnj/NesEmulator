@@ -2,6 +2,16 @@
 
 #include "Mapper2.h"
 
+void Mapper2::serialize(std::ostream& os) {
+    os.write((char*)cartridge->chrRom.data(), cartridge->chrRom.size());
+    os.write((char*)&bankSelect, sizeof bankSelect);
+}
+
+void Mapper2::deserialize(std::istream& is) {
+    is.read((char*)cartridge->chrRom.data(), cartridge->chrRom.size());
+    is.read((char*)&bankSelect, sizeof bankSelect);
+}
+
 uint8_t Mapper2::cpuRead(uint16_t addr) {
     uint32_t mappedAddr = 0;
 

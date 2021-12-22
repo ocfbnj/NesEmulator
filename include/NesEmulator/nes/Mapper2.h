@@ -7,6 +7,9 @@ class Mapper2 : public Mapper {
 public:
     using Mapper::Mapper;
 
+    void serialize(std::ostream &os) override;
+    void deserialize(std::istream &is) override;
+
     uint8_t cpuRead(uint16_t addr) override;
     void cpuWrite(uint16_t addr, uint8_t data) override;
 
