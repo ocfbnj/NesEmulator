@@ -25,7 +25,7 @@ public:
 
     void run();
 
-    [[nodiscard]] Pixel getPixel(int x, int y) const;
+    Pixel getPixel(int x, int y) const;
     void drawPixel(int x, int y, Pixel pixel);
 
     GLFWwindow* getWindow();

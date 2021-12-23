@@ -5,7 +5,7 @@
 #include "Mirroring.h"
 
 namespace {
-uint16_t mirrorPaletteAddr(uint16_t addr) {
+std::uint16_t mirrorPaletteAddr(std::uint16_t addr) {
     assert(addr >= 0x3F00 && addr < 0x4000);
 
     // addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C
@@ -17,13 +17,13 @@ uint16_t mirrorPaletteAddr(uint16_t addr) {
     return addr;
 }
 
-uint16_t mirrorVramAddr(uint16_t addr, Mirroring mirroring) {
+std::uint16_t mirrorVramAddr(std::uint16_t addr, Mirroring mirroring) {
     assert(addr >= 0x2000 && addr < 0x3F00);
 
-    const uint16_t vramIndex = addr - 0x2000;
+    const std::uint16_t vramIndex = addr - 0x2000;
     assert(vramIndex >= 0 && vramIndex < 0x1000);
 
-    const uint8_t nameTable = vramIndex / 0x0400;
+    const std::uint8_t nameTable = vramIndex / 0x0400;
     assert(nameTable >= 0 && nameTable < 4);
 
     switch (mirroring) {
@@ -58,24 +58,24 @@ uint16_t mirrorVramAddr(uint16_t addr, Mirroring mirroring) {
 
 Bus::Bus(std::unique_ptr<Mapper> mapper) : mapper(std::move(mapper)), cpu(*this), ppu(*this) {}
 
-void Bus::serialize(std::ostream& os) {
+void Bus::serialize(std::ostream& os) const {
     mapper->serialize(os);
     cpu.serialize(os);
     ppu.serialize(os);
-    os.write((char*)cpuRam.data(), cpuRam.size());
-    os.write((char*)ppuRam.data(), ppuRam.size());
+    os.write(reinterpret_cast<const char*>(cpuRam.data()), cpuRam.size());
+    os.write(reinterpret_cast<const char*>(ppuRam.data()), ppuRam.size());
 }
 
 void Bus::deserialize(std::istream& is) {
     mapper->deserialize(is);
     cpu.deserialize(is);
     ppu.deserialize(is);
-    is.read((char*)cpuRam.data(), cpuRam.size());
-    is.read((char*)ppuRam.data(), ppuRam.size());
+    is.read(reinterpret_cast<char*>(cpuRam.data()), cpuRam.size());
+    is.read(reinterpret_cast<char*>(ppuRam.data()), ppuRam.size());
 }
 
-uint8_t Bus::cpuRead(uint16_t addr) {
-    uint8_t data = 0;
+std::uint8_t Bus::cpuRead(std::uint16_t addr) {
+    std::uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
         // CPU RAM
@@ -89,7 +89,7 @@ uint8_t Bus::cpuRead(uint16_t addr) {
             data = ppu.readStatus();
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
-            data = ppu.readOAMData();
+            data = ppu.readOamData();
         } else if (addr == 0x2007) {
             // PPU Data Register
             data = ppu.readData();
@@ -114,14 +114,14 @@ uint8_t Bus::cpuRead(uint16_t addr) {
     return data;
 }
 
-uint16_t Bus::cpuRead16(uint16_t addr) {
-    uint16_t lo = cpuRead(addr);
-    uint16_t hi = cpuRead(addr + 1);
+std::uint16_t Bus::cpuRead16(std::uint16_t addr) {
+    std::uint16_t lo = cpuRead(addr);
+    std::uint16_t hi = cpuRead(addr + 1);
 
     return (hi << 8) | lo;
 }
 
-void Bus::cpuWrite(uint16_t addr, uint8_t data) {
+void Bus::cpuWrite(std::uint16_t addr, std::uint8_t data) {
     if (addr >= 0x0000 && addr < 0x2000) {
         // CPU RAM
         cpuRam[addr & 0x07FF] = data;
@@ -137,10 +137,10 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
             ppu.writeMask(data);
         } else if (addr == 0x2003) {
             // PPU OAM Address Register
-            ppu.writeOAMAddr(data);
+            ppu.writeOamAddr(data);
         } else if (addr == 0x2004) {
             // PPU OAM Data Register
-            ppu.writeOAMData(data);
+            ppu.writeOamData(data);
         } else if (addr == 0x2005) {
             // PPU Scroll Data Register
             ppu.writeScroll(data);
@@ -157,13 +157,13 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     } else if (addr >= 0x4000 && addr < 0x4018) {
         if (addr == 0x4014) {
             // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM.
-            std::array<uint8_t, 256> buffer{};
-            uint16_t hi = uint16_t(data) << 8;
+            std::array<std::uint8_t, 256> buffer{};
+            std::uint16_t hi = std::uint16_t(data) << 8;
             for (int i = 0x00; i <= 0xFF; i++) {
                 buffer[i] = cpuRead(hi | i);
             }
 
-            ppu.writeOAMDMA(buffer);
+            ppu.writeOamDMA(buffer);
         } else if (addr == 0x4016) {
             joypad.write(data);
         }
@@ -177,8 +177,8 @@ void Bus::cpuWrite(uint16_t addr, uint8_t data) {
     }
 }
 
-uint8_t Bus::ppuRead(uint16_t addr) {
-    uint8_t data = 0;
+std::uint8_t Bus::ppuRead(std::uint16_t addr) {
+    std::uint8_t data = 0;
 
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
@@ -200,7 +200,7 @@ uint8_t Bus::ppuRead(uint16_t addr) {
     return data;
 }
 
-void Bus::ppuWrite(uint16_t addr, uint8_t data) {
+void Bus::ppuWrite(std::uint16_t addr, std::uint8_t data) {
     if (addr >= 0x0000 && addr < 0x2000) {
         // CHR ROM (aka pattern table)
         mapper->ppuWrite(addr, data);
@@ -220,7 +220,7 @@ void Bus::ppuWrite(uint16_t addr, uint8_t data) {
 }
 
 void Bus::clock() {
-    static uint8_t i = 0;
+    static std::uint8_t i = 0;
 
     ppu.clock();
 

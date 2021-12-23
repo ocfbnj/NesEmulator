@@ -21,11 +21,8 @@ public:
     };
 
     class Frame {
-        static constexpr auto Width = 256;
-        static constexpr auto Height = 240;
-
     public:
-        [[nodiscard]] Pixel getPixel(int x, int y) const {
+        Pixel getPixel(int x, int y) const {
             assert(x >= 0 && x < Width);
             assert(y >= 0 && y < Height);
 
@@ -42,44 +39,43 @@ public:
         }
 
     private:
+        static constexpr auto Width = 256;
+        static constexpr auto Height = 240;
+
         std::array<Pixel, Width * Height> pixels{};
     };
 
     explicit PPU(Bus& bus);
 
-    void serialize(std::ostream& os);
-    void deserialize(std::istream& is);
-
     void clock();
     void reset();
 
-    [[nodiscard]] uint8_t readStatus();
-    [[nodiscard]] uint8_t readOAMData() const;
-    [[nodiscard]] uint8_t readData();
-    [[nodiscard]] uint8_t readPalette(uint16_t addr) const;
+    std::uint8_t readStatus();
+    std::uint8_t readOamData() const;
+    std::uint8_t readData();
+    std::uint8_t readPalette(std::uint16_t addr) const;
 
-    [[nodiscard]] bool showBackground() const;
-    [[nodiscard]] bool showSprites() const;
-    [[nodiscard]] bool renderingEnabled() const;
+    void writeCtrl(std::uint8_t data);
+    void writeMask(std::uint8_t data);
+    void writeOamAddr(std::uint8_t data);
+    void writeOamData(std::uint8_t data);
+    void writeScroll(std::uint8_t data);
+    void writeAddr(std::uint8_t data);
+    void writeData(std::uint8_t data);
+    void writeOamDMA(std::span<std::uint8_t, 256> buffer);
+    void writePalette(std::uint16_t addr, std::uint8_t data);
 
-    [[nodiscard]] const Frame& getFrame() const;
-    [[nodiscard]] bool isFrameComplete() const;
+    void serialize(std::ostream& os) const;
+    void deserialize(std::istream& is);
 
-    [[nodiscard]] Pixel getColor(uint8_t palette, uint8_t pixel);
+    const Frame& getFrame() const;
+    bool isFrameComplete() const;
 
-    void writeCtrl(uint8_t data);
-    void writeMask(uint8_t data);
-    void writeOAMAddr(uint8_t data);
-    void writeOAMData(uint8_t data);
-    void writeScroll(uint8_t data);
-    void writeAddr(uint8_t data);
-    void writeData(uint8_t data);
-    void writeOAMDMA(const std::array<uint8_t, 256>& buffer);
-    void writePalette(uint16_t addr, uint8_t data);
+    Pixel getColor(std::uint8_t palette, std::uint8_t pixel);
 
 private:
-    uint8_t read(uint16_t addr);
-    void write(uint16_t addr, uint8_t data);
+    std::uint8_t read(std::uint16_t addr);
+    void write(std::uint16_t addr, std::uint8_t data);
 
     void incrementAddr();
 
@@ -101,100 +97,101 @@ private:
 
     void processMapper();
 
-    // TODO After power/reset, writes to this register are ignored for about 30,000 cycles
     struct ControlRegister {
-        [[nodiscard]] uint16_t baseNameTableAddr() const {
+        std::uint16_t baseNameTableAddr() const {
             return 0x2000 + 0x400 * n;
         }
 
-        [[nodiscard]] uint8_t addrIncrement() const {
+        std::uint8_t addrIncrement() const {
             return i ? 32 : 1;
         }
 
-        [[nodiscard]] uint16_t spritePatternAddr() const {
+        std::uint16_t spritePatternAddr() const {
             return s ? 0x1000 : 0x0000;
         }
 
-        [[nodiscard]] uint16_t backgroundPatternAddr() const {
+        std::uint16_t backgroundPatternAddr() const {
             return b ? 0x1000 : 0x0000;
         }
 
-        [[nodiscard]] uint8_t spriteHeight() const {
+        std::uint8_t spriteHeight() const {
             return h ? 16 : 8;
         }
 
-        [[nodiscard]] bool generateNMI() const {
+        bool generateNMI() const {
             return v;
         }
 
-        void write(uint8_t data) {
+        void write(std::uint8_t data) {
             reg = data;
         }
 
         union {
             struct {
-                uint8_t n : 2; // Base nametable address (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
-                uint8_t i : 1; // VRAM address increment per CPU readData/writeData of PPUDATA (0: add 1, going across; 1: add 32, going down)
-                uint8_t s : 1; // Sprite pattern table address for 8x8 sprites (0: $0000; 1: $1000; ignored in 8x16 mode)
-                uint8_t b : 1; // Background pattern table address (0: $0000; 1: $1000)
-                uint8_t h : 1; // Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
-                uint8_t p : 1; // TODO PPU master/slave select (0: read backdrop from EXT pins; 1: output color on EXT pins)
-                uint8_t v : 1; // Generate an NMI at the start of the vertical blanking interval (0: off; 1: on)
+                std::uint8_t n : 2; // Base nametable address (0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
+                std::uint8_t i : 1; // VRAM address increment per CPU readData/writeData of PPUDATA (0: add 1, going across; 1: add 32, going down)
+                std::uint8_t s : 1; // Sprite pattern table address for 8x8 sprites (0: $0000; 1: $1000; ignored in 8x16 mode)
+                std::uint8_t b : 1; // Background pattern table address (0: $0000; 1: $1000)
+                std::uint8_t h : 1; // Sprite size (0: 8x8 pixels; 1: 8x16 pixels)
+                std::uint8_t p : 1; // TODO PPU master/slave select (0: read backdrop from EXT pins; 1: output color on EXT pins)
+                std::uint8_t v : 1; // Generate an NMI at the start of the vertical blanking interval (0: off; 1: on)
             };
 
-            uint8_t reg;
+            std::uint8_t reg;
         };
     };
-    static_assert(sizeof(ControlRegister) == 1, "The ControlRegister is not 1 byte");
 
     struct MaskRegister {
-        [[nodiscard]] bool isGreyscale() const {
+        bool isGreyscale() const {
             return g;
         }
 
-        [[nodiscard]] bool showBackgroundLeft() const {
+        bool showBackgroundLeft() const {
             return m;
         }
 
-        [[nodiscard]] bool showSpritesLeft() const {
+        bool showSpritesLeft() const {
             return M;
         }
 
-        [[nodiscard]] bool showBackground() const {
+        bool showBackground() const {
             return b;
         }
 
-        [[nodiscard]] bool showSprites() const {
+        bool showSprites() const {
             return s;
         }
 
-        void write(uint8_t data) {
+        bool renderingEnabled() const {
+            return showBackground() || showSprites();
+        }
+
+        void write(std::uint8_t data) {
             reg = data;
         }
 
         union {
             struct {
-                uint8_t g : 1; // Greyscale (0: normal color, 1: produce a greyscale display)
-                uint8_t m : 1; // 1: Show background in leftmost 8 pixels of screen, 0: Hide
-                uint8_t M : 1; // 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
-                uint8_t b : 1; // 1: Show background
-                uint8_t s : 1; // 1: Show sprites
-                uint8_t R : 1; // TODO Emphasize red (green on PAL/Dendy)
-                uint8_t G : 1; // TODO Emphasize green (red on PAL/Dendy)
-                uint8_t B : 1; // TODO Emphasize blue
+                std::uint8_t g : 1; // Greyscale (0: normal color, 1: produce a greyscale display)
+                std::uint8_t m : 1; // 1: Show background in leftmost 8 pixels of screen, 0: Hide
+                std::uint8_t M : 1; // 1: Show sprites in leftmost 8 pixels of screen, 0: Hide
+                std::uint8_t b : 1; // 1: Show background
+                std::uint8_t s : 1; // 1: Show sprites
+                std::uint8_t R : 1; // TODO Emphasize red (green on PAL/Dendy)
+                std::uint8_t G : 1; // TODO Emphasize green (red on PAL/Dendy)
+                std::uint8_t B : 1; // TODO Emphasize blue
             };
 
-            uint8_t reg;
+            std::uint8_t reg;
         };
     };
-    static_assert(sizeof(MaskRegister) == 1, "The MaskRegister is not 1 byte");
 
     struct StatusRegister {
-        [[nodiscard]] uint8_t read() const {
+        std::uint8_t read() const {
             return reg;
         }
 
-        [[nodiscard]] bool isInVblank() const {
+        bool isInVblank() const {
             return v;
         }
 
@@ -224,79 +221,82 @@ private:
 
         union {
             struct {
-                uint8_t unused : 5; // TODO Least significant bits previously written into a PPU register
-                uint8_t o : 1;      // Sprite overflow
-                uint8_t s : 1;      // Sprite 0 Hit
-                uint8_t v : 1;      // Vertical blank has started (0: not in vblank; 1: in vblank)
+                std::uint8_t unused : 5; // TODO Least significant bits previously written into a PPU register
+                std::uint8_t o : 1;      // Sprite overflow
+                std::uint8_t s : 1;      // Sprite 0 Hit
+                std::uint8_t v : 1;      // Vertical blank has started (0: not in vblank; 1: in vblank)
             };
 
-            uint8_t reg;
+            std::uint8_t reg;
         };
     };
-    static_assert(sizeof(StatusRegister) == 1, "The StatusRegister is not 1 byte");
 
     struct LoopyRegister {
         union {
             struct {
-                uint16_t coarseX : 5;
-                uint16_t coarseY : 5;
-                uint16_t nametableX : 1;
-                uint16_t nametableY : 1;
-                uint16_t fineY : 3;
-                [[maybe_unused]] uint16_t unused : 1;
+                std::uint16_t coarseX : 5;
+                std::uint16_t coarseY : 5;
+                std::uint16_t nametableX : 1;
+                std::uint16_t nametableY : 1;
+                std::uint16_t fineY : 3;
+                std::uint16_t unused : 1;
             };
 
-            uint16_t reg;
+            std::uint16_t reg;
         };
     };
 
     // Initially the maximum value is 8, doubled to eliminate flicker.
     constexpr static auto MaximumSpriteCount = 8 * 2;
 
-    static std::array<PPU::Pixel, 64> DefaultPalette;
+    static std::array<PPU::Pixel, 64> defaultPalette;
+
+    // The following member variables are PPU components, they can be used to serialize and deserialize.
+
+    // PPU Components Begin
+    ControlRegister control;
+    MaskRegister mask;
+    StatusRegister status;
+    std::uint8_t oamAddr;
+    std::uint8_t internalReadBuf;
+
+    std::array<std::uint8_t, 32> paletteTable{};
+    std::array<std::uint8_t, 256> primaryOamData{};
+
+    // PPU internal registers
+    // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#PPU_internal_registers
+    LoopyRegister vramAddr; // current VRAM address (15 bits)
+    LoopyRegister tramAddr; // temporary VRAM address (15 bits)
+    std::uint8_t fineX;     // fine X scroll (3 bits)
+    std::uint8_t latch;     // first or second write toggle
+
+    // for frame rendering
+    // See https://wiki.nesdev.org/w/images/4/4f/Ppu.svg
+    std::int16_t scanline = 0;
+    std::int16_t cycle = 0;
+
+    // for background rendering
+    std::uint8_t bgNtByte;     // name table
+    std::uint8_t bgAtByte;     // attribute table
+    std::uint8_t bgTileByteLo; // pattern low byte
+    std::uint8_t bgTileByteHi; // pattern high byte
+    std::uint16_t bgPatternShifterLo;
+    std::uint16_t bgPatternShifterHi;
+    std::uint16_t bgAttributeShifterLo;
+    std::uint16_t bgAttributeShifterHi;
+
+    // for foreground rendering
+    std::array<std::uint8_t, MaximumSpriteCount * 4> secondaryOamData{};
+    std::array<std::uint8_t, MaximumSpriteCount> spritePatternShifterLo{};
+    std::array<std::uint8_t, MaximumSpriteCount> spritePatternShifterHi{};
+    std::uint8_t spriteCount;
+    bool sprite0HitPossible;
+    // PPU Components End
 
     Bus* bus;
 
     bool frameComplete = false;
     Frame frame;
-
-    // The following member variables are PPU components, they can be used to serialize and deserialize.
-
-    std::array<uint8_t, 32> paletteTable{};
-
-    ControlRegister control{};
-    MaskRegister mask{};
-    StatusRegister status{};
-    uint8_t oamAddr{};
-    std::array<uint8_t, 256> primaryOamData{};
-    uint8_t internalReadBuf{};
-
-    // PPU internal registers
-    // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#PPU_internal_registers
-    LoopyRegister vramAddr{}; // current VRAM address (15 bits)
-    LoopyRegister tramAddr{}; // temporary VRAM address (15 bits)
-    uint8_t fineX{};          // fine X scroll (3 bits)
-    uint8_t latch{};          // first or second write toggle
-
-    // background rendering
-    uint8_t bgNtByte{};     // name table
-    uint8_t bgAtByte{};     // attribute table
-    uint8_t bgTileByteLo{}; // pattern low byte
-    uint8_t bgTileByteHi{}; // pattern high byte
-    uint16_t bgPatternShifterLo{};
-    uint16_t bgPatternShifterHi{};
-    uint16_t bgAttributeShifterLo{};
-    uint16_t bgAttributeShifterHi{};
-
-    // foreground rendering
-    std::array<uint8_t, MaximumSpriteCount * 4> secondaryOamData{};
-    std::array<uint8_t, MaximumSpriteCount> spritePatternShifterLo{};
-    std::array<uint8_t, MaximumSpriteCount> spritePatternShifterHi{};
-    uint8_t spriteCount = 0;
-    bool sprite0HitPossible = false;
-
-    int16_t scanline = 0;
-    int16_t cycle = 0;
 };
 
 #endif // OCFBNJ_NES_PPU_H

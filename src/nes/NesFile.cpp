@@ -10,17 +10,17 @@
 // NesFileHeader represents an iNES file header.
 // See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format
 struct NesFileHeader {
-    static constexpr uint32_t Constant = 0x1A53454E;
+    static constexpr std::uint32_t Constant = 0x1A53454E;
 
-    uint32_t constant;                   // Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
-    uint8_t prgSize;                     // Size of PRG ROM in 16 KB units
-    uint8_t chrSize;                     // Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
-    uint8_t flag6;                       // Mapper, mirroring, battery, trainer
-    uint8_t flag7;                       // Mapper, VS/Playchoice, NES 2.0
-    [[maybe_unused]] uint8_t flag8;      // PRG-RAM size (rarely used extension)
-    [[maybe_unused]] uint8_t flag9;      // TV system (rarely used extension)
-    [[maybe_unused]] uint8_t flag10;     // TV system, PRG-RAM presence (unofficial, rarely used extension)
-    [[maybe_unused]] uint8_t padding[5]; // Unused padding (should be filled with zero, but some rippers put their name across bytes 7-15)
+    std::uint32_t constant;  // Constant $4E $45 $53 $1A ("NES" followed by MS-DOS end-of-file)
+    std::uint8_t prgSize;    // Size of PRG ROM in 16 KB units
+    std::uint8_t chrSize;    // Size of CHR ROM in 8 KB units (Value 0 means the board uses CHR RAM)
+    std::uint8_t flag6;      // Mapper, mirroring, battery, trainer
+    std::uint8_t flag7;      // Mapper, VS/Playchoice, NES 2.0
+    std::uint8_t flag8;      // PRG-RAM size (rarely used extension)
+    std::uint8_t flag9;      // TV system (rarely used extension)
+    std::uint8_t flag10;     // TV system, PRG-RAM presence (unofficial, rarely used extension)
+    std::uint8_t padding[5]; // Unused padding (should be filled with zero, but some rippers put their name across bytes 7-15)
 };
 
 static_assert(sizeof(NesFileHeader) == 16, "The header is not 16 bytes");
@@ -47,9 +47,9 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // mapper number
-    uint8_t lowerMapper = (header.flag6 >> 4) & 0x0F;
-    uint8_t upperMapper = (header.flag7 >> 4) & 0x0F;
-    uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
+    std::uint8_t lowerMapper = (header.flag6 >> 4) & 0x0F;
+    std::uint8_t upperMapper = (header.flag7 >> 4) & 0x0F;
+    std::uint8_t mapperNum = (upperMapper << 4) | lowerMapper;
     std::cout << "The mapper number is " << +mapperNum << "\n";
 
     // mirroring type
@@ -70,7 +70,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     // trainer, if present
     if ((header.flag6 >> 2) & 1) {
         std::cout << "Hava trainer\n";
-        std::vector<uint8_t> trainer(512); // unused
+        std::vector<std::uint8_t> trainer(512); // unused
         nesFile.read(reinterpret_cast<char*>(trainer.data()), trainer.size());
         if (!nesFile) {
             std::cerr << "Read the trainer failed\n";
@@ -85,7 +85,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     }
 
     // prg rom data
-    std::vector<uint8_t> prgRom(header.prgSize * 16_kb);
+    std::vector<std::uint8_t> prgRom(header.prgSize * 16_kb);
     nesFile.read(reinterpret_cast<char*>(prgRom.data()), prgRom.size());
     if (!nesFile) {
         std::cerr << "Read the prg rom data failed\n";
@@ -94,7 +94,7 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
     std::cout << "The PRG ROM size is " << prgRom.size() / 1024 << "KB\n";
 
     // chr rom data
-    std::vector<uint8_t> chrRom;
+    std::vector<std::uint8_t> chrRom;
 
     if (header.chrSize) {
         chrRom.resize(header.chrSize * 8_kb);

@@ -7,19 +7,19 @@ class Mapper2 : public Mapper {
 public:
     using Mapper::Mapper;
 
-    void serialize(std::ostream &os) override;
-    void deserialize(std::istream &is) override;
+    std::uint8_t cpuRead(std::uint16_t addr) override;
+    void cpuWrite(std::uint16_t addr, std::uint8_t data) override;
 
-    uint8_t cpuRead(uint16_t addr) override;
-    void cpuWrite(uint16_t addr, uint8_t data) override;
-
-    uint8_t ppuRead(uint16_t addr) override;
-    void ppuWrite(uint16_t addr, uint8_t data) override;
+    std::uint8_t ppuRead(std::uint16_t addr) override;
+    void ppuWrite(std::uint16_t addr, std::uint8_t data) override;
 
     void reset() override;
 
+    void serialize(std::ostream& os) const override;
+    void deserialize(std::istream& is) override;
+
 private:
-    uint8_t bankSelect = 0;
+    std::uint8_t bankSelect = 0;
 };
 
 #endif // OCFBNJ_NES_MAPPER2_H

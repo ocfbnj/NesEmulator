@@ -4,7 +4,7 @@
 #include "Bus.h"
 #include "PPU.h"
 
-std::array<PPU::Pixel, 64> PPU::DefaultPalette = {
+std::array<PPU::Pixel, 64> PPU::defaultPalette = {
     Pixel{.r = 0x80, .g = 0x80, .b = 0x80, .a = 0xFF},
     Pixel{.r = 0x00, .g = 0x3D, .b = 0xA6, .a = 0xFF},
     Pixel{.r = 0x00, .g = 0x12, .b = 0xB0, .a = 0xFF},
@@ -76,54 +76,6 @@ PPU::PPU(Bus& bus) : bus(&bus) {
     reset();
 }
 
-void PPU::serialize(std::ostream& os) {
-    constexpr auto offset = offsetof(PPU, paletteTable);
-    constexpr auto size = sizeof(PPU) - offset;
-    auto begin = (char*)this + offset;
-    os.write(begin, size);
-    return;
-
-    std::for_each(paletteTable.begin(), paletteTable.end(), [&os](auto& e) { os << e; });
-
-    os << control.reg << mask.reg << status.reg << oamAddr;
-
-    std::for_each(primaryOamData.begin(), primaryOamData.end(), [&os](auto& e) { os << e; });
-
-    os << internalReadBuf << vramAddr.reg << tramAddr.reg << fineX << latch;
-    os << bgNtByte << bgAtByte << bgTileByteLo << bgTileByteHi;
-    os << bgPatternShifterLo << bgPatternShifterHi << bgAttributeShifterLo << bgAttributeShifterHi;
-
-    std::for_each(secondaryOamData.begin(), secondaryOamData.end(), [&os](auto& e) { os << e; });
-    std::for_each(spritePatternShifterLo.begin(), spritePatternShifterLo.end(), [&os](auto& e) { os << e; });
-    std::for_each(spritePatternShifterHi.begin(), spritePatternShifterHi.end(), [&os](auto& e) { os << e; });
-
-    os << spriteCount << sprite0HitPossible << scanline << cycle;
-}
-
-void PPU::deserialize(std::istream& is) {
-    constexpr auto offset = offsetof(PPU, paletteTable);
-    constexpr auto size = sizeof(PPU) - offset;
-    auto begin = (char*)this + offset;
-    is.read(begin, size);
-    return;
-
-    is >> cycle >> scanline >> sprite0HitPossible >> spriteCount;
-
-    std::for_each(spritePatternShifterHi.rbegin(), spritePatternShifterHi.rend(), [&is](auto& e) { is >> e; });
-    std::for_each(spritePatternShifterLo.rbegin(), spritePatternShifterLo.rend(), [&is](auto& e) { is >> e; });
-    std::for_each(secondaryOamData.rbegin(), secondaryOamData.rend(), [&is](auto& e) { is >> e; });
-
-    is >> bgAttributeShifterHi >> bgAttributeShifterLo >> bgPatternShifterHi >> bgPatternShifterLo;
-    is >> bgTileByteHi >> bgTileByteLo >> bgAtByte >> bgNtByte;
-    is >> latch >> fineX >> tramAddr.reg >> vramAddr.reg >> internalReadBuf;
-
-    std::for_each(primaryOamData.rbegin(), primaryOamData.rend(), [&is](auto& e) { is >> e; });
-
-    is >> oamAddr >> status.reg >> mask.reg >> control.reg;
-
-    std::for_each(paletteTable.rbegin(), paletteTable.rend(), [&is](auto& e) { is >> e; });
-}
-
 void PPU::clock() {
     frameComplete = false;
 
@@ -156,6 +108,9 @@ void PPU::reset() {
     oamAddr = 0;
     internalReadBuf = 0;
 
+    scanline = 0;
+    cycle = 0;
+
     vramAddr.reg = 0;
     tramAddr.reg = 0;
     fineX = 0;
@@ -172,32 +127,28 @@ void PPU::reset() {
 
     spriteCount = 0;
     sprite0HitPossible = false;
-
-    scanline = 0;
-    cycle = 0;
-
-    frameComplete = false;
 }
 
-uint8_t PPU::readStatus() {
-    uint8_t res = status.read();
+std::uint8_t PPU::readStatus() {
+    std::uint8_t res = status.read();
 
-    // Reading the status register will clear bit 7 and also the address latch used by PPUSCROLL and PPUADDR
+    // Reading the status register will clear bit 7 and also the address latch used by PPUSCROLL and PPUADDR.
     status.resetVblank();
     latch = 0;
 
     return res;
 }
 
-uint8_t PPU::readOAMData() const {
+std::uint8_t PPU::readOamData() const {
+    assert(oamAddr >= 0 && oamAddr < primaryOamData.size());
     return primaryOamData[oamAddr];
 }
 
-uint8_t PPU::readData() {
-    uint16_t addr = vramAddr.reg;
+std::uint8_t PPU::readData() {
+    std::uint16_t addr = vramAddr.reg;
     incrementAddr();
 
-    uint8_t res = internalReadBuf;
+    std::uint8_t res = internalReadBuf;
 
     // When reading while the VRAM address is in the range 0-$3EFF (i.e., before the palettes),
     // the read will return the contents of an internal readData buffer.
@@ -212,39 +163,12 @@ uint8_t PPU::readData() {
     return res;
 }
 
-uint8_t PPU::readPalette(uint16_t addr) const {
+std::uint8_t PPU::readPalette(std::uint16_t addr) const {
     assert(addr >= 0x3F00 && addr < 0x3F20);
     return paletteTable[addr - 0x3F00] & (mask.isGreyscale() ? 0x30 : 0x3F);
 }
 
-bool PPU::showBackground() const {
-    return mask.showBackground();
-}
-
-bool PPU::showSprites() const {
-    return mask.showSprites();
-}
-
-bool PPU::renderingEnabled() const {
-    return showBackground() || showSprites();
-}
-
-const PPU::Frame& PPU::getFrame() const {
-    return frame;
-}
-
-bool PPU::isFrameComplete() const {
-    return frameComplete;
-}
-
-PPU::Pixel PPU::getColor(uint8_t palette, uint8_t pixel) {
-    uint8_t index = read(0x3F00 + ((palette << 2) | pixel));
-    assert(index >= 0 && index < 64);
-
-    return DefaultPalette[index];
-}
-
-void PPU::writeCtrl(uint8_t data) {
+void PPU::writeCtrl(std::uint8_t data) {
     bool prev = control.generateNMI();
 
     control.write(data);
@@ -260,20 +184,20 @@ void PPU::writeCtrl(uint8_t data) {
     }
 }
 
-void PPU::writeMask(uint8_t data) {
+void PPU::writeMask(std::uint8_t data) {
     mask.write(data);
 }
 
-void PPU::writeOAMAddr(uint8_t data) {
+void PPU::writeOamAddr(std::uint8_t data) {
     oamAddr = data;
 }
 
-void PPU::writeOAMData(uint8_t data) {
+void PPU::writeOamData(std::uint8_t data) {
     // Writes will increment oamAddr after the writing
     primaryOamData[oamAddr++] = data;
 }
 
-void PPU::writeScroll(uint8_t data) {
+void PPU::writeScroll(std::uint8_t data) {
     if (latch == 0) {
         tramAddr.coarseX = (data >> 3) & 0b1'1111;
         fineX = data & 0b111;
@@ -285,9 +209,9 @@ void PPU::writeScroll(uint8_t data) {
     }
 }
 
-void PPU::writeAddr(uint8_t data) {
+void PPU::writeAddr(std::uint8_t data) {
     if (latch == 0) {
-        tramAddr.reg = ((uint16_t)(data & 0b0011'1111)) << 8;
+        tramAddr.reg = ((std::uint16_t)(data & 0b0011'1111)) << 8;
         tramAddr.reg &= ~(0b100'0000);
         latch = 1;
     } else {
@@ -297,31 +221,58 @@ void PPU::writeAddr(uint8_t data) {
     }
 }
 
-void PPU::writeData(uint8_t data) {
-    uint16_t addr = vramAddr.reg;
+void PPU::writeData(std::uint8_t data) {
+    std::uint16_t addr = vramAddr.reg;
     incrementAddr();
 
     assert(addr >= 0x0000 && addr < 0x4000);
     write(addr, data);
 }
 
-void PPU::writeOAMDMA(const std::array<uint8_t, 256>& buffer) {
-    for (uint8_t data : buffer) {
+void PPU::writeOamDMA(std::span<std::uint8_t, 256> buffer) {
+    for (std::uint8_t data : buffer) {
         primaryOamData[oamAddr++] = data;
     }
 }
 
-void PPU::writePalette(uint16_t addr, uint8_t data) {
+void PPU::writePalette(std::uint16_t addr, std::uint8_t data) {
     assert(addr >= 0x3F00 && addr < 0x3F20);
     paletteTable[addr - 0x3F00] = data;
 }
 
-uint8_t PPU::read(uint16_t addr) {
+void PPU::serialize(std::ostream& os) const {
+    auto begin = reinterpret_cast<const char*>(this) + offsetof(PPU, control);
+    auto end = reinterpret_cast<const char*>(this) + offsetof(PPU, bus);
+    os.write(begin, end - begin);
+}
+
+void PPU::deserialize(std::istream& is) {
+    auto begin = reinterpret_cast<char*>(this) + offsetof(PPU, control);
+    auto end = reinterpret_cast<char*>(this) + offsetof(PPU, bus);
+    is.read(begin, end - begin);
+}
+
+const PPU::Frame& PPU::getFrame() const {
+    return frame;
+}
+
+bool PPU::isFrameComplete() const {
+    return frameComplete;
+}
+
+PPU::Pixel PPU::getColor(std::uint8_t palette, std::uint8_t pixel) {
+    std::uint8_t index = read(0x3F00 + ((palette << 2) | pixel));
+    assert(index >= 0 && index < 64);
+
+    return defaultPalette[index];
+}
+
+std::uint8_t PPU::read(std::uint16_t addr) {
     assert(bus != nullptr);
     return bus->ppuRead(addr);
 }
 
-void PPU::write(uint16_t addr, uint8_t data) {
+void PPU::write(std::uint16_t addr, std::uint8_t data) {
     assert(bus != nullptr);
     return bus->ppuWrite(addr, data);
 }
@@ -332,7 +283,7 @@ void PPU::incrementAddr() {
 
 void PPU::incrementHorizontal() {
     // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#Coarse_X_increment
-    if (renderingEnabled()) {
+    if (mask.renderingEnabled()) {
         if (vramAddr.coarseX == 31) {
             vramAddr.coarseX = 0;
             vramAddr.nametableX = ~vramAddr.nametableX;
@@ -344,7 +295,7 @@ void PPU::incrementHorizontal() {
 
 void PPU::incrementVertical() {
     // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#Y_increment
-    if (renderingEnabled()) {
+    if (mask.renderingEnabled()) {
         if (vramAddr.fineY < 7) {
             vramAddr.fineY++;
         } else {
@@ -363,14 +314,14 @@ void PPU::incrementVertical() {
 }
 
 void PPU::transferHorizontalBits() {
-    if (renderingEnabled()) {
+    if (mask.renderingEnabled()) {
         vramAddr.coarseX = tramAddr.coarseX;
         vramAddr.nametableX = tramAddr.nametableX;
     }
 }
 
 void PPU::transferVerticalBits() {
-    if (renderingEnabled()) {
+    if (mask.renderingEnabled()) {
         vramAddr.coarseY = tramAddr.coarseY;
         vramAddr.nametableY = tramAddr.nametableY;
         vramAddr.fineY = tramAddr.fineY;
@@ -389,7 +340,7 @@ void PPU::loadShifters() {
 void PPU::updateShifters() {
     assert(cycle >= 1 && cycle < 257 || cycle >= 321 && cycle < 337);
 
-    if (showBackground()) {
+    if (mask.showBackground()) {
         bgPatternShifterLo <<= 1;
         bgPatternShifterHi <<= 1;
 
@@ -397,9 +348,9 @@ void PPU::updateShifters() {
         bgAttributeShifterHi <<= 1;
     }
 
-    if (showSprites() && cycle >= 2 && cycle < 257) {
+    if (mask.showSprites() && cycle >= 2 && cycle < 257) {
         for (int i = 0; i != spriteCount; i++) {
-            uint8_t* sprite = secondaryOamData.data() + i * 4;
+            std::uint8_t* sprite = secondaryOamData.data() + i * 4;
 
             if (sprite[3] > 0) {
                 sprite[3]--;
@@ -500,38 +451,38 @@ void PPU::renderFrame() {
     int finalX = cycle - 1;
     int finalY = scanline;
 
-    if (!(renderingEnabled() && finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240)) {
+    if (!(mask.renderingEnabled() && finalX >= 0 && finalX < 256 && finalY >= 0 && finalY < 240)) {
         return;
     }
 
-    uint8_t bgPixel = 0x00;
-    uint8_t bgPalette = 0x00;
+    std::uint8_t bgPixel = 0x00;
+    std::uint8_t bgPalette = 0x00;
 
-    if (showBackground() && (finalX >= 8 || mask.showBackgroundLeft())) {
-        uint16_t bit = 0x8000 >> fineX;
+    if (mask.showBackground() && (finalX >= 8 || mask.showBackgroundLeft())) {
+        std::uint16_t bit = 0x8000 >> fineX;
 
-        uint8_t bgPixelHi = (bgPatternShifterHi & bit) > 0;
-        uint8_t bgPixelLo = (bgPatternShifterLo & bit) > 0;
+        std::uint8_t bgPixelHi = (bgPatternShifterHi & bit) > 0;
+        std::uint8_t bgPixelLo = (bgPatternShifterLo & bit) > 0;
         bgPixel = (bgPixelHi << 1) | bgPixelLo;
 
-        uint8_t bgPaletteHi = (bgAttributeShifterHi & bit) > 0;
-        uint8_t bgPaletteLo = (bgAttributeShifterLo & bit) > 0;
+        std::uint8_t bgPaletteHi = (bgAttributeShifterHi & bit) > 0;
+        std::uint8_t bgPaletteLo = (bgAttributeShifterLo & bit) > 0;
         bgPalette = (bgPaletteHi << 1) | bgPaletteLo;
     }
 
-    uint8_t fgPixel = 0x00;
-    uint8_t fgPalette = 0x00;
+    std::uint8_t fgPixel = 0x00;
+    std::uint8_t fgPalette = 0x00;
     bool fgBehindBg = false;
     bool sprite0BeingRendered = false;
 
-    if (showSprites() && (finalX >= 8 || mask.showSpritesLeft())) {
+    if (mask.showSprites() && (finalX >= 8 || mask.showSpritesLeft())) {
         for (int i = 0; i != spriteCount; i++) {
-            uint8_t* sprite = secondaryOamData.data() + i * 4;
-            uint8_t spriteX = sprite[3];
+            std::uint8_t* sprite = secondaryOamData.data() + i * 4;
+            std::uint8_t spriteX = sprite[3];
 
             if (spriteX == 0) {
-                uint8_t fgPixelLo = (spritePatternShifterLo[i] & 0x80) > 0;
-                uint8_t fgPixelHi = (spritePatternShifterHi[i] & 0x80) > 0;
+                std::uint8_t fgPixelLo = (spritePatternShifterLo[i] & 0x80) > 0;
+                std::uint8_t fgPixelHi = (spritePatternShifterHi[i] & 0x80) > 0;
                 fgPixel = (fgPixelHi << 1) | fgPixelLo;
 
                 fgPalette = (sprite[2] & 0b11) | (1 << 2);
@@ -548,8 +499,8 @@ void PPU::renderFrame() {
         }
     }
 
-    uint8_t finalPalette = 0x00;
-    uint8_t finalPixel = 0x00;
+    std::uint8_t finalPalette = 0x00;
+    std::uint8_t finalPixel = 0x00;
 
     if (bgPixel) {
         if (fgPixel) {
@@ -607,10 +558,10 @@ void PPU::secondaryOamClearAndSpriteEvaluation() {
         sprite0HitPossible = false;
 
         for (int i = 0; i != 64 && spriteCount <= MaximumSpriteCount; i++) {
-            uint8_t* sprite = primaryOamData.data() + i * 4;
+            std::uint8_t* sprite = primaryOamData.data() + i * 4;
 
-            uint8_t spriteY = sprite[0];
-            size_t diff = static_cast<size_t>(scanline) - static_cast<size_t>(spriteY);
+            std::uint8_t spriteY = sprite[0];
+            std::size_t diff = static_cast<std::size_t>(scanline) - static_cast<std::size_t>(spriteY);
 
             if (diff >= 0 && diff < control.spriteHeight()) {
                 if (spriteCount < MaximumSpriteCount) {
@@ -637,28 +588,28 @@ void PPU::calculateSpritesPatternAddr() {
 
     if (cycle == 340) {
         for (int i = 0; i != spriteCount; i++) {
-            uint8_t* sprite = secondaryOamData.data() + i * 4;
+            std::uint8_t* sprite = secondaryOamData.data() + i * 4;
 
-            uint8_t spriteY = sprite[0];
+            std::uint8_t spriteY = sprite[0];
             bool flipVertical = (sprite[2] >> 7) & 1;
             bool flipHorizontal = (sprite[2] >> 6) & 1;
 
-            uint16_t patternAddrLo;
+            std::uint16_t patternAddrLo;
 
             if (control.spriteHeight() == 8) {
                 // For 8x8 sprites,
                 // this is the tile number of this sprite within the pattern table selected in bit 3 of PPUCTRL ($2000).
-                uint16_t patternAddr = control.spritePatternAddr();
-                uint8_t tileNumber = sprite[1];
-                uint8_t row = flipVertical ? (7 - (scanline - spriteY)) : (scanline - spriteY);
+                std::uint16_t patternAddr = control.spritePatternAddr();
+                std::uint8_t tileNumber = sprite[1];
+                std::uint8_t row = flipVertical ? (7 - (scanline - spriteY)) : (scanline - spriteY);
 
                 patternAddrLo = patternAddr | (tileNumber << 4) | (row);
             } else {
                 // For 8x16 sprites,
                 // the PPU ignores the pattern table selection and selects a pattern table from bit 0 of this number.
-                uint16_t patternAddr = (sprite[1] & 0x01) ? 0x1000 : 0x0000;
-                uint8_t tileNumber = sprite[1] & 0xFE;
-                uint8_t row = (scanline - spriteY) & 0x07;
+                std::uint16_t patternAddr = (sprite[1] & 0x01) ? 0x1000 : 0x0000;
+                std::uint8_t tileNumber = sprite[1] & 0xFE;
+                std::uint8_t row = (scanline - spriteY) & 0x07;
 
                 if (scanline - spriteY < 8) {
                     if (flipVertical) {
@@ -680,7 +631,7 @@ void PPU::calculateSpritesPatternAddr() {
             spritePatternShifterHi[i] = read(patternAddrLo + 8);
 
             if (flipHorizontal) {
-                auto flipByte = [](uint8_t b) {
+                auto flipByte = [](std::uint8_t b) {
                     b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
                     b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
                     b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
@@ -695,7 +646,7 @@ void PPU::calculateSpritesPatternAddr() {
 }
 
 void PPU::processMapper() {
-    if (cycle == 260 && scanline < 240 && renderingEnabled()) {
+    if (cycle == 260 && scanline < 240 && mask.renderingEnabled()) {
         assert(bus != nullptr);
         bus->getMapper().scanline();
     }

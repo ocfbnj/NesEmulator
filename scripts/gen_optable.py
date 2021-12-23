@@ -42,20 +42,20 @@ def get_result(names, addressing_modes, instructions, cycles, page_cycles):
     for i in range(256):
         if names[i].strip() not in table:
             names[i] = "???"
-            instructions[i] = "&Cpu::NIL"
+            instructions[i] = "&CPU::NIL"
 
-        # {"BRK", Imp, &Cpu::BRK, 0, 0},
-        res += f'Operate{{"{names[i].strip()}", {addressing_modes[i].strip()}, {instructions[i].strip()}, {cycles[i].strip()}, {page_cycles[i].strip()}}},\n'
+        # {"BRK", Imp, &CPU::BRK, 0, 0},
+        res += f'Operation{{.name = "{names[i].strip()}", .addressing = Addressing::{addressing_modes[i].strip()}, .instruction = {instructions[i].strip()}, .cycle = {cycles[i].strip()}, .pageCycle = {page_cycles[i].strip()}}},\n'
     return res
 
 
 # Generate the CPU operation table in C++.
-# struct Operate {
+# struct Operation {
 #     std::string_view name;
 #     Addressing addressing;
-#     void (Cpu::*instruction)(uint16_t);
-#     uint8_t cycle;
-#     uint8_t pageCycle;
+#     void (CPU::*instruction)(std::uint16_t);
+#     std::uint8_t cycle;
+#     std::uint8_t pageCycle;
 # };
 if __name__ == "__main__":
     # this file is partly copied from https://github.com/fogleman/nes/blob/master/nes/cpu.go
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         # instructions
         instructions = []
         for name in names:
-            instructions.append(f"&Cpu::{name.strip()}")
+            instructions.append(f"&CPU::{name.strip()}")
         print(instructions)
 
         # cycles

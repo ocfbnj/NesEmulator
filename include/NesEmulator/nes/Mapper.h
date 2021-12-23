@@ -17,27 +17,27 @@ public:
     explicit Mapper(std::unique_ptr<Cartridge> cartridge);
     virtual ~Mapper() = default;
 
-    virtual void serialize(std::ostream& os);
-    virtual void deserialize(std::istream& is);
+    virtual std::uint8_t cpuRead(std::uint16_t addr) = 0;
+    virtual void cpuWrite(std::uint16_t addr, std::uint8_t data) = 0;
 
-    virtual uint8_t cpuRead(uint16_t addr) = 0;
-    virtual void cpuWrite(uint16_t addr, uint8_t data) = 0;
-
-    virtual uint8_t ppuRead(uint16_t addr) = 0;
-    virtual void ppuWrite(uint16_t addr, uint8_t data) = 0;
+    virtual std::uint8_t ppuRead(std::uint16_t addr) = 0;
+    virtual void ppuWrite(std::uint16_t addr, std::uint8_t data) = 0;
 
     virtual void reset();
 
-    [[nodiscard]] virtual Mirroring mirroring() const;
+    virtual void serialize(std::ostream& os) const;
+    virtual void deserialize(std::istream& is);
 
-    [[nodiscard]] virtual bool irqState() const;
+    virtual Mirroring mirroring() const;
+
+    virtual bool irqState() const;
     virtual void irqClear();
 
     virtual void scanline();
 
 protected:
-    [[nodiscard]] uint8_t prgBanks() const;
-    [[nodiscard]] uint8_t chrBanks() const;
+    std::uint8_t prgBanks() const;
+    std::uint8_t chrBanks() const;
 
     std::unique_ptr<Cartridge> cartridge;
 };

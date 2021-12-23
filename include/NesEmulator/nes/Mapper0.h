@@ -8,11 +8,11 @@ class Mapper0 : public Mapper {
 public:
     using Mapper::Mapper;
 
-    uint8_t cpuRead(uint16_t addr) override;
-    void cpuWrite(uint16_t addr, uint8_t data) override;
+    std::uint8_t cpuRead(std::uint16_t addr) override;
+    void cpuWrite(std::uint16_t addr, std::uint8_t data) override;
 
-    uint8_t ppuRead(uint16_t addr) override;
-    void ppuWrite(uint16_t addr, uint8_t data) override;
+    std::uint8_t ppuRead(std::uint16_t addr) override;
+    void ppuWrite(std::uint16_t addr, std::uint8_t data) override;
 };
 
 #endif // OCFBNJ_NES_MAPPER0_H

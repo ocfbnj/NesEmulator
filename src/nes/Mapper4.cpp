@@ -1,36 +1,12 @@
 #include "Mapper4.h"
 
-void Mapper4::serialize(std::ostream& os) {
-    os.write((char*)prgRam.data(), prgRam.size());
-    os.write((char*)&bankSelect, sizeof bankSelect);
-    os.write((char*)bankRegister.data(), bankRegister.size());
-    os.write((char*)&mirror, sizeof mirror);
-    os.write((char*)&prgRamProtect, sizeof prgRamProtect);
-    os.write((char*)&irqReload, sizeof irqReload);
-    os.write((char*)&irqCounter, sizeof irqCounter);
-    os.write((char*)&irqEnable, sizeof irqEnable);
-    os.write((char*)&irqActive, sizeof irqActive);
-}
-
-void Mapper4::deserialize(std::istream& is) {
-    is.read((char*)prgRam.data(), prgRam.size());
-    is.read((char*)&bankSelect, sizeof bankSelect);
-    is.read((char*)bankRegister.data(), bankRegister.size());
-    is.read((char*)&mirror, sizeof mirror);
-    is.read((char*)&prgRamProtect, sizeof prgRamProtect);
-    is.read((char*)&irqReload, sizeof irqReload);
-    is.read((char*)&irqCounter, sizeof irqCounter);
-    is.read((char*)&irqEnable, sizeof irqEnable);
-    is.read((char*)&irqActive, sizeof irqActive);
-}
-
-uint8_t Mapper4::cpuRead(uint16_t addr) {
+std::uint8_t Mapper4::cpuRead(std::uint16_t addr) {
     if (addr >= 0x6000 && addr < 0x8000) {
         return prgRam[addr & 0x1FFF];
     }
 
-    uint32_t baseAddr = 0;
-    uint8_t d6 = (bankSelect >> 6) & 1;
+    std::uint32_t baseAddr = 0;
+    std::uint8_t d6 = (bankSelect >> 6) & 1;
 
     if (addr >= 0x8000 && addr < 0xA000) {
         if (d6) {
@@ -50,13 +26,13 @@ uint8_t Mapper4::cpuRead(uint16_t addr) {
         baseAddr = (prgBanks() * 2 - 1) * 0x2000;
     }
 
-    uint32_t mappedAddr = baseAddr + (addr & 0x1FFF);
+    std::uint32_t mappedAddr = baseAddr + (addr & 0x1FFF);
     assert(mappedAddr >= 0 && mappedAddr < cartridge->prgRom.size());
 
     return cartridge->prgRom[mappedAddr];
 }
 
-void Mapper4::cpuWrite(uint16_t addr, uint8_t data) {
+void Mapper4::cpuWrite(std::uint16_t addr, std::uint8_t data) {
     if (addr >= 0x6000 && addr < 0x8000) {
         prgRam[addr & 0x1FFF] = data;
         return;
@@ -98,11 +74,11 @@ void Mapper4::cpuWrite(uint16_t addr, uint8_t data) {
     }
 }
 
-uint8_t Mapper4::ppuRead(uint16_t addr) {
+std::uint8_t Mapper4::ppuRead(std::uint16_t addr) {
     assert(addr >= 0 && addr < 0x2000);
 
-    uint32_t baseAddr = 0;
-    uint8_t d7 = (bankSelect >> 7) & 1;
+    std::uint32_t baseAddr = 0;
+    std::uint8_t d7 = (bankSelect >> 7) & 1;
 
     if (addr >= 0x0000 && addr < 0x0400) {
         if (d7) {
@@ -154,13 +130,13 @@ uint8_t Mapper4::ppuRead(uint16_t addr) {
         }
     }
 
-    uint32_t mappedAddr = baseAddr + (addr & 0x03FF);
+    std::uint32_t mappedAddr = baseAddr + (addr & 0x03FF);
     assert(mappedAddr >= 0 && mappedAddr < cartridge->chrRom.size());
 
     return cartridge->chrRom[mappedAddr];
 }
 
-void Mapper4::ppuWrite(uint16_t addr, uint8_t data) {
+void Mapper4::ppuWrite(std::uint16_t addr, std::uint8_t data) {
     assert(0);
 }
 
@@ -176,6 +152,30 @@ void Mapper4::reset() {
 
     irqEnable = false;
     irqActive = false;
+}
+
+void Mapper4::serialize(std::ostream& os) const {
+    os.write(reinterpret_cast<const char*>(prgRam.data()), prgRam.size());
+    os.write(reinterpret_cast<const char*>(&bankSelect), sizeof bankSelect);
+    os.write(reinterpret_cast<const char*>(bankRegister.data()), bankRegister.size());
+    os.write(reinterpret_cast<const char*>(&mirror), sizeof mirror);
+    os.write(reinterpret_cast<const char*>(&prgRamProtect), sizeof prgRamProtect);
+    os.write(reinterpret_cast<const char*>(&irqReload), sizeof irqReload);
+    os.write(reinterpret_cast<const char*>(&irqCounter), sizeof irqCounter);
+    os.write(reinterpret_cast<const char*>(&irqEnable), sizeof irqEnable);
+    os.write(reinterpret_cast<const char*>(&irqActive), sizeof irqActive);
+}
+
+void Mapper4::deserialize(std::istream& is) {
+    is.read(reinterpret_cast<char*>(prgRam.data()), prgRam.size());
+    is.read(reinterpret_cast<char*>(&bankSelect), sizeof bankSelect);
+    is.read(reinterpret_cast<char*>(bankRegister.data()), bankRegister.size());
+    is.read(reinterpret_cast<char*>(&mirror), sizeof mirror);
+    is.read(reinterpret_cast<char*>(&prgRamProtect), sizeof prgRamProtect);
+    is.read(reinterpret_cast<char*>(&irqReload), sizeof irqReload);
+    is.read(reinterpret_cast<char*>(&irqCounter), sizeof irqCounter);
+    is.read(reinterpret_cast<char*>(&irqEnable), sizeof irqEnable);
+    is.read(reinterpret_cast<char*>(&irqActive), sizeof irqActive);
 }
 
 Mirroring Mapper4::mirroring() const {

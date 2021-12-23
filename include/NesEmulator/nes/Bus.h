@@ -3,8 +3,9 @@
 
 #include <array>
 #include <cstdint>
+#include <istream>
 #include <memory>
-#include <vector>
+#include <ostream>
 
 #include "CPU.h"
 #include "Joypad.h"
@@ -19,22 +20,22 @@ class Bus {
 public:
     explicit Bus(std::unique_ptr<Mapper> mapper);
 
-    void serialize(std::ostream& os);
-    void deserialize(std::istream& is);
-
     // CPU and PPU have different buses.
 
     // CPU read from and write to the MAIN bus.
-    uint8_t cpuRead(uint16_t addr);
-    uint16_t cpuRead16(uint16_t addr);
-    void cpuWrite(uint16_t addr, uint8_t data);
+    std::uint8_t cpuRead(std::uint16_t addr);
+    std::uint16_t cpuRead16(std::uint16_t addr);
+    void cpuWrite(std::uint16_t addr, std::uint8_t data);
 
     // PPU read from and write to the PPU bus.
-    uint8_t ppuRead(uint16_t addr);
-    void ppuWrite(uint16_t addr, uint8_t data);
+    std::uint8_t ppuRead(std::uint16_t addr);
+    void ppuWrite(std::uint16_t addr, std::uint8_t data);
 
     void clock();
     void reset();
+
+    void serialize(std::ostream& os) const;
+    void deserialize(std::istream& is);
 
     Mapper& getMapper();
     CPU& getCPU();
@@ -46,8 +47,8 @@ private:
     std::unique_ptr<Mapper> mapper;
     CPU cpu;
     PPU ppu;
-    std::array<uint8_t, 2_kb> cpuRam{};
-    std::array<uint8_t, 2_kb> ppuRam{};
+    std::array<std::uint8_t, 2_kb> cpuRam{};
+    std::array<std::uint8_t, 2_kb> ppuRam{};
 
     Joypad joypad;
 };

@@ -27,7 +27,11 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
 
 Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartridge)) {}
 
-void Mapper::serialize(std::ostream& os) {
+void Mapper::reset() {
+    // do nothing
+}
+
+void Mapper::serialize(std::ostream& os) const {
     // do nothing
 }
 
@@ -35,19 +39,15 @@ void Mapper::deserialize(std::istream& is) {
     // do nothing
 }
 
-void Mapper::reset() {
-    // do nothing
-}
-
 Mirroring Mapper::mirroring() const {
     return cartridge->mirroring;
 }
 
-uint8_t Mapper::prgBanks() const {
+std::uint8_t Mapper::prgBanks() const {
     return cartridge->prgBanks;
 }
 
-uint8_t Mapper::chrBanks() const {
+std::uint8_t Mapper::chrBanks() const {
     return cartridge->chrBanks;
 }
 
