@@ -87,7 +87,7 @@ void PixelEngine::run() {
 
         if (realFps > fps) {
             realFps = fps;
-            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / (fps + 0.5f)) - frameTime;
+            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / (fps * 1.05)) - frameTime;
             std::this_thread::sleep_for(sleepTime);
         }
 
