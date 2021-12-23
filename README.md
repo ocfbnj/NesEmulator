@@ -1,6 +1,7 @@
 # NesEmulator
 
-This is a NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been tested, other games may or may not work:
+This is a NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been
+tested, other games may or may not work:
 
 - Super Mario Bros.
 - Battle City
@@ -16,13 +17,34 @@ This is a NES emulator. It implements Mapper0-4, which cover about 80% of iNes r
 ![Contra](./images/Contra.png)
 ![Teenage Mutant Ninja Turtles III](./images/Teenage%20Mutant%20Ninja%20Turtles%20III.png)
 ![Double Dragon II](./images/Double%20Dragon%20II.png)
-![Legend of Zelda](./images/Legend%20of%20Zelda.png)
 
 ## Usage
 
 ~~~bash
 ./NesEmulator <nes file path>
 ~~~
+
+### Controller
+
+#### Player1
+
+| Button | Mapped to |
+|:------:|:---------:|
+|   A    |     J     |
+|   B    |     K     |
+| Select |   Space   |
+| Start  |   Enter   |
+|   Up   |     W     |
+|  Down  |     S     |
+|  Left  |     A     |
+| Right  |     D     |
+
+#### Quick Save
+
+| Button | Effect  |
+|:------:|:-------:|
+|   L    |  Save   |
+|   I    | Restore |
 
 ## How to build
 
