@@ -39,12 +39,13 @@ tested, other games may or may not work:
 |  Left  |     A     |
 | Right  |     D     |
 
-#### Quick Save
+#### Other
 
 | Button | Effect  |
 |:------:|:-------:|
-|   L    |  Save   |
-|   I    | Restore |
+|   R    |  Reset  |
+|   I    |  Save   |
+|   L    | Restore |
 
 ## How to build
 
