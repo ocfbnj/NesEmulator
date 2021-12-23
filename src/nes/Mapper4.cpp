@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "Mapper4.h"
 
 std::uint8_t Mapper4::cpuRead(std::uint16_t addr) {

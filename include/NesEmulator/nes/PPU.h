@@ -2,6 +2,7 @@
 #define OCFBNJ_NES_PPU_H
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <istream>

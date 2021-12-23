@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 
 #include "Bus.h"
 #include "PPU.h"
