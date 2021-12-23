@@ -15,8 +15,8 @@ std::uint8_t Mapper3::cpuRead(std::uint16_t addr) {
         }
     }
 
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->prgRom.size());
-    return cartridge->prgRom[mappedAddr];
+    assert(mappedAddr >= 0 && mappedAddr < cartridge.prgRom.size());
+    return cartridge.prgRom[mappedAddr];
 }
 
 void Mapper3::cpuWrite(std::uint16_t addr, std::uint8_t data) {
@@ -36,8 +36,8 @@ std::uint8_t Mapper3::ppuRead(std::uint16_t addr) {
         mappedAddr = bankSelect * 0x2000 + addr;
     }
 
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->chrRom.size());
-    return cartridge->chrRom[mappedAddr];
+    assert(mappedAddr >= 0 && mappedAddr < cartridge.chrRom.size());
+    return cartridge.chrRom[mappedAddr];
 }
 
 void Mapper3::ppuWrite(std::uint16_t addr, std::uint8_t data) {

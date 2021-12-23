@@ -11,8 +11,8 @@ std::uint8_t Mapper2::cpuRead(std::uint16_t addr) {
         mappedAddr = (prgBanks() - 1) * 0x4000 + (addr & 0x3FFF);
     }
 
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->prgRom.size());
-    return cartridge->prgRom[mappedAddr];
+    assert(mappedAddr >= 0 && mappedAddr < cartridge.prgRom.size());
+    return cartridge.prgRom[mappedAddr];
 }
 
 void Mapper2::cpuWrite(std::uint16_t addr, std::uint8_t data) {
@@ -23,13 +23,13 @@ void Mapper2::cpuWrite(std::uint16_t addr, std::uint8_t data) {
 
 std::uint8_t Mapper2::ppuRead(std::uint16_t addr) {
     assert(addr >= 0 && addr < 0x2000);
-    return cartridge->chrRom[addr];
+    return cartridge.chrRom[addr];
 }
 
 void Mapper2::ppuWrite(std::uint16_t addr, std::uint8_t data) {
     assert(addr >= 0 && addr < 0x2000);
     assert(chrBanks() == 0);
-    cartridge->chrRom[addr] = data;
+    cartridge.chrRom[addr] = data;
 }
 
 void Mapper2::reset() {
@@ -37,11 +37,11 @@ void Mapper2::reset() {
 }
 
 void Mapper2::serialize(std::ostream& os) const {
-    os.write(reinterpret_cast<const char*>(cartridge->chrRom.data()), cartridge->chrRom.size());
+    os.write(reinterpret_cast<const char*>(cartridge.chrRom.data()), cartridge.chrRom.size());
     os.write(reinterpret_cast<const char*>(&bankSelect), sizeof bankSelect);
 }
 
 void Mapper2::deserialize(std::istream& is) {
-    is.read(reinterpret_cast<char*>(cartridge->chrRom.data()), cartridge->chrRom.size());
+    is.read(reinterpret_cast<char*>(cartridge.chrRom.data()), cartridge.chrRom.size());
     is.read(reinterpret_cast<char*>(&bankSelect), sizeof bankSelect);
 }

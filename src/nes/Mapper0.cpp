@@ -15,8 +15,8 @@ std::uint8_t Mapper0::cpuRead(std::uint16_t addr) {
         }
     }
 
-    assert(mappedAddr >= 0 && mappedAddr < cartridge->prgRom.size());
-    return cartridge->prgRom[mappedAddr];
+    assert(mappedAddr >= 0 && mappedAddr < cartridge.prgRom.size());
+    return cartridge.prgRom[mappedAddr];
 }
 
 void Mapper0::cpuWrite(std::uint16_t addr, std::uint8_t data) {
@@ -25,10 +25,10 @@ void Mapper0::cpuWrite(std::uint16_t addr, std::uint8_t data) {
 
 std::uint8_t Mapper0::ppuRead(std::uint16_t addr) {
     assert(addr >= 0 && addr < 0x2000);
-    return cartridge->chrRom[addr];
+    return cartridge.chrRom[addr];
 }
 
 void Mapper0::ppuWrite(std::uint16_t addr, std::uint8_t data) {
     assert(addr >= 0 && addr < 0x2000);
-    cartridge->chrRom[addr] = data;
+    cartridge.chrRom[addr] = data;
 }

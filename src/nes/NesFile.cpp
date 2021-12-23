@@ -25,7 +25,7 @@ struct NesFileHeader {
 
 static_assert(sizeof(NesFileHeader) == 16, "The header is not 16 bytes");
 
-std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
+std::optional<Cartridge> loadNesFile(std::string_view path) {
     std::ifstream nesFile{path.data(), std::ifstream::in | std::ifstream::binary};
     if (!nesFile) {
         std::cerr << "Cannot open the nes file from " << path << "\n";
@@ -109,5 +109,12 @@ std::unique_ptr<Cartridge> loadNesFile(std::string_view path) {
         std::cout << "The board uses CHR RAM\n";
     }
 
-    return std::make_unique<Cartridge>(header.prgSize, header.chrSize, mapperNum, mirroringType, std::move(prgRom), std::move(chrRom));
+    return Cartridge{
+        .prgBanks = header.prgSize,
+        .chrBanks = header.chrSize,
+        .mapperNum = mapperNum,
+        .mirroring = mirroringType,
+        .prgRom = std::move(prgRom),
+        .chrRom = std::move(chrRom),
+    };
 }

@@ -7,8 +7,8 @@
 #include "Mapper3.h"
 #include "Mapper4.h"
 
-std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
-    switch (cartridge->mapperNum) {
+std::unique_ptr<Mapper> Mapper::create(Cartridge cartridge) {
+    switch (cartridge.mapperNum) {
     case 0:
         return std::make_unique<Mapper0>(std::move(cartridge));
     case 1:
@@ -25,7 +25,7 @@ std::unique_ptr<Mapper> Mapper::create(std::unique_ptr<Cartridge> cartridge) {
     }
 }
 
-Mapper::Mapper(std::unique_ptr<Cartridge> cartridge) : cartridge(std::move(cartridge)) {}
+Mapper::Mapper(Cartridge cartridge) : cartridge(std::move(cartridge)) {}
 
 void Mapper::reset() {
     // do nothing
@@ -40,15 +40,15 @@ void Mapper::deserialize(std::istream& is) {
 }
 
 Mirroring Mapper::mirroring() const {
-    return cartridge->mirroring;
+    return cartridge.mirroring;
 }
 
 std::uint8_t Mapper::prgBanks() const {
-    return cartridge->prgBanks;
+    return cartridge.prgBanks;
 }
 
 std::uint8_t Mapper::chrBanks() const {
-    return cartridge->chrBanks;
+    return cartridge.chrBanks;
 }
 
 bool Mapper::irqState() const {

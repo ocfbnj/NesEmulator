@@ -19,7 +19,7 @@ private:
     void checkReset();
     void checkSerialization();
 
-    Bus bus;
+    Bus nes;
 
     float freeTime = 0.0f;
 };

@@ -12,9 +12,9 @@
 // See https://bugzmanov.github.io/nes_ebook/chapter_5.html
 class Mapper {
 public:
-    static std::unique_ptr<Mapper> create(std::unique_ptr<Cartridge> cartridge);
+    static std::unique_ptr<Mapper> create(Cartridge cartridge);
 
-    explicit Mapper(std::unique_ptr<Cartridge> cartridge);
+    explicit Mapper(Cartridge cartridge);
     virtual ~Mapper() = default;
 
     virtual std::uint8_t cpuRead(std::uint16_t addr) = 0;
@@ -39,7 +39,7 @@ protected:
     std::uint8_t prgBanks() const;
     std::uint8_t chrBanks() const;
 
-    std::unique_ptr<Cartridge> cartridge;
+    Cartridge cartridge;
 };
 
 #endif // OCFBNJ_NES_MAPPER_H

@@ -1,4 +1,3 @@
-#include <iostream>
 #include <unordered_map>
 
 #include "NesEmulator/nes/Mapper.h"
@@ -8,7 +7,7 @@
 
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
-      bus(Mapper::create(loadNesFile(nesFile))) {}
+      nes(Mapper::create(std::move(loadNesFile(nesFile).value()))) {}
 
 void Emulator::onUpdate(float elapsedTime) {
     // CPU clock frequency is 1.789773 MHz
@@ -24,10 +23,10 @@ void Emulator::onUpdate(float elapsedTime) {
         freeTime += (1.0f / 60.0f) - elapsedTime;
 
         do {
-            bus.clock();
-        } while (!bus.getPPU().isFrameComplete());
+            nes.clock();
+        } while (!nes.getPPU().isFrameComplete());
 
-        renderFrame(bus.getPPU().getFrame());
+        renderFrame(nes.getPPU().getFrame());
     }
 }
 
@@ -58,9 +57,9 @@ void Emulator::checkKeyboard() {
     for (auto [glfwKey, btn] : keyMap) {
         int status = glfwGetKey(getWindow(), glfwKey);
         if (status == GLFW_PRESS) {
-            bus.getJoypad().press(btn);
+            nes.getJoypad().press(btn);
         } else if (status == GLFW_RELEASE) {
-            bus.getJoypad().release(btn);
+            nes.getJoypad().release(btn);
         }
     }
 }
@@ -70,7 +69,7 @@ void Emulator::checkReset() {
 
     if (int status = glfwGetKey(getWindow(), GLFW_KEY_R); !pressedReset && status == GLFW_PRESS) {
         pressedReset = true;
-        bus.reset();
+        nes.reset();
     } else if (status == GLFW_RELEASE) {
         pressedReset = false;
     }
@@ -86,7 +85,7 @@ void Emulator::checkSerialization() {
         pressedSave = true;
 
         std::ostringstream oss;
-        bus.serialize(oss);
+        nes.serialize(oss);
         dump = oss.str();
     } else if (statusI == GLFW_RELEASE) {
         pressedSave = false;
@@ -97,7 +96,7 @@ void Emulator::checkSerialization() {
 
         if (!dump.empty()) {
             std::istringstream iss{dump};
-            bus.deserialize(iss);
+            nes.deserialize(iss);
         }
     } else if (statusL == GLFW_RELEASE) {
         pressedLoad = false;
