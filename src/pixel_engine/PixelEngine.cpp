@@ -83,17 +83,6 @@ void PixelEngine::run() {
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-        std::chrono::duration<float> frameTime = std::chrono::steady_clock::now() - frameStart;
-        float realFps = std::chrono::duration<float>(1.0f) / frameTime;
-
-        if (realFps > fps) {
-            realFps = fps;
-            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / (fps * 1.05)) - frameTime;
-            std::this_thread::sleep_for(sleepTime);
-        }
-
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(realFps)) + "]").data());
     }
 
     onEnd();
