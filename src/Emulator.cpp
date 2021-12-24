@@ -29,7 +29,7 @@ bool Emulator::onUpdate(float elapsedTime) {
         return false;
     }
 
-    freeTime += (1.0f / 60.0f) - elapsedTime;
+    freeTime += (1.0f / 60.098f) - elapsedTime;
 
     do {
         nes.clock();
