@@ -7,19 +7,14 @@
 
 #include "NesEmulator/nes/Bus.h"
 #include "NesEmulator/nes/CPU.h"
-#include "NesEmulator/nes/Mapper.h"
 #include "NesEmulator/nes/NesFile.h"
-#include "NesEmulator/nes/PPU.h"
 
 GTEST_TEST(Nes, CPU) {
     auto cartridge = loadNesFile("nestest.nes");
     ASSERT_TRUE(cartridge.has_value());
 
-    auto mapper = Mapper::create(std::move(cartridge.value()));
-    ASSERT_TRUE(mapper != nullptr);
-
     Bus bus;
-    bus.insert(cartridge.value());
+    bus.insert(std::move(cartridge.value()));
     bus.powerUp();
 
     CPU& cpu = bus.getCPU();

@@ -10,7 +10,7 @@ std::ostream& operator<<(std::ostream& os, const CPU& cpu) {
     os << " A:" << std::setw(2) << +cpu.a
        << " X:" << std::setw(2) << +cpu.x
        << " Y:" << std::setw(2) << +cpu.y
-       << " P:" << std::setw(2) << +cpu.status
+       << " P:" << std::setw(2) << +cpu.status.reg
        << " SP:" << std::setw(2) << +cpu.sp
        << " CYC:" << std::dec << cpu.totalCycles;
 
@@ -303,16 +303,16 @@ void CPU::reset() {
     y = 0;
     sp = 0xFD;
 
-    status = 0x24;
+    status.reg = 0x24;
 
     cycles = 8;
 }
 
 void CPU::nmi() {
     push16(pc);
-    push(status);
+    push(status.reg);
 
-    i = 1;
+    status.i = 1;
 
     pc = read16(0xFFFA);
 
@@ -320,11 +320,11 @@ void CPU::nmi() {
 }
 
 void CPU::irq() {
-    if (i == 0) {
+    if (status.i == 0) {
         push16(pc);
-        push(status);
+        push(status.reg);
 
-        i = 1;
+        status.i = 1;
 
         pc = read16(0xFFFE);
 
@@ -361,9 +361,8 @@ void CPU::step() {
     bool pageCrossed = false;
 
     const Operation& op = opTable[opcode];
-    addressingMode = op.addressing;
 
-    switch (addressingMode) {
+    switch (op.addressing) {
     case Addressing::Imp:
     case Addressing::Acc:
         // ignore
@@ -471,40 +470,40 @@ std::uint16_t CPU::pop16() {
 
 void CPU::ADC(std::uint16_t address) {
     std::uint8_t m = read(address);
-    std::uint16_t sum = std::uint16_t(a) + m + c;
+    std::uint16_t sum = std::uint16_t(a) + m + status.c;
 
-    c = (sum > 0xFF ? 1 : 0);
-    v = ((a ^ sum) & (m ^ sum) & 0x80 ? 1 : 0);
+    status.c = (sum > 0xFF ? 1 : 0);
+    status.v = ((a ^ sum) & (m ^ sum) & 0x80 ? 1 : 0);
 
     a = std::uint8_t(sum);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::AND(std::uint16_t address) {
     a = a & read(address);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::ASL(std::uint16_t address) {
-    if (addressingMode == Addressing::Acc) {
-        c = (a >> 7) & 1;
+    if (opTable[opcode].addressing == Addressing::Acc) {
+        status.c = (a >> 7) & 1;
         a <<= 1;
-        z = (a == 0 ? 1 : 0);
-        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (a == 0 ? 1 : 0);
+        status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
         std::uint8_t m = read(address);
-        c = (m >> 7) & 1;
+        status.c = (m >> 7) & 1;
         m <<= 1;
         write(address, m);
-        z = (m == 0 ? 1 : 0);
-        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (m == 0 ? 1 : 0);
+        status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
 }
 
 void CPU::BCC(std::uint16_t address) {
-    if (!c) {
+    if (!status.c) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
             cycles += 2;
@@ -515,7 +514,7 @@ void CPU::BCC(std::uint16_t address) {
 }
 
 void CPU::BCS(std::uint16_t address) {
-    if (c) {
+    if (status.c) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
             cycles += 2;
@@ -526,7 +525,7 @@ void CPU::BCS(std::uint16_t address) {
 }
 
 void CPU::BEQ(std::uint16_t address) {
-    if (z) {
+    if (status.z) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
             cycles += 2;
@@ -538,27 +537,27 @@ void CPU::BEQ(std::uint16_t address) {
 
 void CPU::BIT(std::uint16_t address) {
     std::uint8_t m = read(address);
-    z = (m & a) == 0;
-    v = (m >> 6) & 1;
-    n = (m >> 7) & 1;
+    status.z = (m & a) == 0;
+    status.v = (m >> 6) & 1;
+    status.n = (m >> 7) & 1;
 }
 
 void CPU::BMI(std::uint16_t address) {
-    if (n) {
+    if (status.n) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
 }
 
 void CPU::BNE(std::uint16_t address) {
-    if (!z) {
+    if (!status.z) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
 }
 
 void CPU::BPL(std::uint16_t address) {
-    if (!n) {
+    if (!status.n) {
         pc += address;
         cycles += (isCrossed(pc, pc - address) ? 2 : 1);
     }
@@ -571,7 +570,7 @@ void CPU::BRK(std::uint16_t address) {
 }
 
 void CPU::BVC(std::uint16_t address) {
-    if (!v) {
+    if (!status.v) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
             cycles += 2;
@@ -582,7 +581,7 @@ void CPU::BVC(std::uint16_t address) {
 }
 
 void CPU::BVS(std::uint16_t address) {
-    if (v) {
+    if (status.v) {
         pc += address;
         if (isCrossed(pc, pc - address)) {
             cycles += 2;
@@ -593,40 +592,40 @@ void CPU::BVS(std::uint16_t address) {
 }
 
 void CPU::CLC(std::uint16_t) {
-    c = 0;
+    status.c = 0;
 }
 
 void CPU::CLD(std::uint16_t) {
-    d = 0;
+    status.d = 0;
 }
 
 void CPU::CLI(std::uint16_t) {
-    i = 0;
+    status.i = 0;
 }
 
 void CPU::CLV(std::uint16_t) {
-    v = 0;
+    status.v = 0;
 }
 
 void CPU::CMP(std::uint16_t address) {
     std::uint8_t m = read(address);
-    c = (a >= m ? 1 : 0);
-    z = (a == m ? 1 : 0);
-    n = ((((a - m) >> 7) & 1) == 1 ? 1 : 0);
+    status.c = (a >= m ? 1 : 0);
+    status.z = (a == m ? 1 : 0);
+    status.n = ((((a - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::CPX(std::uint16_t address) {
     std::uint8_t m = read(address);
-    c = (x >= m ? 1 : 0);
-    z = (x == m ? 1 : 0);
-    n = ((((x - m) >> 7) & 1) == 1 ? 1 : 0);
+    status.c = (x >= m ? 1 : 0);
+    status.z = (x == m ? 1 : 0);
+    status.n = ((((x - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::CPY(std::uint16_t address) {
     std::uint8_t m = read(address);
-    c = (y >= m ? 1 : 0);
-    z = (y == m ? 1 : 0);
-    n = ((((y - m) >> 7) & 1) == 1 ? 1 : 0);
+    status.c = (y >= m ? 1 : 0);
+    status.z = (y == m ? 1 : 0);
+    status.n = ((((y - m) >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::DEC(std::uint16_t address) {
@@ -634,26 +633,26 @@ void CPU::DEC(std::uint16_t address) {
     m--;
     write(address, m);
 
-    z = (m == 0 ? 1 : 0);
-    n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (m == 0 ? 1 : 0);
+    status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::DEX(std::uint16_t) {
     x--;
-    z = (x == 0 ? 1 : 0);
-    n = (((x >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (x == 0 ? 1 : 0);
+    status.n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::DEY(std::uint16_t) {
     y--;
-    z = (y == 0 ? 1 : 0);
-    n = (((y >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (y == 0 ? 1 : 0);
+    status.n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::EOR(std::uint16_t address) {
     a = a ^ read(address);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::INC(std::uint16_t address) {
@@ -661,20 +660,20 @@ void CPU::INC(std::uint16_t address) {
     m++;
     write(address, m);
 
-    z = (m == 0 ? 1 : 0);
-    n = (((m >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (m == 0 ? 1 : 0);
+    status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::INX(std::uint16_t) {
     x++;
-    z = (x == 0 ? 1 : 0);
-    n = (((x >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (x == 0 ? 1 : 0);
+    status.n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::INY(std::uint16_t) {
     y++;
-    z = (y == 0 ? 1 : 0);
-    n = (((y >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (y == 0 ? 1 : 0);
+    status.n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::JMP(std::uint16_t address) {
@@ -688,35 +687,35 @@ void CPU::JSR(std::uint16_t address) {
 
 void CPU::LDA(std::uint16_t address) {
     a = read(address);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::LDX(std::uint16_t address) {
     x = read(address);
-    z = (x == 0 ? 1 : 0);
-    n = (((x >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (x == 0 ? 1 : 0);
+    status.n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::LDY(std::uint16_t address) {
     y = read(address);
-    z = (y == 0 ? 1 : 0);
-    n = (((y >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (y == 0 ? 1 : 0);
+    status.n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::LSR(std::uint16_t address) {
-    if (addressingMode == Addressing::Acc) {
-        c = a & 1;
+    if (opTable[opcode].addressing == Addressing::Acc) {
+        status.c = a & 1;
         a >>= 1;
-        z = (a == 0 ? 1 : 0);
-        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (a == 0 ? 1 : 0);
+        status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
         std::uint8_t m = read(address);
-        c = m & 1;
+        status.c = m & 1;
         m >>= 1;
         write(address, m);
-        z = (m == 0 ? 1 : 0);
-        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (m == 0 ? 1 : 0);
+        status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
 }
 
@@ -726,8 +725,8 @@ void CPU::NOP(std::uint16_t) {
 
 void CPU::ORA(std::uint16_t address) {
     a = a | read(address);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::PHA(std::uint16_t) {
@@ -735,57 +734,57 @@ void CPU::PHA(std::uint16_t) {
 }
 
 void CPU::PHP(std::uint16_t) {
-    push(status | 0x10);
+    push(status.reg | 0x10);
 }
 
 void CPU::PLA(std::uint16_t) {
     a = pop();
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::PLP(std::uint16_t) {
-    status = pop() & 0xEF | 0x20;
+    status.reg = pop() & 0xEF | 0x20;
 }
 
 void CPU::ROL(std::uint16_t address) {
-    if (addressingMode == Addressing::Acc) {
-        std::uint8_t oldC = c;
-        c = (a >> 7) & 1;
+    if (opTable[opcode].addressing == Addressing::Acc) {
+        std::uint8_t oldC = status.c;
+        status.c = (a >> 7) & 1;
         a = (a << 1) | oldC;
-        z = (a == 0 ? 1 : 0);
-        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (a == 0 ? 1 : 0);
+        status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
         std::uint8_t m = read(address);
-        std::uint8_t oldC = c;
-        c = (m >> 7) & 1;
+        std::uint8_t oldC = status.c;
+        status.c = (m >> 7) & 1;
         m = (m << 1) | oldC;
         write(address, m);
-        z = (m == 0 ? 1 : 0);
-        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (m == 0 ? 1 : 0);
+        status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
 }
 
 void CPU::ROR(std::uint16_t address) {
-    if (addressingMode == Addressing::Acc) {
-        std::uint8_t oldC = c;
-        c = a & 1;
+    if (opTable[opcode].addressing == Addressing::Acc) {
+        std::uint8_t oldC = status.c;
+        status.c = a & 1;
         a = (a >> 1) | (oldC << 7);
-        z = (a == 0 ? 1 : 0);
-        n = (((a >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (a == 0 ? 1 : 0);
+        status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
     } else {
         std::uint8_t m = read(address);
-        std::uint8_t oldC = c;
-        c = m & 1;
+        std::uint8_t oldC = status.c;
+        status.c = m & 1;
         m = (m >> 1) | (oldC << 7);
         write(address, m);
-        z = (m == 0 ? 1 : 0);
-        n = (((m >> 7) & 1) == 1 ? 1 : 0);
+        status.z = (m == 0 ? 1 : 0);
+        status.n = (((m >> 7) & 1) == 1 ? 1 : 0);
     }
 }
 
 void CPU::RTI(std::uint16_t) {
-    status = pop() & 0xEF | 0x20;
+    status.reg = pop() & 0xEF | 0x20;
     pc = pop16();
 }
 
@@ -795,26 +794,26 @@ void CPU::RTS(std::uint16_t) {
 
 void CPU::SBC(std::uint16_t address) {
     std::uint8_t m = read(address);
-    std::uint16_t diff = std::uint16_t(a) - m - (1 - c);
+    std::uint16_t diff = std::uint16_t(a) - m - (1 - status.c);
 
-    c = (diff > 0xFF ? 0 : 1);
-    v = ((a ^ diff) & (~m ^ diff) & 0x80 ? 1 : 0);
+    status.c = (diff > 0xFF ? 0 : 1);
+    status.v = ((a ^ diff) & (~m ^ diff) & 0x80 ? 1 : 0);
 
     a = std::uint8_t(diff);
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::SEC(std::uint16_t) {
-    c = 1;
+    status.c = 1;
 }
 
 void CPU::SED(std::uint16_t) {
-    d = 1;
+    status.d = 1;
 }
 
 void CPU::SEI(std::uint16_t) {
-    i = 1;
+    status.i = 1;
 }
 
 void CPU::STA(std::uint16_t address) {
@@ -831,26 +830,26 @@ void CPU::STY(std::uint16_t address) {
 
 void CPU::TAX(std::uint16_t) {
     x = a;
-    z = (x == 0 ? 1 : 0);
-    n = (((x >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (x == 0 ? 1 : 0);
+    status.n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::TAY(std::uint16_t) {
     y = a;
-    z = (y == 0 ? 1 : 0);
-    n = (((y >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (y == 0 ? 1 : 0);
+    status.n = (((y >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::TSX(std::uint16_t) {
     x = sp;
-    z = (x == 0 ? 1 : 0);
-    n = (((x >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (x == 0 ? 1 : 0);
+    status.n = (((x >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::TXA(std::uint16_t) {
     a = x;
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::TXS(std::uint16_t) {
@@ -859,8 +858,8 @@ void CPU::TXS(std::uint16_t) {
 
 void CPU::TYA(std::uint16_t) {
     a = y;
-    z = (a == 0 ? 1 : 0);
-    n = (((a >> 7) & 1) == 1 ? 1 : 0);
+    status.z = (a == 0 ? 1 : 0);
+    status.n = (((a >> 7) & 1) == 1 ? 1 : 0);
 }
 
 void CPU::NIL(std::uint16_t) {

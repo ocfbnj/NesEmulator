@@ -60,6 +60,21 @@ private:
         std::uint8_t pageCycle;
     };
 
+    struct StatusRegister {
+        union {
+            struct {
+                std::uint8_t c : 1; // carry flag
+                std::uint8_t z : 1; // zero flag
+                std::uint8_t i : 1; // interrupt disable flag
+                std::uint8_t d : 1; // decimal mode flag
+                std::uint8_t B : 2; // break command flag
+                std::uint8_t v : 1; // overflow flag
+                std::uint8_t n : 1; // negative flag
+            };
+            std::uint8_t reg;
+        };
+    };
+
     void step();
 
     std::uint8_t read(std::uint16_t addr);
@@ -147,19 +162,7 @@ private:
     std::uint8_t y = 0;     // y register
     std::uint8_t sp = 0xFD; // stack pointer
 
-    union {
-        struct {
-            std::uint8_t c : 1; // carry flag
-            std::uint8_t z : 1; // zero flag
-            std::uint8_t i : 1; // interrupt disable flag
-            std::uint8_t d : 1; // decimal mode flag
-            std::uint8_t B : 2; // break command flag
-            std::uint8_t v : 1; // overflow flag
-            std::uint8_t n : 1; // negative flag
-        };
-
-        std::uint8_t status = 0x24;
-    };
+    StatusRegister status{.reg = 0x24};
 
     std::uint8_t cycles = 8;
     // CPU Components End
@@ -168,7 +171,6 @@ private:
 
     // for convenience
     std::uint8_t opcode = 0;
-    Addressing addressingMode = Addressing::Imp;
 
     // for debug
     std::uint32_t totalCycles = 0;
