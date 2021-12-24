@@ -10,14 +10,6 @@ tested, other games may or may not work:
 - Double Dragon
 - Zelda
 
-## Screenshots
-
-![Super Mario Bros](./images/Super%20Mario%20Bros.png)
-![Battle City](images/Battle%20City.png)
-![Contra](./images/Contra.png)
-![Teenage Mutant Ninja Turtles III](./images/Teenage%20Mutant%20Ninja%20Turtles%20III.png)
-![Double Dragon II](./images/Double%20Dragon%20II.png)
-
 ## Usage
 
 ~~~bash
@@ -41,11 +33,11 @@ tested, other games may or may not work:
 
 #### Other
 
-| Button | Effect  |
-|:------:|:-------:|
-|   R    |  Reset  |
-|   I    |  Save   |
-|   L    | Restore |
+| Button |    Effect     |
+|:------:|:-------------:|
+|   R    |     Reset     |
+|   I    |  Quick Save   |
+|   L    | Quick Restore |
 
 ## How to build
 
@@ -75,6 +67,14 @@ tested, other games may or may not work:
     ~~~
 
 Now, you can find the binary in `build/src` directory.
+
+## Screenshots
+
+![Super Mario Bros](./images/Super%20Mario%20Bros.png)
+![Battle City](images/Battle%20City.png)
+![Contra](./images/Contra.png)
+![Teenage Mutant Ninja Turtles III](./images/Teenage%20Mutant%20Ninja%20Turtles%20III.png)
+![Double Dragon II](./images/Double%20Dragon%20II.png)
 
 ## References
 
