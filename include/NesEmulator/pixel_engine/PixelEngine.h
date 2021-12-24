@@ -57,6 +57,8 @@ private:
 
     std::chrono::time_point<std::chrono::steady_clock> frameStart;
     std::chrono::time_point<std::chrono::steady_clock> tp;
+
+    float fps = 60;
 };
 
 #endif // OCFBNJ_PIXEL_ENGINE_H
