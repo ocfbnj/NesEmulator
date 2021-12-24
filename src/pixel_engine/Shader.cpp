@@ -3,7 +3,8 @@
 
 #include "Shader.h"
 
-constexpr static auto DefaultVertexShader = R"(
+namespace {
+constexpr auto DefaultVertexShader = R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
@@ -17,7 +18,7 @@ void main() {
 }
 )";
 
-constexpr static auto DefaultFragmentShader = R"(
+constexpr auto DefaultFragmentShader = R"(
 #version 330 core
 
 out vec4 FragColor;
@@ -31,7 +32,7 @@ void main(){
 }
 )";
 
-static std::string readFile(std::string_view fileName) {
+std::string readFile(std::string_view fileName) {
     std::ifstream is{fileName.data(), std::ifstream::binary};
     is.seekg(0, std::ifstream::end);
 
@@ -42,6 +43,7 @@ static std::string readFile(std::string_view fileName) {
 
     return contents;
 }
+} // namespace
 
 Shader::Shader(std::string_view vertexFile, std::string_view fragmentFile) {
     std::string vertexCode = vertexFile.empty() ? DefaultVertexShader : readFile(vertexFile);
@@ -65,11 +67,6 @@ Shader::Shader(std::string_view vertexFile, std::string_view fragmentFile) {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-}
-
-Shader::Shader(Shader&& other) noexcept {
-    programId = other.programId;
-    other.programId.reset();
 }
 
 Shader::~Shader() {

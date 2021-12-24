@@ -7,12 +7,6 @@ VBO::VBO(GLfloat* vertices, GLsizeiptr size) {
     glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 
     id = vbo;
-
-}
-
-VBO::VBO(VBO&& other) noexcept {
-    id = other.id;
-    other.id.reset();
 }
 
 VBO::~VBO() {

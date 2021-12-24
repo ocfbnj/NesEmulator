@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_VBO_H
-#define NESEMULATOR_VBO_H
+#ifndef OCFBNJ_PIXEL_ENGINE_VBO_H
+#define OCFBNJ_PIXEL_ENGINE_VBO_H
 
 #include <optional>
 
@@ -8,8 +8,12 @@
 class VBO {
 public:
     VBO(GLfloat* vertices, GLsizeiptr size);
-    VBO(const VBO& other) = delete;
-    VBO(VBO&& other) noexcept;
+
+    VBO(const VBO&) = delete;
+    VBO& operator=(const VBO&) = delete;
+    VBO(VBO&& other) = default;
+    VBO& operator=(VBO&& other) = default;
+
     ~VBO();
 
     void bind();
@@ -19,4 +23,4 @@ private:
     std::optional<GLuint> id;
 };
 
-#endif // NESEMULATOR_VBO_H
+#endif // OCFBNJ_PIXEL_ENGINE_VBO_H

@@ -1,16 +1,20 @@
-#ifndef NESEMULATOR_SHADER_H
-#define NESEMULATOR_SHADER_H
+#ifndef OCFBNJ_PIXEL_ENGINE_SHADER_H
+#define OCFBNJ_PIXEL_ENGINE_SHADER_H
 
-#include <string_view>
 #include <optional>
+#include <string_view>
 
 #include <glad/glad.h>
 
 class Shader {
 public:
-    Shader(std::string_view vertexFile = "", std::string_view fragmentFile = "");
-    Shader(const Shader& other) = delete;
-    Shader(Shader&& other) noexcept;
+    explicit Shader(std::string_view vertexFile = "", std::string_view fragmentFile = "");
+
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+    Shader(Shader&&) = default;
+    Shader& operator=(Shader&&) = default;
+
     ~Shader();
 
     void activate();
@@ -20,4 +24,4 @@ private:
     std::optional<GLuint> programId;
 };
 
-#endif // NESEMULATOR_SHADER_H
+#endif // OCFBNJ_PIXEL_ENGINE_SHADER_H

@@ -9,11 +9,6 @@ VAO::VAO() {
     id = vao;
 }
 
-VAO::VAO(VAO&& other) noexcept {
-    id = other.id;
-    other.id.reset();
-}
-
 VAO::~VAO() {
     if (id.has_value()) {
         glDeleteVertexArrays(1, &id.value());

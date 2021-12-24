@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_TEXTURE_H
-#define NESEMULATOR_TEXTURE_H
+#ifndef OCFBNJ_PIXEL_ENGINE_TEXTURE_H
+#define OCFBNJ_PIXEL_ENGINE_TEXTURE_H
 
 #include <optional>
 
@@ -8,11 +8,13 @@
 class Texture {
 public:
     Texture(const void* bytes, GLint width, GLint height);
-    Texture(const Texture& other) = delete;
-    Texture(Texture&& other) noexcept;
-    ~Texture();
 
-    Texture& operator=(Texture&& other) noexcept;
+    Texture(const Texture&) = delete;
+    Texture& operator=(const Texture&) = delete;
+    Texture(Texture&&) = default;
+    Texture& operator=(Texture&&) = default;
+
+    ~Texture();
 
     void bind();
     void unBind();
@@ -21,4 +23,4 @@ private:
     std::optional<GLuint> id;
 };
 
-#endif // NESEMULATOR_TEXTURE_H
+#endif // OCFBNJ_PIXEL_ENGINE_TEXTURE_H

@@ -9,11 +9,6 @@ EBO::EBO(GLuint* indices, GLsizeiptr size) {
     id = ebo;
 }
 
-EBO::EBO(EBO&& other) noexcept {
-    id = other.id;
-    other.id.reset();
-}
-
 EBO::~EBO() {
     if (id.has_value()) {
         glDeleteBuffers(GL_ELEMENT_ARRAY_BUFFER, &id.value());

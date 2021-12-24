@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_VAO_H
-#define NESEMULATOR_VAO_H
+#ifndef OCFBNJ_PIXEL_ENGINE_VAO_H
+#define OCFBNJ_PIXEL_ENGINE_VAO_H
 
 #include <optional>
 
@@ -10,8 +10,12 @@ class VBO;
 class VAO {
 public:
     VAO();
-    VAO(const VAO& other) = delete;
-    VAO(VAO&& other) noexcept;
+
+    VAO(const VAO&) = delete;
+    VAO& operator=(const VAO&) = delete;
+    VAO(VAO&&) = default;
+    VAO& operator=(VAO&&) = default;
+
     ~VAO();
 
     void linkAttrib(VBO& vbo, GLuint layout, GLint size, GLenum type, GLsizei stride, void* offset);
@@ -23,4 +27,4 @@ private:
     std::optional<GLuint> id;
 };
 
-#endif // NESEMULATOR_VAO_H
+#endif // OCFBNJ_PIXEL_ENGINE_VAO_H

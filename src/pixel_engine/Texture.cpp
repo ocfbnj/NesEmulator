@@ -16,26 +16,10 @@ Texture::Texture(const void* bytes, GLint width, GLint height) {
     id = texture;
 }
 
-Texture::Texture(Texture&& other) noexcept {
-    id = other.id;
-    other.id.reset();
-}
-
 Texture::~Texture() {
     if (id.has_value()) {
         glDeleteTextures(GL_TEXTURE_2D, &id.value());
     }
-}
-
-Texture& Texture::operator=(Texture&& other) noexcept {
-    if (this == &other) {
-        return *this;
-    }
-
-    id = other.id;
-    other.id.reset();
-
-    return *this;
 }
 
 void Texture::bind() {

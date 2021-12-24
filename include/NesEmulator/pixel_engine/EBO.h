@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_EBO_H
-#define NESEMULATOR_EBO_H
+#ifndef OCFBNJ_PIXEL_ENGINE_EBO_H
+#define OCFBNJ_PIXEL_ENGINE_EBO_H
 
 #include <optional>
 
@@ -8,8 +8,12 @@
 class EBO {
 public:
     EBO(GLuint* indices, GLsizeiptr size);
-    EBO(const EBO& other) = delete;
-    EBO(EBO&& other) noexcept;
+
+    EBO(const EBO&) = delete;
+    EBO& operator=(const EBO&) = delete;
+    EBO(EBO&&) = default;
+    EBO& operator=(EBO&&) = default;
+    
     ~EBO();
 
     void bind();
@@ -19,4 +23,4 @@ private:
     std::optional<GLuint> id;
 };
 
-#endif // NESEMULATOR_EBO_H
+#endif // OCFBNJ_PIXEL_ENGINE_EBO_H
