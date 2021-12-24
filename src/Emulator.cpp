@@ -16,7 +16,7 @@ void Emulator::onBegin() {
     nes.powerUp();
 }
 
-void Emulator::onUpdate(float elapsedTime) {
+bool Emulator::onUpdate(float elapsedTime) {
     // CPU clock frequency is 1.789773 MHz
     // PPU clock frequency is three times CPU (~5.369319 MHz)
     // A frame has 341 x 262 = 89,342 clock cycles
@@ -26,15 +26,18 @@ void Emulator::onUpdate(float elapsedTime) {
 
     if (freeTime > 0.0f) {
         freeTime -= elapsedTime;
-    } else {
-        freeTime += (1.0f / 60.0f) - elapsedTime;
-
-        do {
-            nes.clock();
-        } while (!nes.getPPU().isFrameComplete());
-
-        renderFrame(nes.getPPU().getFrame());
+        return false;
     }
+
+    freeTime += (1.0f / 60.0f) - elapsedTime;
+
+    do {
+        nes.clock();
+    } while (!nes.getPPU().isFrameComplete());
+
+    renderFrame(nes.getPPU().getFrame());
+
+    return true;
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {

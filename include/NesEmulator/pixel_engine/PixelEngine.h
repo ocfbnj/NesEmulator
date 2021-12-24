@@ -31,10 +31,12 @@ public:
     GLFWwindow* getWindow();
 
     virtual void onBegin();
-    virtual void onUpdate(float elapsedTime);
+    virtual bool onUpdate(float elapsedTime);
     virtual void onEnd();
 
 private:
+    void render();
+
     int width;
     int height;
 
@@ -56,10 +58,9 @@ private:
     Texture texture;
 
     std::chrono::time_point<std::chrono::steady_clock> frameStart;
-    std::chrono::time_point<std::chrono::steady_clock> tp;
+    std::chrono::time_point<std::chrono::steady_clock> lastUserUpdate;
+    std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
 
-    float fps = 60.0f;
-    std::chrono::time_point<std::chrono::steady_clock> fpsUpdate;
     std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
 };
 

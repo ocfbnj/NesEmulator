@@ -1,5 +1,4 @@
 #include <cassert>
-#include <thread>
 
 #include "PixelEngine.h"
 
@@ -62,44 +61,30 @@ PixelEngine::~PixelEngine() {
 void PixelEngine::run() {
     onBegin();
 
-    tp = std::chrono::steady_clock::now();
-    frameStart = tp;
+    frameStart = std::chrono::steady_clock::now();
+    lastUserUpdate = frameStart;
+    lastFpsUpdate = frameStart;
 
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-
-        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - tp;
-        tp = std::chrono::steady_clock::now();
-
-        onUpdate(elapsedTime.count());
-
-        glClearColor(0, 0, 0, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        shader.activate();
-        texture.bind();
-        vao.bind();
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
-
-        glfwSwapBuffers(window);
-
-        std::chrono::duration<float> frameTime = std::chrono::steady_clock::now() - frameStart;
         frameStart = std::chrono::steady_clock::now();
 
-        float realFps = std::chrono::duration<float>(1.0f) / frameTime;
+        glfwPollEvents();
 
-        if (realFps > fps) {
-            realFps = fps;
+        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - lastUserUpdate;
+        lastUserUpdate = std::chrono::steady_clock::now();
+        bool updated = onUpdate(elapsedTime.count());
 
-            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / fps) - frameTime;
-            std::this_thread::sleep_for(sleepTime);
+        if (updated) {
+            render();
         }
 
-        if (auto now = std::chrono::steady_clock::now(); now - fpsUpdate >= fpsUpdateInterval) {
-            fpsUpdate = now;
-            glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(realFps)) + "]").data());
+        std::chrono::time_point<std::chrono::steady_clock> frameEnd = std::chrono::steady_clock::now();
+        std::chrono::duration<float> frameTime = frameEnd - frameStart;
+        float fps = std::chrono::duration<float>(1.0f) / frameTime;
+
+        if (frameEnd - lastFpsUpdate > fpsUpdateInterval) {
+            lastFpsUpdate = frameEnd;
+            glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(fps)) + "]").data());
         }
     }
 
@@ -114,8 +99,8 @@ void PixelEngine::onBegin() {
     // do nothing
 }
 
-void PixelEngine::onUpdate(float elapsedTime) {
-    // do nothing
+bool PixelEngine::onUpdate(float elapsedTime) {
+    return false;
 }
 
 void PixelEngine::onEnd() {
@@ -136,4 +121,18 @@ void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
 
     y = height - y - 1;
     pixels[y * width + x] = pixel;
+}
+
+void PixelEngine::render() {
+    glClearColor(0, 0, 0, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    shader.activate();
+    texture.bind();
+    vao.bind();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+
+    glfwSwapBuffers(window);
 }

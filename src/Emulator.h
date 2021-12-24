@@ -13,7 +13,7 @@ public:
     explicit Emulator(std::string_view nesFile);
 
     void onBegin() override;
-    void onUpdate(float elapsedTime) override;
+    bool onUpdate(float elapsedTime) override;
 
 private:
     void renderFrame(const PPU::Frame& frame);
