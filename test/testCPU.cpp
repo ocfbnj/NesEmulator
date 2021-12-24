@@ -18,8 +18,11 @@ GTEST_TEST(Nes, CPU) {
     auto mapper = Mapper::create(std::move(cartridge.value()));
     ASSERT_TRUE(mapper != nullptr);
 
-    Bus bus{std::move(mapper)};
-    CPU& cpu{bus.getCPU()};
+    Bus bus;
+    bus.insert(cartridge.value());
+    bus.powerUp();
+
+    CPU& cpu = bus.getCPU();
 
     std::ostringstream oss;
     cpu.testCPU(&oss, 0xC000, 7);
