@@ -1,13 +1,20 @@
 #include <unordered_map>
 
-#include "NesEmulator/nes/Mapper.h"
 #include "NesEmulator/nes/NesFile.h"
 
 #include "Emulator.h"
 
-Emulator::Emulator(std::string_view nesFile)
-    : PixelEngine(256, 240, "Nes Emulator", 3),
-      nes(Mapper::create(std::move(loadNesFile(nesFile).value()))) {}
+Emulator::Emulator(std::string_view nesFile) : PixelEngine(256, 240, "Nes Emulator", 3), nesFile(nesFile) {}
+
+void Emulator::onBegin() {
+    std::optional<Cartridge> cartridge = loadNesFile(nesFile);
+    if (!cartridge.has_value()) {
+        throw std::runtime_error{"Cannot load the NES ROM"};
+    }
+
+    nes.insert(std::move(cartridge.value()));
+    nes.powerUp();
+}
 
 void Emulator::onUpdate(float elapsedTime) {
     // CPU clock frequency is 1.789773 MHz

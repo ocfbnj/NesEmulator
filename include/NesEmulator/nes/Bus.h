@@ -8,6 +8,7 @@
 #include <ostream>
 
 #include "CPU.h"
+#include "Cartridge.h"
 #include "Joypad.h"
 #include "Mapper.h"
 #include "PPU.h"
@@ -18,7 +19,14 @@
 // Because it contains all the components of the NES system.
 class Bus {
 public:
-    explicit Bus(std::unique_ptr<Mapper> mapper);
+    Bus() = default;
+    Bus(const Bus&) = delete;
+    Bus& operator=(const Bus&) = delete;
+    Bus(Bus&&) = default;
+    Bus& operator=(Bus&&) = default;
+
+    void insert(Cartridge cartridge);
+    void powerUp();
 
     // CPU and PPU have different buses.
 

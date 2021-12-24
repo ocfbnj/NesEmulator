@@ -1,5 +1,5 @@
-#ifndef NESEMULATOR_PIXELENGINE_H
-#define NESEMULATOR_PIXELENGINE_H
+#ifndef OCFBNJ_PIXEL_ENGINE_H
+#define OCFBNJ_PIXEL_ENGINE_H
 
 #include <chrono>
 #include <string>
@@ -30,7 +30,9 @@ public:
 
     GLFWwindow* getWindow();
 
+    virtual void onBegin();
     virtual void onUpdate(float elapsedTime);
+    virtual void onEnd();
 
 private:
     int width;
@@ -59,4 +61,4 @@ private:
     float fps = 60;
 };
 
-#endif // NESEMULATOR_PIXELENGINE_H
+#endif // OCFBNJ_PIXEL_ENGINE_H

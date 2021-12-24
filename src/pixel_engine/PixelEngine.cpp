@@ -60,6 +60,8 @@ PixelEngine::~PixelEngine() {
 }
 
 void PixelEngine::run() {
+    onBegin();
+
     tp = std::chrono::steady_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
@@ -93,13 +95,23 @@ void PixelEngine::run() {
 
         glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(realFps)) + "]").data());
     }
+
+    onEnd();
 }
 
 GLFWwindow* PixelEngine::getWindow() {
     return window;
 }
 
+void PixelEngine::onBegin() {
+    // do nothing
+}
+
 void PixelEngine::onUpdate(float elapsedTime) {
+    // do nothing
+}
+
+void PixelEngine::onEnd() {
     // do nothing
 }
 

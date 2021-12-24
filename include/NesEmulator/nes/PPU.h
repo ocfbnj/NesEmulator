@@ -46,7 +46,13 @@ public:
         std::array<Pixel, Width * Height> pixels{};
     };
 
-    explicit PPU(Bus& bus);
+    PPU() = default;
+    PPU(const PPU&) = delete;
+    PPU& operator=(const PPU&) = delete;
+    PPU(PPU&&) = default;
+    PPU& operator=(PPU&&) = default;
+
+    void connect(Bus* bus);
 
     void clock();
     void reset();
@@ -255,21 +261,21 @@ private:
     // The following member variables are PPU components, they can be used to serialize and deserialize.
 
     // PPU Components Begin
-    ControlRegister control;
-    MaskRegister mask;
-    StatusRegister status;
-    std::uint8_t oamAddr;
-    std::uint8_t internalReadBuf;
+    ControlRegister control{.reg = 0};
+    MaskRegister mask{.reg = 0};
+    StatusRegister status{.reg = 0};
+    std::uint8_t oamAddr = 0;
+    std::uint8_t internalReadBuf = 0;
 
     std::array<std::uint8_t, 32> paletteTable{};
     std::array<std::uint8_t, 256> primaryOamData{};
 
     // PPU internal registers
     // See https://wiki.nesdev.org/w/index.php?title=PPU_scrolling#PPU_internal_registers
-    LoopyRegister vramAddr; // current VRAM address (15 bits)
-    LoopyRegister tramAddr; // temporary VRAM address (15 bits)
-    std::uint8_t fineX;     // fine X scroll (3 bits)
-    std::uint8_t latch;     // first or second write toggle
+    LoopyRegister vramAddr{.reg = 0}; // current VRAM address (15 bits)
+    LoopyRegister tramAddr{.reg = 0}; // temporary VRAM address (15 bits)
+    std::uint8_t fineX = 0;           // fine X scroll (3 bits)
+    std::uint8_t latch = 0;           // first or second write toggle
 
     // for frame rendering
     // See https://wiki.nesdev.org/w/images/4/4f/Ppu.svg
@@ -277,24 +283,24 @@ private:
     std::int16_t cycle = 0;
 
     // for background rendering
-    std::uint8_t bgNtByte;     // name table
-    std::uint8_t bgAtByte;     // attribute table
-    std::uint8_t bgTileByteLo; // pattern low byte
-    std::uint8_t bgTileByteHi; // pattern high byte
-    std::uint16_t bgPatternShifterLo;
-    std::uint16_t bgPatternShifterHi;
-    std::uint16_t bgAttributeShifterLo;
-    std::uint16_t bgAttributeShifterHi;
+    std::uint8_t bgNtByte = 0;     // name table
+    std::uint8_t bgAtByte = 0;     // attribute table
+    std::uint8_t bgTileByteLo = 0; // pattern low byte
+    std::uint8_t bgTileByteHi = 0; // pattern high byte
+    std::uint16_t bgPatternShifterLo = 0;
+    std::uint16_t bgPatternShifterHi = 0;
+    std::uint16_t bgAttributeShifterLo = 0;
+    std::uint16_t bgAttributeShifterHi = 0;
 
     // for foreground rendering
     std::array<std::uint8_t, MaximumSpriteCount * 4> secondaryOamData{};
     std::array<std::uint8_t, MaximumSpriteCount> spritePatternShifterLo{};
     std::array<std::uint8_t, MaximumSpriteCount> spritePatternShifterHi{};
-    std::uint8_t spriteCount;
-    bool sprite0HitPossible;
+    std::uint8_t spriteCount = 0;
+    bool sprite0HitPossible = false;
     // PPU Components End
 
-    Bus* bus;
+    Bus* bus = nullptr;
 
     bool frameComplete = false;
     Frame frame;

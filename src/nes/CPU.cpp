@@ -282,9 +282,9 @@ std::array<CPU::Operation, 256> CPU::opTable{
     Operation{.name = "???", .addressing = Addressing::Abx, .instruction = &CPU::NIL, .cycle = 7, .pageCycle = 0},
 };
 
-CPU::CPU(Bus& bus) : bus(&bus) {
+void CPU::connect(Bus* bus) {
+    this->bus = bus;
     assert(this->bus != nullptr);
-    reset();
 }
 
 void CPU::clock() {

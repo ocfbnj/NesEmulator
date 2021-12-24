@@ -2,6 +2,7 @@
 #define EMULATOR_H
 
 #include <sstream>
+#include <string>
 #include <string_view>
 
 #include "NesEmulator/nes/Bus.h"
@@ -11,6 +12,7 @@ class Emulator : public PixelEngine {
 public:
     explicit Emulator(std::string_view nesFile);
 
+    void onBegin() override;
     void onUpdate(float elapsedTime) override;
 
 private:
@@ -20,7 +22,7 @@ private:
     void checkSerialization();
 
     Bus nes;
-
+    std::string nesFile;
     float freeTime = 0.0f;
 };
 

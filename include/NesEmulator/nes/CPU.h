@@ -15,7 +15,13 @@ class CPU {
     friend std::ostream& operator<<(std::ostream& os, const CPU& cpu);
 
 public:
-    explicit CPU(Bus& bus);
+    CPU() = default;
+    CPU(const CPU&) = delete;
+    CPU& operator=(const CPU&) = delete;
+    CPU(CPU&&) = default;
+    CPU& operator=(CPU&&) = default;
+
+    void connect(Bus* bus);
 
     void clock();
     void reset();
@@ -135,11 +141,11 @@ private:
     // CPU Components Begin
     // CPU Registers
     // See http://wiki.nesdev.com/w/index.php/CPU_registers
-    std::uint16_t pc; // program counter
-    std::uint8_t a;   // accumulator
-    std::uint8_t x;   // x register
-    std::uint8_t y;   // y register
-    std::uint8_t sp;  // stack pointer
+    std::uint16_t pc = 0;   // program counter
+    std::uint8_t a = 0;     // accumulator
+    std::uint8_t x = 0;     // x register
+    std::uint8_t y = 0;     // y register
+    std::uint8_t sp = 0xFD; // stack pointer
 
     union {
         struct {
@@ -152,13 +158,13 @@ private:
             std::uint8_t n : 1; // negative flag
         };
 
-        std::uint8_t status;
+        std::uint8_t status = 0x24;
     };
 
-    std::uint8_t cycles;
+    std::uint8_t cycles = 8;
     // CPU Components End
 
-    Bus* bus;
+    Bus* bus = nullptr;
 
     // for convenience
     std::uint8_t opcode = 0;

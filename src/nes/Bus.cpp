@@ -56,7 +56,19 @@ std::uint16_t mirrorVramAddr(std::uint16_t addr, Mirroring mirroring) {
 }
 } // namespace
 
-Bus::Bus(std::unique_ptr<Mapper> mapper) : mapper(std::move(mapper)), cpu(*this), ppu(*this) {}
+void Bus::insert(Cartridge cartridge) {
+    mapper = Mapper::create(std::move(cartridge));
+    if (mapper == nullptr) {
+        throw std::runtime_error{"No supported cartridge"};
+    }
+}
+
+void Bus::powerUp() {
+    cpu.connect(this);
+    ppu.connect(this);
+
+    reset();
+}
 
 void Bus::serialize(std::ostream& os) const {
     mapper->serialize(os);

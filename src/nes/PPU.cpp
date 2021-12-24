@@ -70,9 +70,9 @@ std::array<PPU::Pixel, 64> PPU::defaultPalette = {
     Pixel{.r = 0x11, .g = 0x11, .b = 0x11, .a = 0xFF},
 };
 
-PPU::PPU(Bus& bus) : bus(&bus) {
+void PPU::connect(Bus* bus) {
+    this->bus = bus;
     assert(this->bus != nullptr);
-    reset();
 }
 
 void PPU::clock() {
