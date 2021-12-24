@@ -57,11 +57,12 @@ private:
     std::vector<Pixel> pixels;
     Texture texture;
 
-    std::chrono::time_point<std::chrono::steady_clock> frameStart;
+    std::chrono::time_point<std::chrono::steady_clock> lastRendering;
     std::chrono::time_point<std::chrono::steady_clock> lastUserUpdate;
     std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
 
     std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
+    void updateFpsIfNeed(const std::chrono::duration<float>& frameTime);
 };
 
 #endif // OCFBNJ_PIXEL_ENGINE_H

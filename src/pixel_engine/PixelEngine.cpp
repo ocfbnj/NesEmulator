@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 
 #include "PixelEngine.h"
 
@@ -61,30 +62,25 @@ PixelEngine::~PixelEngine() {
 void PixelEngine::run() {
     onBegin();
 
-    frameStart = std::chrono::steady_clock::now();
-    lastUserUpdate = frameStart;
-    lastFpsUpdate = frameStart;
+    lastRendering = std::chrono::steady_clock::now();
+    lastUserUpdate = lastRendering;
+    lastFpsUpdate = lastRendering;
 
     while (!glfwWindowShouldClose(window)) {
-        frameStart = std::chrono::steady_clock::now();
-
         glfwPollEvents();
 
         std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - lastUserUpdate;
         lastUserUpdate = std::chrono::steady_clock::now();
+        
         bool updated = onUpdate(elapsedTime.count());
 
         if (updated) {
+            std::chrono::duration<float> frameTime = std::chrono::steady_clock::now() - lastRendering;
+            lastRendering = std::chrono::steady_clock::now();
+
             render();
-        }
 
-        std::chrono::time_point<std::chrono::steady_clock> frameEnd = std::chrono::steady_clock::now();
-        std::chrono::duration<float> frameTime = frameEnd - frameStart;
-        float fps = std::chrono::duration<float>(1.0f) / frameTime;
-
-        if (frameEnd - lastFpsUpdate > fpsUpdateInterval) {
-            lastFpsUpdate = frameEnd;
-            glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(static_cast<int>(fps)) + "]").data());
+            updateFpsIfNeed(frameTime);
         }
     }
 
@@ -135,4 +131,12 @@ void PixelEngine::render() {
     glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
+}
+
+void PixelEngine::updateFpsIfNeed(const std::chrono::duration<float>& frameTime) {
+    if (auto now = std::chrono::steady_clock::now(); now - lastFpsUpdate > fpsUpdateInterval) {
+        lastFpsUpdate = now;
+        int fps = static_cast<int>(std::round(std::chrono::duration<float>(1.0f) / frameTime));
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(fps) + "]").data());
+    }
 }
