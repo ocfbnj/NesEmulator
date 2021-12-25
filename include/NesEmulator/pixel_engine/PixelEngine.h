@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <span>
 
 // clang-format off
 #include <glad/glad.h>
@@ -25,18 +26,21 @@ public:
 
     void run();
 
+    void setFpsLimit(float value);
+
     Pixel getPixel(int x, int y) const;
     void drawPixel(int x, int y, Pixel pixel);
+    void drawPixels(std::span<const std::uint8_t> rawPixels);
 
     GLFWwindow* getWindow();
 
     virtual void onBegin();
-    virtual bool onUpdate(float elapsedTime);
+    virtual void onUpdate();
     virtual void onEnd();
 
 private:
     void render();
-    void updateFpsIfNeed(const std::chrono::duration<float>& frameTime);
+    void updateFpsIfNeed();
 
     int width;
     int height;
@@ -58,11 +62,11 @@ private:
     std::vector<Pixel> pixels;
     Texture texture;
 
-    std::chrono::time_point<std::chrono::steady_clock> lastRendering;
-    std::chrono::time_point<std::chrono::steady_clock> lastUserUpdate;
-    std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
-
+    std::chrono::time_point<std::chrono::steady_clock> startTime;
     std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
+
+    float fps = 60.0f;
+    float actualFps = 0.0f;
 };
 
 #endif // OCFBNJ_PIXEL_ENGINE_H

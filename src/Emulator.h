@@ -13,7 +13,7 @@ public:
     explicit Emulator(std::string_view nesFile);
 
     void onBegin() override;
-    bool onUpdate(float elapsedTime) override;
+    void onUpdate() override;
 
 private:
     void renderFrame(const PPU::Frame& frame);
@@ -23,7 +23,6 @@ private:
 
     Bus nes;
     std::string nesFile;
-    float freeTime = 0.0f;
 };
 
 #endif

@@ -14,39 +14,26 @@ void Emulator::onBegin() {
 
     nes.insert(std::move(cartridge.value()));
     nes.powerUp();
-}
 
-bool Emulator::onUpdate(float elapsedTime) {
     // CPU clock frequency is 1.789773 MHz
     // PPU clock frequency is three times CPU (~5.369319 MHz)
     // A frame has 341 x 262 = 89,342 clock cycles
     // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
+    setFpsLimit(60.0f);
+}
 
+void Emulator::onUpdate() {
     checkKeyboard();
-
-    if (freeTime > 0.0f) {
-        freeTime -= elapsedTime;
-        return false;
-    }
-
-    freeTime += (1.0f / 60.0f) - elapsedTime;
 
     do {
         nes.clock();
     } while (!nes.getPPU().isFrameComplete());
 
     renderFrame(nes.getPPU().getFrame());
-
-    return true;
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
-    for (int x = 0; x < 256; x++) {
-        for (int y = 0; y < 240; y++) {
-            PPU::Pixel pixel = frame.getPixel(x, y);
-            drawPixel(x, y, Pixel{.r = pixel.r, .g = pixel.g, .b = pixel.b, .a = pixel.a});
-        }
-    }
+    drawPixels(frame.getRawPixels());
 }
 
 void Emulator::checkKeyboard() {

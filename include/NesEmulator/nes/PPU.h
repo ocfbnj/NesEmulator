@@ -23,6 +23,10 @@ public:
 
     class Frame {
     public:
+        std::span<const std::uint8_t> getRawPixels() const {
+            return std::span{reinterpret_cast<const std::uint8_t*>(pixels.data()), Width * Height * sizeof(Pixel)};
+        }
+
         Pixel getPixel(int x, int y) const {
             assert(x >= 0 && x < Width);
             assert(y >= 0 && y < Height);

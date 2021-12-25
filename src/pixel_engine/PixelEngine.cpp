@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <thread>
 
 #include "PixelEngine.h"
 
@@ -60,47 +61,34 @@ PixelEngine::~PixelEngine() {
 }
 
 void PixelEngine::run() {
+    startTime = std::chrono::steady_clock::now();
+
     onBegin();
 
-    lastRendering = std::chrono::steady_clock::now();
-    lastUserUpdate = lastRendering;
-    lastFpsUpdate = lastRendering;
-
     while (!glfwWindowShouldClose(window)) {
+        updateFpsIfNeed();
         glfwPollEvents();
+        onUpdate();
+        render();
 
-        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - lastUserUpdate;
-        lastUserUpdate = std::chrono::steady_clock::now();
+        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - startTime;
+        std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / fps) - elapsedTime;
 
-        bool updated = onUpdate(elapsedTime.count());
-
-        if (updated) {
-            std::chrono::duration<float> frameTime = std::chrono::steady_clock::now() - lastRendering;
-            lastRendering = std::chrono::steady_clock::now();
-
-            render();
-
-            updateFpsIfNeed(frameTime);
+        if (sleepTime.count() > 0) {
+            actualFps = fps;
+            std::this_thread::sleep_for(sleepTime);
+        } else {
+            actualFps = std::chrono::seconds{1} / elapsedTime;
         }
+
+        startTime = std::chrono::steady_clock::now();
     }
 
     onEnd();
 }
 
-GLFWwindow* PixelEngine::getWindow() {
-    return window;
-}
-
-void PixelEngine::onBegin() {
-    // do nothing
-}
-
-bool PixelEngine::onUpdate(float elapsedTime) {
-    return false;
-}
-
-void PixelEngine::onEnd() {
-    // do nothing
+void PixelEngine::setFpsLimit(float value) {
+    fps = value;
 }
 
 Pixel PixelEngine::getPixel(int x, int y) const {
@@ -119,6 +107,27 @@ void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
     pixels[y * width + x] = pixel;
 }
 
+void PixelEngine::drawPixels(std::span<const std::uint8_t> rawPixels) {
+    assert(rawPixels.size() == pixels.size() * sizeof(decltype(pixels)::value_type));
+    std::memcpy(pixels.data(), rawPixels.data(), rawPixels.size());
+}
+
+GLFWwindow* PixelEngine::getWindow() {
+    return window;
+}
+
+void PixelEngine::onBegin() {
+    // do nothing
+}
+
+void PixelEngine::onUpdate() {
+    // do nothing
+}
+
+void PixelEngine::onEnd() {
+    // do nothing
+}
+
 void PixelEngine::render() {
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -133,10 +142,12 @@ void PixelEngine::render() {
     glfwSwapBuffers(window);
 }
 
-void PixelEngine::updateFpsIfNeed(const std::chrono::duration<float>& frameTime) {
+void PixelEngine::updateFpsIfNeed() {
+    static std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
+
     if (auto now = std::chrono::steady_clock::now(); now - lastFpsUpdate > fpsUpdateInterval) {
         lastFpsUpdate = now;
-        int fps = static_cast<int>(std::round(std::chrono::duration<float>(1.0f) / frameTime));
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(fps) + "]").data());
+        int displayedFps = static_cast<int>(std::round(actualFps));
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(displayedFps) + "]").data());
     }
 }
