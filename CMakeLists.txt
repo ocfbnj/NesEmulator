@@ -24,14 +24,15 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 # Add requires here
 conan_cmake_configure(
     REQUIRES
+        sfml/2.5.1
         gtest/cci.20210126
-        glfw/3.3.5
-        glad/0.1.34
     GENERATORS
         cmake_find_package
     IMPORTS
         "bin, *.dll -> ./src"
         "lib, *.dylib* -> ./src"
+    OPTIONS
+        sfml:shared=True
 )
 
 conan_cmake_autodetect(settings)
@@ -43,9 +44,8 @@ conan_cmake_install(
 )
 
 # Add `find_package` here
+find_package(SFML REQUIRED)
 find_package(GTest)
-find_package(glfw3 REQUIRED)
-find_package(glad REQUIRED)
 
 #############################################################################################
 ########### Conan Package Manager End #######################################################

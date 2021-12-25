@@ -6,24 +6,15 @@
 #include <string_view>
 
 #include "NesEmulator/nes/Bus.h"
-#include "NesEmulator/pixel_engine/PixelEngine.h"
 
-class Emulator : public PixelEngine {
+class Emulator {
 public:
     explicit Emulator(std::string_view nesFile);
 
-    void onBegin() override;
-    bool onUpdate(float elapsedTime) override;
+    void run();
 
 private:
-    void renderFrame(const PPU::Frame& frame);
-    void checkKeyboard();
-    void checkReset();
-    void checkSerialization();
-
     Bus nes;
-    std::string nesFile;
-    float freeTime = 0.0f;
 };
 
 #endif

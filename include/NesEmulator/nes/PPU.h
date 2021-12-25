@@ -23,11 +23,15 @@ public:
 
     class Frame {
     public:
+        const std::uint8_t* getPixels() const {
+            return reinterpret_cast<const std::uint8_t*>(pixels.data());
+        }
+
         Pixel getPixel(int x, int y) const {
             assert(x >= 0 && x < Width);
             assert(y >= 0 && y < Height);
 
-            y = Height - y - 1;
+            // y = Height - y - 1;
             return pixels[y * Width + x];
         }
 
@@ -35,7 +39,7 @@ public:
             assert(x >= 0 && x < Width);
             assert(y >= 0 && y < Height);
 
-            y = Height - y - 1;
+            // y = Height - y - 1;
             pixels[y * Width + x] = pixel;
         }
 
