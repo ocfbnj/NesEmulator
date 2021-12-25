@@ -71,7 +71,7 @@ void PixelEngine::run() {
 
         std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - lastUserUpdate;
         lastUserUpdate = std::chrono::steady_clock::now();
-        
+
         bool updated = onUpdate(elapsedTime.count());
 
         if (updated) {

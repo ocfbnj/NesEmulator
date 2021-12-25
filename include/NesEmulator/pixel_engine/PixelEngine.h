@@ -36,6 +36,7 @@ public:
 
 private:
     void render();
+    void updateFpsIfNeed(const std::chrono::duration<float>& frameTime);
 
     int width;
     int height;
@@ -62,7 +63,6 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
 
     std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
-    void updateFpsIfNeed(const std::chrono::duration<float>& frameTime);
 };
 
 #endif // OCFBNJ_PIXEL_ENGINE_H
