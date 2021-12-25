@@ -35,6 +35,7 @@ PixelEngine::GLLoader::GLLoader(int width, int height, std::string_view title, G
 
     glfwMakeContextCurrent(*window);
     glfwSetFramebufferSizeCallback(*window, framebufferSizeCallback);
+    glfwSwapInterval(0);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 }
