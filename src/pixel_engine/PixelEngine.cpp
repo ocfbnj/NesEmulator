@@ -1,5 +1,6 @@
 #include <cassert>
 #include <thread>
+#include <cmath>
 
 #include "PixelEngine.h"
 
@@ -179,8 +180,9 @@ void PixelEngine::updateFps() {
     if (now - lastFpsUpdate >= fpsUpdateInterval) {
         lastFpsUpdate = now;
 
-        Clock::rep fps = 1s / (now - tp);
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(fps) + "]").data());
+        float fps = 1s / std::chrono::duration_cast<std::chrono::duration<float>>(now - tp);
+        auto displayedFps = static_cast<int>(std::round(fps));
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(displayedFps) + "]").data());
     }
 
     tp = now;
