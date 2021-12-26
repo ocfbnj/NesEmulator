@@ -25,7 +25,7 @@ include(${CMAKE_BINARY_DIR}/conan.cmake)
 conan_cmake_configure(
     REQUIRES
         gtest/cci.20210126
-        glfw/3.3.5
+        glfw/3.3.6
         glad/0.1.34
     GENERATORS
         cmake_find_package
