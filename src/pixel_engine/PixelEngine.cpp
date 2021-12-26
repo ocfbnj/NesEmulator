@@ -1,8 +1,9 @@
 #include <cassert>
-#include <cmath>
 #include <thread>
 
 #include "PixelEngine.h"
+
+using namespace std::chrono_literals;
 
 static GLfloat vertices[] = {
     -1.0f, -1.0f, 0.0f, 0.0f, // lower left corner
@@ -55,8 +56,10 @@ PixelEngine::PixelEngine(int width, int height, std::string_view title, int scal
     vao.linkAttrib(vbo, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)(0 * sizeof(float)));
     vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-    setFpsLimit(0.0f);
+    setFpsLimit(0);
     setVsyncEnabled(false);
+
+    fpsUpdateInterval = 500ms;
 }
 
 PixelEngine::~PixelEngine() {
@@ -65,7 +68,7 @@ PixelEngine::~PixelEngine() {
 }
 
 void PixelEngine::run() {
-    startTime = std::chrono::steady_clock::now();
+    startTime = Clock::now();
 
     onBegin();
 
@@ -75,21 +78,27 @@ void PixelEngine::run() {
         onUpdate();
         render();
 
-        std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - startTime;
+        Clock::time_point now = Clock::now();
+        Clock::duration elapsedTime = now - startTime;
+        startTime = now;
 
-        if (fps != 0.0f) {
-            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / fps) - elapsedTime;
+        if (frameTimeLimit != 0s) {
+            Clock::duration sleepTime = frameTimeLimit - elapsedTime;
             std::this_thread::sleep_for(sleepTime);
-        }
 
-        startTime = std::chrono::steady_clock::now();
+            startTime += sleepTime;
+        }
     }
 
     onEnd();
 }
 
-void PixelEngine::setFpsLimit(float value) {
-    fps = value;
+void PixelEngine::setFpsLimit(int value) {
+    if (value > 0) {
+        frameTimeLimit = std::chrono::duration_cast<Clock::duration>(1s) / value;
+    } else {
+        frameTimeLimit = 0s;
+    }
 }
 
 void PixelEngine::setVsyncEnabled(bool enabled) {
@@ -148,16 +157,17 @@ void PixelEngine::render() {
 }
 
 void PixelEngine::updateFps() {
-    static std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
-    static std::chrono::time_point<std::chrono::steady_clock> tp;
+    static Clock::time_point lastFpsUpdate;
+    static Clock::time_point tp;
 
-    std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
-    actualFps = std::chrono::duration<float>{1} / (now - tp);
-    tp = now;
+    Clock::time_point now = Clock::now();
 
-    if (now - lastFpsUpdate > fpsUpdateInterval) {
+    if (now - lastFpsUpdate >= fpsUpdateInterval) {
         lastFpsUpdate = now;
-        int displayedFps = static_cast<int>(std::round(actualFps));
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(displayedFps) + "]").data());
+
+        Clock::rep fps = 1s / (now - tp);
+        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(fps) + "]").data());
     }
+
+    tp = now;
 }

@@ -2,10 +2,10 @@
 #define OCFBNJ_PIXEL_ENGINE_H
 
 #include <chrono>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <span>
 
 // clang-format off
 #include <glad/glad.h>
@@ -26,7 +26,7 @@ public:
 
     void run();
 
-    void setFpsLimit(float value);
+    void setFpsLimit(int value);
     void setVsyncEnabled(bool enabled);
 
     Pixel getPixel(int x, int y) const;
@@ -40,6 +40,10 @@ public:
     virtual void onEnd();
 
 private:
+    using Clock = std::conditional_t<std::chrono::high_resolution_clock::is_steady,
+                                     std::chrono::high_resolution_clock,
+                                     std::chrono::steady_clock>;
+
     void render();
     void updateFps();
 
@@ -63,11 +67,10 @@ private:
     std::vector<Pixel> pixels;
     Texture texture;
 
-    std::chrono::time_point<std::chrono::steady_clock> startTime;
-    std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
+    Clock::time_point startTime;
 
-    float fps = 0.0f;
-    float actualFps = 0.0f;
+    Clock::duration frameTimeLimit;
+    Clock::duration fpsUpdateInterval;
 };
 
 #endif // OCFBNJ_PIXEL_ENGINE_H
