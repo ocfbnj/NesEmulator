@@ -27,6 +27,7 @@ public:
     void run();
 
     void setFpsLimit(float value);
+    void setVsyncEnabled(bool enabled);
 
     Pixel getPixel(int x, int y) const;
     void drawPixel(int x, int y, Pixel pixel);
@@ -40,7 +41,7 @@ public:
 
 private:
     void render();
-    void updateFpsIfNeed();
+    void updateFps();
 
     int width;
     int height;
@@ -65,7 +66,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> startTime;
     std::chrono::duration<float> fpsUpdateInterval = std::chrono::milliseconds{500};
 
-    float fps = 60.0f;
+    float fps = 0.0f;
     float actualFps = 0.0f;
 };
 

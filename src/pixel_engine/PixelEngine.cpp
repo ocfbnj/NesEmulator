@@ -54,6 +54,9 @@ PixelEngine::PixelEngine(int width, int height, std::string_view title, int scal
       texture(pixels.data(), width, height) {
     vao.linkAttrib(vbo, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)(0 * sizeof(float)));
     vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    setFpsLimit(0.0f);
+    setVsyncEnabled(false);
 }
 
 PixelEngine::~PixelEngine() {
@@ -67,19 +70,16 @@ void PixelEngine::run() {
     onBegin();
 
     while (!glfwWindowShouldClose(window)) {
-        updateFpsIfNeed();
+        updateFps();
         glfwPollEvents();
         onUpdate();
         render();
 
         std::chrono::duration<float> elapsedTime = std::chrono::steady_clock::now() - startTime;
-        std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / fps) - elapsedTime;
 
-        if (sleepTime.count() > 0) {
-            actualFps = fps;
+        if (fps != 0.0f) {
+            std::chrono::duration<float> sleepTime = std::chrono::duration<float>(1.0f / fps) - elapsedTime;
             std::this_thread::sleep_for(sleepTime);
-        } else {
-            actualFps = std::chrono::seconds{1} / elapsedTime;
         }
 
         startTime = std::chrono::steady_clock::now();
@@ -90,6 +90,10 @@ void PixelEngine::run() {
 
 void PixelEngine::setFpsLimit(float value) {
     fps = value;
+}
+
+void PixelEngine::setVsyncEnabled(bool enabled) {
+    glfwSwapInterval(enabled ? 1 : 0);
 }
 
 Pixel PixelEngine::getPixel(int x, int y) const {
@@ -143,10 +147,15 @@ void PixelEngine::render() {
     glfwSwapBuffers(window);
 }
 
-void PixelEngine::updateFpsIfNeed() {
+void PixelEngine::updateFps() {
     static std::chrono::time_point<std::chrono::steady_clock> lastFpsUpdate;
+    static std::chrono::time_point<std::chrono::steady_clock> tp;
 
-    if (auto now = std::chrono::steady_clock::now(); now - lastFpsUpdate > fpsUpdateInterval) {
+    std::chrono::time_point<std::chrono::steady_clock> now = std::chrono::steady_clock::now();
+    actualFps = std::chrono::duration<float>{1} / (now - tp);
+    tp = now;
+
+    if (now - lastFpsUpdate > fpsUpdateInterval) {
         lastFpsUpdate = now;
         int displayedFps = static_cast<int>(std::round(actualFps));
         glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(displayedFps) + "]").data());

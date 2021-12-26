@@ -20,6 +20,7 @@ void Emulator::onBegin() {
     // A frame has 341 x 262 = 89,342 clock cycles
     // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
     setFpsLimit(60.0f);
+    setVsyncEnabled(true);
 }
 
 void Emulator::onUpdate() {
