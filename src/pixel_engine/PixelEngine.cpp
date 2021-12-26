@@ -5,21 +5,35 @@
 
 using namespace std::chrono_literals;
 
-static GLfloat vertices[] = {
+namespace {
+GLfloat vertices[] = {
     -1.0f, -1.0f, 0.0f, 0.0f, // lower left corner
     1.0f, -1.0f, 1.0f, 0.0f,  // lower right corner
     1.0f, 1.0f, 1.0f, 1.0f,   // upper right corner
     -1.0f, 1.0f, 0.0f, 1.0f   // upper left corner
 };
 
-static GLuint indices[] = {
+GLuint indices[] = {
     0, 1, 2, // lower triangle
     2, 3, 0, // upper triangle
 };
 
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
+
+template <class Clock, class Duration>
+void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
+#ifdef _WIN32
+    // TODO On my machine, using `std::this_thread::sleep_until()` is not precise?
+    while (Clock::now() < absTime) {
+        std::this_thread::yield();
+    }
+#else
+    std::this_thread::sleep_until(absTime);
+#endif
+}
+} // namespace
 
 PixelEngine::GLLoader::GLLoader(int width, int height, std::string_view title, GLFWwindow** window) {
     glfwInit();
@@ -83,10 +97,10 @@ void PixelEngine::run() {
         startTime = now;
 
         if (frameTimeLimit != 0s) {
-            Clock::duration sleepTime = frameTimeLimit - elapsedTime;
-            std::this_thread::sleep_for(sleepTime);
+            Clock::time_point sleepEnd = now + (frameTimeLimit - elapsedTime);
+            sleepUntil(sleepEnd);
 
-            startTime += sleepTime;
+            startTime = sleepEnd;
         }
     }
 
