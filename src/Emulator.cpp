@@ -21,7 +21,7 @@ void Emulator::run() {
     sf::RenderWindow window(sf::VideoMode(256 * 6, 240 * 6), "NES Emulator");
 
     window.setFramerateLimit(60);
-    window.setVerticalSyncEnabled(true);
+    window.setVerticalSyncEnabled(false);
 
     while (window.isOpen()) {
         static const std::unordered_map<sf::Keyboard::Key, Joypad::Button> player1KeyMap{
