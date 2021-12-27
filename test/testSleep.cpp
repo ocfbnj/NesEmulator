@@ -7,6 +7,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using Clock = std::conditional_t<std::chrono::high_resolution_clock::is_steady,
                                  std::chrono::high_resolution_clock,
                                  std::chrono::steady_clock>;
@@ -19,6 +23,7 @@ void testStdSleep(long long us) {
     std::cout << "std::this_thread::sleep_for() " << time.count() << "us\n";
 }
 
+#ifdef __APPLE__
 void testUsleep(long long us) {
     Clock::time_point begin = Clock::now();
     usleep(us);
@@ -39,16 +44,27 @@ void testNanosleep(long long us) {
 
     std::cout << "unix nanosleep() " << time.count() << "us\n";
 }
+#endif
+
+#ifdef _WIN32
+void testSleep(int ms) {
+    Clock::time_point begin = Clock::now();
+    Sleep(ms);
+    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - begin);
+
+    std::cout << "Windows Sleep() " << time.count() << "ms\n";
+}
+#endif
 
 int main() {
     using F = void(long long);
 
+#ifdef __APPLE__
+
     constexpr F* testCases[] = {
         &testStdSleep,
-#ifdef __APPLE__
         &testUsleep,
         &testNanosleep,
-#endif
     };
 
     std::cout << "-> sleep 1ms tests\n";
@@ -56,7 +72,6 @@ int main() {
         testCase(1'000);
     }
 
-#ifdef __APPLE__
     std::cout << "\n-> sleep 100us tests\n";
     for (auto testCase : testCases) {
         testCase(100);
@@ -71,5 +86,40 @@ int main() {
     for (auto testCase : testCases) {
         testCase(1);
     }
+#endif
+
+#ifdef _WIN32
+    std::cout << "-> sleep 10ms tests\n";
+    testStdSleep(10'000);
+    testSleep(10);
+
+    std::cout << "\n-> sleep 1ms tests\n";
+    testStdSleep(1'000);
+    testSleep(1);
+
+    std::cout << "\n== call timeBeginPeriod(1) and timeEndPeriod(1) in Windows ==\n";
+
+    std::cout << "\n-> sleep 10ms tests\n";
+    timeBeginPeriod(1);
+    testStdSleep(10'000);
+    timeEndPeriod(1);
+
+    timeBeginPeriod(1);
+    testSleep(10);
+    timeEndPeriod(1);
+
+    std::cout << "\n-> sleep 1ms tests\n";
+    timeBeginPeriod(1);
+    testStdSleep(1'000);
+    timeEndPeriod(1);
+
+    timeBeginPeriod(1);
+    testSleep(1);
+    timeEndPeriod(1);
+
+    std::cout << "\n-> sleep 100us tests\n";
+    timeBeginPeriod(1);
+    testStdSleep(100);
+    timeEndPeriod(1);
 #endif
 }

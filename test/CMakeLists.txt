@@ -13,6 +13,6 @@ endif()
 
 add_executable(testSleep testSleep.cpp)
 
-#if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-#
-#endif()
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    target_link_libraries(testSleep PRIVATE winmm)
+endif()
