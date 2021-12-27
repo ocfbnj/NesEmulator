@@ -1,5 +1,5 @@
-#include "VAO.h"
-#include "VBO.h"
+#include <pixel_engine/VAO.h>
+#include <pixel_engine/VBO.h>
 
 VAO::VAO() {
     GLuint vao;

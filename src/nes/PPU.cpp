@@ -1,7 +1,7 @@
 #include <algorithm>
 
-#include "Bus.h"
-#include "PPU.h"
+#include <nes/Bus.h>
+#include <nes/PPU.h>
 
 std::array<PPU::Pixel, 64> PPU::defaultPalette = {
     Pixel{.r = 0x80, .g = 0x80, .b = 0x80, .a = 0xFF},

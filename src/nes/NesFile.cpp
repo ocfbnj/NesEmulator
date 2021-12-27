@@ -3,9 +3,9 @@
 #include <iostream>
 #include <vector>
 
-#include "Cartridge.h"
-#include "NesFile.h"
-#include "literals.h"
+#include <nes/Cartridge.h>
+#include <nes/NesFile.h>
+#include <nes/literals.h>
 
 // NesFileHeader represents an iNES file header.
 // See https://wiki.nesdev.com/w/index.php/INES#iNES_file_format

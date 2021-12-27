@@ -1,8 +1,8 @@
 #include <cassert>
 #include <utility>
 
-#include "Bus.h"
-#include "Mirroring.h"
+#include <nes/Bus.h>
+#include <nes/Mirroring.h>
 
 namespace {
 std::uint16_t mirrorPaletteAddr(std::uint16_t addr) {

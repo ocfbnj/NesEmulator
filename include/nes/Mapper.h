@@ -6,7 +6,7 @@
 #include <memory>
 #include <ostream>
 
-#include "Cartridge.h"
+#include <nes/Cartridge.h>
 
 // Mapper is an interface that provide access to extended ROM memory(both CHR ROM and PRG ROM).
 // See https://bugzmanov.github.io/nes_ebook/chapter_5.html

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "Mirroring.h"
+#include <nes/Mirroring.h>
 
 // Cartridge represents a NES cartridge.
 // It carried two banks of ROM memory: PRG ROM for code and CHR ROM for visual graphics.

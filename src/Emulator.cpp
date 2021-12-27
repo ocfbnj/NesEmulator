@@ -1,6 +1,6 @@
 #include <unordered_map>
 
-#include "NesEmulator/nes/NesFile.h"
+#include <nes/NesFile.h>
 
 #include "Emulator.h"
 

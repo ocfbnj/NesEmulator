@@ -1,7 +1,7 @@
 #ifndef OCFBNJ_NES_MAPPER3_H
 #define OCFBNJ_NES_MAPPER3_H
 
-#include "Mapper.h"
+#include <nes/Mapper.h>
 
 class Mapper3 : public Mapper {
 public:

@@ -50,7 +50,5 @@ find_package(glad REQUIRED)
 #############################################################################################
 ########### Conan Package Manager End #######################################################
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 add_subdirectory(src)
 add_subdirectory(test)

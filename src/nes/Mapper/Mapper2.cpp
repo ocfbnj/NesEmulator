@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "Mapper2.h"
+#include <nes/Mapper/Mapper2.h>
 
 std::uint8_t Mapper2::cpuRead(std::uint16_t addr) {
     std::uint32_t mappedAddr = 0;

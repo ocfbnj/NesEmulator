@@ -1,21 +1,9 @@
 #include <cassert>
 #include <iomanip>
+#include <sstream>
 
-#include "Bus.h"
-#include "CPU.h"
-
-std::ostream& operator<<(std::ostream& os, const CPU& cpu) {
-    os << std::hex << std::uppercase << std::right << std::setfill('0');
-    os << std::setw(4) << cpu.pc - 1 << "  " << std::setw(2) << +cpu.opcode << " " << CPU::opTable[cpu.opcode].name << "         ";
-    os << " A:" << std::setw(2) << +cpu.a
-       << " X:" << std::setw(2) << +cpu.x
-       << " Y:" << std::setw(2) << +cpu.y
-       << " P:" << std::setw(2) << +cpu.status.reg
-       << " SP:" << std::setw(2) << +cpu.sp
-       << " CYC:" << std::dec << cpu.totalCycles;
-
-    return os;
-}
+#include <nes/Bus.h>
+#include <nes/CPU.h>
 
 namespace {
 bool isCrossed(std::uint16_t a, std::uint16_t b) {
@@ -344,18 +332,33 @@ void CPU::deserialize(std::istream& is) {
     is.read(begin, end - begin);
 }
 
-void CPU::testCPU(std::ostream* os, std::uint16_t pc, std::uint32_t totalCycles) {
-    this->os = os;
-    this->pc = pc;
-    this->totalCycles = totalCycles;
+void CPU::setPc(std::uint16_t newPc) {
+    pc = newPc;
+}
+
+std::string CPU::debugStr() {
+    if (cycles != 0) {
+        return "";
+    }
+
+    std::ostringstream os;
+    std::uint8_t nextOpcode = read(pc);
+
+    os << std::hex << std::uppercase << std::right << std::setfill('0');
+    os << std::setw(4) << pc << "  " << std::setw(2) << +nextOpcode << " " << CPU::opTable[nextOpcode].name << "         ";
+    os << " A:" << std::setw(2) << +a
+       << " X:" << std::setw(2) << +x
+       << " Y:" << std::setw(2) << +y
+       << " P:" << std::setw(2) << +status.reg
+       << " SP:" << std::setw(2) << +sp
+       << " CYC:" << std::dec << totalCycles;
+    os << "\n";
+
+    return os.str();
 }
 
 void CPU::step() {
     opcode = read(pc++);
-
-    if (os) {
-        *os << *this << "\n";
-    }
 
     std::uint16_t address = 0;
     bool pageCrossed = false;

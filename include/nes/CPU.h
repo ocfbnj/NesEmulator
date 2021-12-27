@@ -7,13 +7,8 @@
 #include <ostream>
 
 class Bus;
-class CPU;
-
-std::ostream& operator<<(std::ostream& os, const CPU& cpu);
 
 class CPU {
-    friend std::ostream& operator<<(std::ostream& os, const CPU& cpu);
-
 public:
     CPU() = default;
     CPU(const CPU&) = delete;
@@ -31,7 +26,9 @@ public:
     void serialize(std::ostream& os) const;
     void deserialize(std::istream& is);
 
-    void testCPU(std::ostream* os, std::uint16_t pc, std::uint32_t totalCycles);
+    // for test
+    void setPc(std::uint16_t newPc);
+    std::string debugStr();
 
 private:
     // Addressing Mode
@@ -173,8 +170,7 @@ private:
     std::uint8_t opcode = 0;
 
     // for debug
-    std::uint32_t totalCycles = 0;
-    std::ostream* os = nullptr;
+    std::uint32_t totalCycles = 7;
 };
 
 #endif // OCFBNJ_NES_CPU_H

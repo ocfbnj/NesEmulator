@@ -1,4 +1,4 @@
-#include "EBO.h"
+#include <pixel_engine/EBO.h>
 
 EBO::EBO(GLuint* indices, GLsizeiptr size) {
     GLuint ebo;

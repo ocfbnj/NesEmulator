@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "Mirroring.h"
+#include <nes/Mirroring.h>
 
 std::string_view description(Mirroring mirroring) {
     switch (mirroring) {

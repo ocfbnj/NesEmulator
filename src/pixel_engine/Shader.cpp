@@ -1,7 +1,7 @@
 #include <fstream>
 #include <string>
 
-#include "Shader.h"
+#include <pixel_engine/Shader.h>
 
 namespace {
 constexpr auto DefaultVertexShader = R"(

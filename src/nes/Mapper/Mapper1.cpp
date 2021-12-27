@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "Mapper1.h"
+#include <nes/Mapper/Mapper1.h>
 
 std::uint8_t Mapper1::cpuRead(std::uint16_t addr) {
     if (addr >= 0x6000 && addr < 0x8000) {

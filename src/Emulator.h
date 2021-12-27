@@ -5,8 +5,8 @@
 #include <string>
 #include <string_view>
 
-#include "NesEmulator/nes/Bus.h"
-#include "NesEmulator/pixel_engine/PixelEngine.h"
+#include <nes/Bus.h>
+#include <pixel_engine/PixelEngine.h>
 
 class Emulator : public PixelEngine {
 public:

@@ -12,12 +12,12 @@
 #include <GLFW/glfw3.h>
 // clang-format on
 
-#include "NesEmulator/pixel_engine/EBO.h"
-#include "NesEmulator/pixel_engine/Pixel.h"
-#include "NesEmulator/pixel_engine/Shader.h"
-#include "NesEmulator/pixel_engine/Texture.h"
-#include "NesEmulator/pixel_engine/VAO.h"
-#include "NesEmulator/pixel_engine/VBO.h"
+#include <pixel_engine/EBO.h>
+#include <pixel_engine/Pixel.h>
+#include <pixel_engine/Shader.h>
+#include <pixel_engine/Texture.h>
+#include <pixel_engine/VAO.h>
+#include <pixel_engine/VBO.h>
 
 class PixelEngine {
 public:

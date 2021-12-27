@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include <pixel_engine/Texture.h>
 
 Texture::Texture(const void* bytes, GLint width, GLint height) {
     GLuint texture;

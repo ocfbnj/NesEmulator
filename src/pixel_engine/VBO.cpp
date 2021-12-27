@@ -1,4 +1,4 @@
-#include "VBO.h"
+#include <pixel_engine/VBO.h>
 
 VBO::VBO(GLfloat* vertices, GLsizeiptr size) {
     GLuint vbo;

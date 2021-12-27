@@ -7,12 +7,12 @@
 #include <memory>
 #include <ostream>
 
-#include "CPU.h"
-#include "Cartridge.h"
-#include "Joypad.h"
-#include "Mapper.h"
-#include "PPU.h"
-#include "literals.h"
+#include <nes/CPU.h>
+#include <nes/Cartridge.h>
+#include <nes/Joypad.h>
+#include <nes/Mapper.h>
+#include <nes/PPU.h>
+#include <nes/literals.h>
 
 // CPU and PPU access memory (including memory-mapped spaces) through the bus.
 // This class does not represent the bus itself, it is more like a console.

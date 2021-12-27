@@ -2,7 +2,7 @@
 #include <cmath>
 #include <thread>
 
-#include "PixelEngine.h"
+#include <pixel_engine/PixelEngine.h>
 
 using namespace std::chrono_literals;
 

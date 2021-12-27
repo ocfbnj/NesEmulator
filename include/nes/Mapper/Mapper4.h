@@ -3,8 +3,8 @@
 
 #include <array>
 
-#include "Mapper.h"
-#include "literals.h"
+#include <nes/Mapper.h>
+#include <nes/literals.h>
 
 class Mapper4 : public Mapper {
 public:

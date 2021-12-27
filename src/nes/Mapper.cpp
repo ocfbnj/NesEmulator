@@ -1,11 +1,11 @@
 #include <iostream>
 
-#include "Mapper.h"
-#include "Mapper0.h"
-#include "Mapper1.h"
-#include "Mapper2.h"
-#include "Mapper3.h"
-#include "Mapper4.h"
+#include <nes/Mapper.h>
+#include <nes/Mapper/Mapper0.h>
+#include <nes/Mapper/Mapper1.h>
+#include <nes/Mapper/Mapper2.h>
+#include <nes/Mapper/Mapper3.h>
+#include <nes/Mapper/Mapper4.h>
 
 std::unique_ptr<Mapper> Mapper::create(Cartridge cartridge) {
     switch (cartridge.mapperNum) {

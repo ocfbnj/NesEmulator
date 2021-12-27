@@ -5,7 +5,7 @@
 #include <optional>
 #include <string_view>
 
-#include "Cartridge.h"
+#include <nes/Cartridge.h>
 
 std::optional<Cartridge> loadNesFile(std::string_view path);
 

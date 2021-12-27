@@ -1,7 +1,7 @@
 #ifndef OCFBNJ_NES_MAPPER0_H
 #define OCFBNJ_NES_MAPPER0_H
 
-#include "Mapper.h"
+#include <nes/Mapper.h>
 
 // Mapper0 essentially means "no mapper" that CPU reads both CHR and PRG ROM as is.
 class Mapper0 : public Mapper {

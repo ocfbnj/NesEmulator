@@ -1,4 +1,4 @@
-#include "Joypad.h"
+#include <nes/Joypad.h>
 
 std::uint8_t Joypad::read() {
     std::uint8_t bit = shifter & 1;
