@@ -10,3 +10,9 @@ if(TARGET GTest::GTest)
             ${CMAKE_CURRENT_BINARY_DIR}
     )
 endif()
+
+add_executable(testSleep testSleep.cpp)
+
+#if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+#
+#endif()
