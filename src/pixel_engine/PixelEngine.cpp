@@ -1,6 +1,6 @@
 #include <cassert>
-#include <thread>
 #include <cmath>
+#include <thread>
 
 #include "PixelEngine.h"
 
@@ -27,6 +27,12 @@ template <class Clock, class Duration>
 void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
 #ifdef _WIN32
     // TODO On my machine, using `std::this_thread::sleep_until()` is not precise?
+    // The minimum sleep duration is about 15 milliseconds on my Windows 11 machine.
+    // See https://github.com/rust-lang/rust/issues/43376
+
+    // But SFML works well?
+    // See https://github.com/SFML/SFML/blob/HEAD/src/SFML/System/Sleep.cpp#L39
+
     while (Clock::now() < absTime) {
         std::this_thread::yield();
     }
