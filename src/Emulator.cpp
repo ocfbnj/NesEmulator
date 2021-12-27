@@ -18,10 +18,10 @@ Emulator::Emulator(std::string_view nesFile) {
 }
 
 void Emulator::run() {
-    sf::RenderWindow window(sf::VideoMode(256 * 6, 240 * 6), "NES Emulator");
+    sf::RenderWindow window(sf::VideoMode(256 * 6, 240 * 6), "Nes Emulator");
 
-    window.setFramerateLimit(60);
-    window.setVerticalSyncEnabled(true);
+    window.setFramerateLimit(64);
+    window.setVerticalSyncEnabled(false);
 
     while (window.isOpen()) {
         static const std::unordered_map<sf::Keyboard::Key, Joypad::Button> player1KeyMap{
@@ -35,6 +35,14 @@ void Emulator::run() {
             {sf::Keyboard::D, Joypad::Button::Right},
         };
 
+        static std::string dump;
+
+        static sf::Clock clock;
+
+        auto fps = static_cast<int>(std::round(1.0f / clock.getElapsedTime().asSeconds()));
+        clock.restart();
+        window.setTitle("Nes Emulator [FPS: " + std::to_string(fps) + "]");
+
         sf::Event event{};
         while (window.pollEvent(event)) {
             switch (event.type) {
@@ -44,6 +52,19 @@ void Emulator::run() {
             case sf::Event::KeyPressed:
                 if (auto it = player1KeyMap.find(event.key.code); it != player1KeyMap.end()) {
                     nes.getJoypad().press(it->second);
+                }
+
+                if (sf::Keyboard::Key key = event.key.code; key == sf::Keyboard::L) {
+                    if (!dump.empty()) {
+                        std::istringstream iss{dump};
+                        nes.deserialize(iss);
+                    }
+                } else if (key == sf::Keyboard::I) {
+                    std::ostringstream oss;
+                    nes.serialize(oss);
+                    dump = oss.str();
+                } else if (key == sf::Keyboard::R) {
+                    nes.reset();
                 }
                 break;
             case sf::Event::KeyReleased:
