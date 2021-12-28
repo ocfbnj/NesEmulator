@@ -123,7 +123,7 @@ void Emulator::checkSerialization() {
 }
 
 std::span<const std::int16_t> Emulator::audioMakerGetData() {
-    std::vector<std::int16_t> data;
+    static std::vector<std::int16_t> data;
 
     {
         std::unique_lock<std::mutex> lock{mtx};
