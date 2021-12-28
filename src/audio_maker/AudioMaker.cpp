@@ -81,10 +81,9 @@ void AudioMaker::stop() {
 
 void AudioMaker::streamData() {
     alGenBuffers(buffers.size(), buffers.data());
-
     fillQueue();
-
     alSourcePlay(source);
+    assert(alGetError() == AL_NO_ERROR);
 
     while (!stoped) {
         ALint processed = 0;
@@ -109,11 +108,27 @@ void AudioMaker::streamData() {
             }
         }
     }
+
+    alSourceStop(source);
+    closeQueue();
+    alSourcei(source, AL_BUFFER, 0);
+    alDeleteBuffers(buffers.size(), buffers.data());
+    assert(alGetError() == AL_NO_ERROR);
 }
 
 void AudioMaker::fillQueue() {
     for (int i = 0; i != buffers.size(); i++) {
         fillAndPushBuffer(i);
+    }
+}
+
+void AudioMaker::closeQueue() {
+    ALint count;
+    alGetSourcei(source, AL_BUFFERS_QUEUED, &count);
+
+    for (ALint i = 0; i != count; i++) {
+        ALuint buffer;
+        alSourceUnqueueBuffers(source, 1, &buffer);
     }
 }
 

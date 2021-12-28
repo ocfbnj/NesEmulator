@@ -28,6 +28,7 @@ private:
     void streamData();
 
     void fillQueue();
+    void closeQueue();
     void fillAndPushBuffer(int bufferNum);
 
     int sampleRate;
