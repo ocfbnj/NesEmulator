@@ -21,7 +21,7 @@ tested, other games may or may not work:
 #### Player1
 
 | Button | Mapped to |
-|:------:|:---------:|
+| :----: | :-------: |
 |   A    |     J     |
 |   B    |     K     |
 | Select |   Space   |
@@ -34,7 +34,7 @@ tested, other games may or may not work:
 #### Other
 
 | Button |    Effect     |
-|:------:|:-------------:|
+| :----: | :-----------: |
 |   R    |     Reset     |
 |   I    |  Quick Save   |
 |   L    | Quick Restore |
@@ -103,4 +103,13 @@ Now, you can find the binary in `build/src` directory.
 
 ### Graphic
 
+- <https://learnopengl-cn.github.io>
+- <https://www.youtube.com/playlist?list=PLPaoO-vpZnumdcb4tZc4x5Q-v7CkrQ6M->
 - <https://github.com/OneLoneCoder/olcPixelGameEngine>
+
+### Audio
+
+- <https://www.sfml-dev.org/tutorials/2.5/audio-streams.php>
+- <https://github.com/SFML/SFML/blob/HEAD/src/SFML/Audio/SoundStream.cpp>
+- <https://www.youtube.com/watch?v=tgamhuQnOkM>
+- <https://www.openal.org/documentation/OpenAL_Programmers_Guide.pdf>
