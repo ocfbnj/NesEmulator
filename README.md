@@ -78,6 +78,8 @@ Now, you can find the binary in `build/src` directory.
 
 ## References
 
+Developing an NES emulator is exciting and interesting 😀. If you also want to develop your own one, you can refer to the following tutorials and references. ❤️
+
 ### Nesdev Wiki
 
 - <https://wiki.nesdev.org>
