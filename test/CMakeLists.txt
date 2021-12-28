@@ -16,3 +16,6 @@ add_executable(testSleep testSleep.cpp)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     target_link_libraries(testSleep PRIVATE winmm)
 endif()
+
+add_executable(testAudioMaker testAudioMaker.cpp)
+target_link_libraries(testAudioMaker PRIVATE ocfbnj::audio_maker)
