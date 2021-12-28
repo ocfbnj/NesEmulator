@@ -1,10 +1,15 @@
+#include <cmath>
+#include <numbers>
 #include <unordered_map>
 
 #include <nes/NesFile.h>
 
 #include "Emulator.h"
 
-Emulator::Emulator(std::string_view nesFile) : PixelEngine(256, 240, "Nes Emulator", 3), nesFile(nesFile) {}
+Emulator::Emulator(std::string_view nesFile)
+    : PixelEngine(256, 240, "Nes Emulator", 3),
+      nesFile(nesFile),
+      audioMaker(44100, 1) {}
 
 void Emulator::onBegin() {
     std::optional<Cartridge> cartridge = loadNesFile(nesFile);
@@ -21,6 +26,10 @@ void Emulator::onBegin() {
     // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
     setFpsLimit(60);
     setVsyncEnabled(false);
+
+    audioMaker.setCallback(std::bind(&Emulator::audioMakerGetData, this));
+    audioMaker.setProcessingInterval(10);
+    audioMaker.run();
 }
 
 void Emulator::onUpdate() {
@@ -31,6 +40,18 @@ void Emulator::onUpdate() {
     } while (!nes.getPPU().isFrameComplete());
 
     renderFrame(nes.getPPU().getFrame());
+
+    // TODO delete
+    for (int i = 0; i != 40960; i++) {
+        static double globalTime = 0.0;
+        std::int16_t sample = 100 * std::sin(220 * 2 * std::numbers::pi * globalTime);
+        {
+            std::unique_lock<std::mutex> lock{mtx};
+            samples.emplace_back(sample);
+            cond.notify_one();
+        }
+        globalTime += 1.0 / 44100.0;
+    }
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
@@ -99,4 +120,17 @@ void Emulator::checkSerialization() {
     } else if (statusL == GLFW_RELEASE) {
         pressedLoad = false;
     }
+}
+
+std::span<const std::int16_t> Emulator::audioMakerGetData() {
+    std::vector<std::int16_t> data;
+
+    {
+        std::unique_lock<std::mutex> lock{mtx};
+        cond.wait(lock, [this]() { return samples.size() >= 40960; });
+
+        samples.swap(data);
+    }
+
+    return data;
 }
