@@ -27,6 +27,7 @@ conan_cmake_configure(
         gtest/cci.20210126
         glfw/3.3.6
         glad/0.1.34
+        openal/1.21.1
     GENERATORS
         cmake_find_package
     IMPORTS
@@ -46,6 +47,7 @@ conan_cmake_install(
 find_package(GTest)
 find_package(glfw3 REQUIRED)
 find_package(glad REQUIRED)
+find_package(OpenAL REQUIRED)
 
 #############################################################################################
 ########### Conan Package Manager End #######################################################

@@ -1,5 +1,6 @@
 add_subdirectory(nes)
 add_subdirectory(pixel_engine)
+add_subdirectory(audio_maker)
 
 add_executable(
     ${CMAKE_PROJECT_NAME}
@@ -12,6 +13,7 @@ target_link_libraries(
     PRIVATE
     ocfbnj::nes
     ocfbnj::pixel_engine
+    ocfbnj::audio_maker
     glfw::glfw
     glad::glad
 )
