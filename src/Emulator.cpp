@@ -28,7 +28,7 @@ void Emulator::onBegin() {
     setVsyncEnabled(false);
 
     audioMaker.setCallback(std::bind(&Emulator::audioMakerGetData, this));
-    audioMaker.setProcessingInterval(0);
+    audioMaker.setProcessingInterval(10);
     audioMaker.run();
 }
 
@@ -44,7 +44,7 @@ void Emulator::onUpdate() {
     // TODO delete
     for (int i = 0; i != 5000; i++) {
         static double globalTime = 0.0;
-        std::int16_t sample = 100 * std::sin(220 * 2 * std::numbers::pi * globalTime);
+        std::int16_t sample = 0 * std::sin(220 * 2 * std::numbers::pi * globalTime);
         {
             std::unique_lock<std::mutex> lock{mtx};
             samples.emplace_back(sample);
