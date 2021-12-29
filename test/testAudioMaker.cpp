@@ -8,9 +8,9 @@
 constexpr auto SimpleRate = 44100;
 constexpr auto SimpleSize = 4096;
 
-std::span<const std::int16_t> getData() {
+std::vector<std::int16_t> getData() {
     static double globalTime = 0.0;
-    static std::vector<std::int16_t> samples(SimpleSize);
+    std::vector<std::int16_t> samples(SimpleSize);
 
     for (int i = 0; i != samples.size(); i++) {
         samples[i] = 50 * std::sin(440 * 2 * std::numbers::pi * globalTime);

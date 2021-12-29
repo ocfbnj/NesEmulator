@@ -3,7 +3,6 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -26,7 +25,7 @@ private:
     void checkReset();
     void checkSerialization();
 
-    std::span<const std::int16_t> audioMakerGetData();
+    std::vector<std::int16_t> audioMakerGetData();
 
     Bus nes;
     std::string nesFile;

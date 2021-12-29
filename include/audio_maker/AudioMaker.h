@@ -5,15 +5,15 @@
 #include <atomic>
 #include <cstdint>
 #include <functional>
-#include <span>
 #include <thread>
+#include <vector>
 
 struct ALCdevice;
 struct ALCcontext;
 
 class AudioMaker {
 public:
-    using GetData = std::function<std::span<const std::int16_t>()>;
+    using GetData = std::function<std::vector<std::int16_t>()>;
 
     AudioMaker(int sampleRate = 44100, int channelCount = 1);
     ~AudioMaker();

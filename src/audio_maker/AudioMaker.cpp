@@ -133,7 +133,7 @@ void AudioMaker::closeQueue() {
 }
 
 void AudioMaker::fillAndPushBuffer(int bufferNum) {
-    std::span<const std::int16_t> data = getData();
+    std::vector<std::int16_t> data = getData();
 
     if (data.size() == 0) {
         return;
@@ -141,6 +141,6 @@ void AudioMaker::fillAndPushBuffer(int bufferNum) {
 
     std::uint32_t buffer = buffers[bufferNum];
 
-    alBufferData(buffer, channelFormat, data.data(), data.size_bytes(), sampleRate);
+    alBufferData(buffer, channelFormat, data.data(), data.size() * sizeof(data[0]), sampleRate);
     alSourceQueueBuffers(source, 1, &buffer);
 }

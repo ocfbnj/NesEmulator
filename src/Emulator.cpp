@@ -28,7 +28,7 @@ void Emulator::onBegin() {
     setVsyncEnabled(false);
 
     audioMaker.setCallback(std::bind(&Emulator::audioMakerGetData, this));
-    audioMaker.setProcessingInterval(10);
+    audioMaker.setProcessingInterval(0);
     audioMaker.run();
 }
 
@@ -42,13 +42,16 @@ void Emulator::onUpdate() {
     renderFrame(nes.getPPU().getFrame());
 
     // TODO delete
-    for (int i = 0; i != 40960; i++) {
+    for (int i = 0; i != 5000; i++) {
         static double globalTime = 0.0;
         std::int16_t sample = 100 * std::sin(220 * 2 * std::numbers::pi * globalTime);
         {
             std::unique_lock<std::mutex> lock{mtx};
             samples.emplace_back(sample);
-            cond.notify_one();
+
+            if (samples.size() >= 4096) {
+                cond.notify_one();
+            }
         }
         globalTime += 1.0 / 44100.0;
     }
@@ -122,12 +125,12 @@ void Emulator::checkSerialization() {
     }
 }
 
-std::span<const std::int16_t> Emulator::audioMakerGetData() {
-    static std::vector<std::int16_t> data;
+std::vector<std::int16_t> Emulator::audioMakerGetData() {
+    std::vector<std::int16_t> data;
 
     {
         std::unique_lock<std::mutex> lock{mtx};
-        cond.wait(lock, [this]() { return samples.size() >= 40960; });
+        cond.wait(lock, [this]() { return samples.size() >= 4096; });
 
         samples.swap(data);
     }
