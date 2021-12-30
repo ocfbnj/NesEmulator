@@ -44,12 +44,25 @@ void Emulator::onBegin() {
 
 void Emulator::onUpdate() {
     checkKeyboard();
+    synchronizeSoundWithVideo();
 
     do {
         nes.clock();
     } while (!nes.getPPU().isFrameComplete());
 
     renderFrame(nes.getPPU().getFrame());
+}
+
+void Emulator::synchronizeSoundWithVideo() {
+    static std::uint8_t i = 0;
+
+    // The game runs faster than the speed of sound production.
+    // So after a period of time, the sound will lag behind the video.
+    // We need to synchronize them.
+    if (++i == 0) {
+        audioMaker.stop();
+        audioMaker.run();
+    }
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {

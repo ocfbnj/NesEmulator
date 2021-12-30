@@ -13,8 +13,11 @@ constexpr auto FrameCounterPeroid = static_cast<std::uint16_t>(ApuFrequency / Fr
 
 void APU::clock() {
     stepTimer();
-    stepFrameCounter();
+    stepTimer();
+    stepTimer();
+    stepTimer();
 
+    stepFrameCounter();
     sendSample();
 }
 

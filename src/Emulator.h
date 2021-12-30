@@ -20,6 +20,7 @@ public:
     void onUpdate() override;
 
 private:
+    void synchronizeSoundWithVideo();
     void renderFrame(const PPU::Frame& frame);
 
     void checkKeyboard();

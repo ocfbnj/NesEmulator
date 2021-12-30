@@ -60,7 +60,7 @@ private:
                 0b1001'1111, // 25% negated
             };
 
-            return (DutyCycleSequences[dutyCycle] >> dutyValue) & 1;
+            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? (reg & 0x0F) : 0;
         }
 
         void writeControl(std::uint8_t data) {
@@ -68,7 +68,7 @@ private:
         }
 
         void writeTimerLo(std::uint8_t data) {
-            timer.reloadValue = (timer.reloadValue & 0xFF00) | data;
+            timer.reloadValue = (timer.reloadValue & 0xFF00) | static_cast<std::uint16_t>(data);
         }
 
         void writeTimerHi(std::uint8_t data) {
