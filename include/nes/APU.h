@@ -13,7 +13,7 @@ public:
     void clock();
     void reset();
 
-    std::uint8_t apuRead();
+    std::uint8_t apuRead(std::uint16_t addr);
     void apuWrite(std::uint16_t addr, std::uint8_t data);
 
     void setSampleRate(int rate);
@@ -133,6 +133,7 @@ private:
 
     StatusRegister status{.reg = 0};
     Pulse pulse1{.reg = 0};
+    Pulse pulse2{.reg = 0};
 
     int sampleRate = 44100;
     SampleCallback sampleCallback = &APU::defaultSampleCallback;

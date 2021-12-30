@@ -114,7 +114,7 @@ std::uint8_t Bus::cpuRead(std::uint16_t addr) {
     } else if (addr >= 0x4000 && addr < 0x4018) {
         if (addr == 0x4015) {
             // APU Status Register
-            data = apu.apuRead();
+            data = apu.apuRead(addr);
         } else if (addr == 0x4016) {
             data = joypad.read();
         }

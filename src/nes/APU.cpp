@@ -1,7 +1,6 @@
 #include <array>
 #include <cassert>
 #include <cmath>
-#include <iostream>
 
 #include <nes/APU.h>
 
@@ -22,7 +21,7 @@ void APU::clock() {
 void APU::reset() {
 }
 
-std::uint8_t APU::apuRead() {
+std::uint8_t APU::apuRead(std::uint16_t addr) {
     assert(addr == 0x4015);
 
     // TODO
@@ -30,9 +29,8 @@ std::uint8_t APU::apuRead() {
 }
 
 void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
-    assert(addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == addr == 0x4015);
+    assert(addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015);
     switch (addr) {
-    default:
     case 0x4000:
         pulse1.writeControl(data);
         break;
@@ -40,6 +38,20 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
         pulse1.writeTimerLo(data);
         break;
     case 0x4003:
+        pulse1.writeTimerHi(data);
+    case 0x4004:
+        pulse2.writeControl(data);
+        break;
+    case 0x4006:
+        pulse2.writeTimerLo(data);
+        break;
+    case 0x4007:
+        pulse2.writeTimerHi(data);
+        break;
+    case 0x4015:
+        status.reg = data;
+        break;
+    default:
         break;
     }
 }
@@ -60,6 +72,7 @@ void APU::deserialize(std::istream& is) {
 
 void APU::stepTimer() {
     pulse1.stepTimer();
+    pulse2.stepTimer();
 }
 
 void APU::stepFrameCounter() {
@@ -100,7 +113,7 @@ void APU::stepFrameCounter() {
             }
             break;
         default:
-            assert(0);
+            // assert(0);
             break;
         }
 
@@ -132,5 +145,7 @@ void APU::sendSample() {
 }
 
 double APU::getOutputSample() {
-    return pulse1.output();
+    std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
+    std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
+    return pulse1Out;
 }
