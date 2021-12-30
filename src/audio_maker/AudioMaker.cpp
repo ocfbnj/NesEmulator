@@ -9,7 +9,7 @@
 AudioMaker::AudioMaker(int sampleRate, int channelCount)
     : sampleRate(sampleRate),
       channelCount(channelCount),
-      stoped(false),
+      isStop(false),
       processingInterval(10) {
     assert(channelCount >= 1 && channelCount < 3);
     channelFormat = (channelCount == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
@@ -64,12 +64,12 @@ void AudioMaker::run() {
 
     assert(alGetError() == AL_NO_ERROR);
 
-    stoped = false;
+    isStop = false;
     thread = std::thread{&AudioMaker::streamData, this};
 }
 
 void AudioMaker::stop() {
-    stoped = true;
+    isStop = true;
 
     if (thread.joinable()) {
         thread.join();
@@ -85,7 +85,7 @@ void AudioMaker::streamData() {
     alSourcePlay(source);
     assert(alGetError() == AL_NO_ERROR);
 
-    while (!stoped) {
+    while (!isStop) {
         ALint processed = 0;
         alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
 

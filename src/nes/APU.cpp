@@ -8,7 +8,7 @@ namespace {
 constexpr auto CpuFrequency = 1.789773 * 1'000'000;
 constexpr auto ApuFrequency = static_cast<std::uint32_t>(CpuFrequency / 2 + 0.5);
 constexpr auto FrameCounterFrequency = 240;
-constexpr auto FrameCounterPeroid = static_cast<std::uint16_t>(ApuFrequency / FrameCounterFrequency + 0.5);
+constexpr auto FrameCounterPeriod = static_cast<std::uint16_t>(ApuFrequency / FrameCounterFrequency + 0.5);
 } // namespace
 
 void APU::clock() {
@@ -81,7 +81,7 @@ void APU::stepTimer() {
 void APU::stepFrameCounter() {
     static std::uint16_t i = 0;
 
-    if ((i % FrameCounterPeroid) == 0) {
+    if ((i % FrameCounterPeriod) == 0) {
         switch (frameCounterMode) {
         case 4:
             switch (frameCounter) {
@@ -125,7 +125,7 @@ void APU::stepFrameCounter() {
         }
     }
 
-    if (++i == FrameCounterPeroid) {
+    if (++i == FrameCounterPeriod) {
         i = 0;
     }
 }
@@ -136,13 +136,13 @@ void APU::sendSample() {
 
     static std::uint32_t i = 0;
 
-    std::uint32_t peroid = ApuFrequency / sampleRate;
+    std::uint32_t period = ApuFrequency / sampleRate;
 
-    if ((i % peroid) == 0) {
+    if ((i % period) == 0) {
         sampleCallback(getOutputSample());
     }
 
-    if (++i == peroid) {
+    if (++i == period) {
         i = 0;
     }
 }

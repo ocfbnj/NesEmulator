@@ -41,7 +41,7 @@ private:
     std::array<std::uint32_t, 3> buffers;
 
     std::thread thread;
-    std::atomic<bool> stoped;
+    std::atomic<bool> isStop;
     int processingInterval;
 
     GetData getData;
