@@ -147,5 +147,5 @@ void APU::sendSample() {
 double APU::getOutputSample() {
     std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
     std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
-    return pulse1Out;
+    return pulse1Out + pulse2Out;
 }
