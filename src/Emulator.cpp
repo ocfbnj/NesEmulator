@@ -6,10 +6,21 @@
 
 #include "Emulator.h"
 
+namespace {
+// CPU clock frequency is 1.789773 MHz
+// PPU clock frequency is three times CPU (~5.369319 MHz)
+// A frame has 341 x 262 = 89,342 clock cycles
+// So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
+constexpr auto FPS = 60.0;
+
+constexpr auto SampleRate = 44100;
+constexpr auto SampleCountPerFrame = SampleRate / FPS;
+} // namespace
+
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
       nesFile(nesFile),
-      audioMaker(44100, 1) {}
+      audioMaker(SampleRate, 1) {}
 
 void Emulator::onBegin() {
     std::optional<Cartridge> cartridge = loadNesFile(nesFile);
@@ -18,13 +29,12 @@ void Emulator::onBegin() {
     }
 
     nes.insert(std::move(cartridge.value()));
+
+    nes.getAPU().setSampleRate(SampleRate);
+    nes.getAPU().setSampleCallback(std::bind(&Emulator::sampleCallback, this, std::placeholders::_1));
     nes.powerUp();
 
-    // CPU clock frequency is 1.789773 MHz
-    // PPU clock frequency is three times CPU (~5.369319 MHz)
-    // A frame has 341 x 262 = 89,342 clock cycles
-    // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
-    setFpsLimit(60);
+    setFpsLimit(FPS);
     setVsyncEnabled(false);
 
     audioMaker.setCallback(std::bind(&Emulator::audioMakerGetData, this));
@@ -40,21 +50,6 @@ void Emulator::onUpdate() {
     } while (!nes.getPPU().isFrameComplete());
 
     renderFrame(nes.getPPU().getFrame());
-
-    // TODO delete
-    for (int i = 0; i != 5000; i++) {
-        static double globalTime = 0.0;
-        std::int16_t sample = 0 * std::sin(220 * 2 * std::numbers::pi * globalTime);
-        {
-            std::unique_lock<std::mutex> lock{mtx};
-            samples.emplace_back(sample);
-
-            if (samples.size() >= 4096) {
-                cond.notify_one();
-            }
-        }
-        globalTime += 1.0 / 44100.0;
-    }
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
@@ -125,12 +120,20 @@ void Emulator::checkSerialization() {
     }
 }
 
+void Emulator::sampleCallback(double sample) {
+    std::lock_guard<std::mutex> lock{mtx};
+    samples.emplace_back(static_cast<std::int16_t>(sample) * 50);
+    if (samples.size() >= SampleCountPerFrame) {
+        cond.notify_one();
+    }
+}
+
 std::vector<std::int16_t> Emulator::audioMakerGetData() {
     std::vector<std::int16_t> data;
 
     {
         std::unique_lock<std::mutex> lock{mtx};
-        cond.wait(lock, [this]() { return samples.size() >= 4096; });
+        cond.wait(lock, [this]() { return samples.size() >= SampleCountPerFrame; });
 
         samples.swap(data);
     }

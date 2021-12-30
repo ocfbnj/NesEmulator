@@ -7,6 +7,7 @@
 #include <memory>
 #include <ostream>
 
+#include <nes/APU.h>
 #include <nes/CPU.h>
 #include <nes/Cartridge.h>
 #include <nes/Joypad.h>
@@ -47,6 +48,7 @@ public:
 
     Mapper& getMapper();
     CPU& getCPU();
+    APU& getAPU();
     PPU& getPPU();
     Joypad& getJoypad();
 
@@ -54,6 +56,7 @@ private:
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
     std::unique_ptr<Mapper> mapper;
     CPU cpu;
+    APU apu;
     PPU ppu;
     std::array<std::uint8_t, 2_kb> cpuRam{};
     std::array<std::uint8_t, 2_kb> ppuRam{};

@@ -73,6 +73,7 @@ void Bus::powerUp() {
 void Bus::serialize(std::ostream& os) const {
     mapper->serialize(os);
     cpu.serialize(os);
+    apu.serialize(os);
     ppu.serialize(os);
     os.write(reinterpret_cast<const char*>(cpuRam.data()), cpuRam.size());
     os.write(reinterpret_cast<const char*>(ppuRam.data()), ppuRam.size());
@@ -81,6 +82,7 @@ void Bus::serialize(std::ostream& os) const {
 void Bus::deserialize(std::istream& is) {
     mapper->deserialize(is);
     cpu.deserialize(is);
+    apu.deserialize(is);
     ppu.deserialize(is);
     is.read(reinterpret_cast<char*>(cpuRam.data()), cpuRam.size());
     is.read(reinterpret_cast<char*>(ppuRam.data()), ppuRam.size());
@@ -110,7 +112,10 @@ std::uint8_t Bus::cpuRead(std::uint16_t addr) {
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        if (addr == 0x4016) {
+        if (addr == 0x4015) {
+            // APU Status Register
+            data = apu.apuRead();
+        } else if (addr == 0x4016) {
             data = joypad.read();
         }
     } else if (addr >= 0x4018 && addr < 0x4020) {
@@ -167,7 +172,10 @@ void Bus::cpuWrite(std::uint16_t addr, std::uint8_t data) {
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        if (addr == 0x4014) {
+        if (addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015) {
+            // APU  addresses
+            apu.apuWrite(addr, data);
+        } else if (addr == 0x4014) {
             // Writing $XX will upload 256 bytes of data from CPU page $XX00-$XXFF to the internal PPU OAM.
             std::array<std::uint8_t, 256> buffer{};
             std::uint16_t hi = std::uint16_t(data) << 8;
@@ -240,17 +248,24 @@ void Bus::clock() {
         cpu.clock();
     }
 
+    if ((i % 6) == 0) {
+        apu.clock();
+    }
+
     if (mapper->irqState()) {
         mapper->irqClear();
         cpu.irq();
     }
 
-    i++;
+    if (++i == 6) {
+        i = 0;
+    }
 }
 
 void Bus::reset() {
     mapper->reset();
     cpu.reset();
+    apu.reset();
     ppu.reset();
 }
 
@@ -260,6 +275,10 @@ Mapper& Bus::getMapper() {
 
 CPU& Bus::getCPU() {
     return cpu;
+}
+
+APU& Bus::getAPU() {
+    return apu;
 }
 
 PPU& Bus::getPPU() {

@@ -1,6 +1,7 @@
 add_library(
     nes
     STATIC
+    APU.cpp
     Bus.cpp
     Cartridge.cpp
     CPU.cpp

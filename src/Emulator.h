@@ -21,10 +21,12 @@ public:
 
 private:
     void renderFrame(const PPU::Frame& frame);
+
     void checkKeyboard();
     void checkReset();
     void checkSerialization();
 
+    void sampleCallback(double sample);
     std::vector<std::int16_t> audioMakerGetData();
 
     Bus nes;
