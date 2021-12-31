@@ -15,7 +15,7 @@ class AudioMaker {
 public:
     using GetData = std::function<std::vector<std::int16_t>()>;
 
-    AudioMaker(int sampleRate = 44100, int channelCount = 1);
+    explicit AudioMaker(int sampleRate = 44100, int channelCount = 1);
     ~AudioMaker();
 
     void setCallback(GetData f);

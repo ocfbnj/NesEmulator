@@ -13,7 +13,7 @@ std::vector<std::int16_t> getData() {
     std::vector<std::int16_t> samples(SampleSize);
 
     for (short & sample : samples) {
-        sample = 50 * std::sin(440 * 2 * std::numbers::pi * globalTime);
+        sample = static_cast<std::int16_t>(50 * std::sin(440 * 2 * std::numbers::pi * globalTime));
         globalTime += 1.0 / SampleRate;
     }
 
