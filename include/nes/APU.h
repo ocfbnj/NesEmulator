@@ -60,7 +60,7 @@ private:
                 0b1001'1111, // 25% negated
             };
 
-            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? (reg & 0x0F) : 0;
+            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? (reg & period) : 0;
         }
 
         void writeControl(std::uint8_t data) {
@@ -73,17 +73,16 @@ private:
 
         void writeTimerHi(std::uint8_t data) {
             timer.reloadValue = (timer.reloadValue & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
-            timer.value = timer.reloadValue;
 
             dutyValue = 0;
         }
 
         union {
             struct {
-                std::uint8_t dutyCycle : 2;
-                std::uint8_t lengthCounterHalt : 1;
-                std::uint8_t envelopeEnabled : 1;
                 std::uint8_t period : 4;
+                std::uint8_t envelopeEnabled : 1;
+                std::uint8_t lengthCounterHalt : 1;
+                std::uint8_t dutyCycle : 2;
             };
 
             std::uint8_t reg;

@@ -42,6 +42,7 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
         break;
     case 0x4003:
         pulse1.writeTimerHi(data);
+        break;
     case 0x4004:
         pulse2.writeControl(data);
         break;
