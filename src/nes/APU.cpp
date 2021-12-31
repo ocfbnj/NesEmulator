@@ -13,9 +13,6 @@ constexpr auto FrameCounterPeriod = static_cast<std::uint16_t>(ApuFrequency / Fr
 
 void APU::clock() {
     stepTimer();
-    stepTimer();
-    stepTimer();
-    stepTimer();
 
     stepFrameCounter();
     sendSample();

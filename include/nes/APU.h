@@ -48,7 +48,7 @@ private:
     struct Pulse {
         void stepTimer() {
             if (timer.step()) {
-                dutyValue++;
+                dutyValue = (dutyValue + 1) % 8;
             }
         }
 
