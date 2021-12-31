@@ -11,7 +11,7 @@ namespace {
 // PPU clock frequency is three times CPU (~5.369319 MHz)
 // A frame has 341 x 262 = 89,342 clock cycles
 // So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
-constexpr auto FPS = 60.0;
+constexpr auto FPS = 60;
 
 constexpr auto SampleRate = 44100;
 constexpr auto SampleCountPerFrame = SampleRate / FPS;
@@ -54,15 +54,11 @@ void Emulator::onUpdate() {
 }
 
 void Emulator::synchronizeSoundWithVideo() {
-    static std::uint8_t i = 0;
-
     // The game runs faster than the speed of sound production.
     // So after a period of time, the sound will lag behind the video.
     // We need to synchronize them.
-    if (++i == 0) {
-        audioMaker.stop();
-        audioMaker.run();
-    }
+
+    // TODO
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
