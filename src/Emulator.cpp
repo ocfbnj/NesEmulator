@@ -130,9 +130,10 @@ void Emulator::checkSerialization() {
 }
 
 void Emulator::sampleCallback(double sample) {
-    std::lock_guard<std::mutex> lock{mtx};
+    std::unique_lock<std::mutex> lock{mtx};
     samples.emplace_back(static_cast<std::int16_t>(sample) * 50);
     if (samples.size() >= SampleCountPerFrame) {
+        lock.unlock();
         cond.notify_one();
     }
 }
