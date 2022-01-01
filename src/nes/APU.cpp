@@ -75,11 +75,11 @@ void APU::deserialize(std::istream& is) {
 std::uint8_t APU::readStatus() const {
     std::uint8_t data = 0;
 
-    if (!pulse1.lengthCounter.isZero()) {
+    if (pulse1.lengthCounter.value > 0) {
         data |= 0b0000'0001;
     }
 
-    if (!pulse2.lengthCounter.isZero()) {
+    if (pulse2.lengthCounter.value > 0) {
         data |= 0b0000'0010;
     }
 
@@ -88,6 +88,14 @@ std::uint8_t APU::readStatus() const {
 
 void APU::writeStatus(std::uint8_t data) {
     status.reg = data;
+
+    if (!status.pulse1Enabled()) {
+        pulse1.lengthCounter.value = 0;
+    }
+
+    if (!status.pulse2Enabled()) {
+        pulse2.lengthCounter.value = 0;
+    }
 }
 
 void APU::writeFrameCounter(std::uint8_t data) {
@@ -192,6 +200,5 @@ double APU::getOutputSample() {
     std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
     std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
 
-    // std::cout << +pulse1Out << " " << +pulse2Out << "\n";
     return pulse1Out + pulse2Out;
 }

@@ -63,10 +63,6 @@ private:
             }
         }
 
-        bool isZero() const {
-            return value == 0;
-        }
-
         std::uint8_t value;
     };
 
@@ -116,7 +112,7 @@ private:
         }
 
         std::uint8_t output() const {
-            if (lengthCounter.isZero()) {
+            if (lengthCounter.value == 0) {
                 return 0;
             }
 
