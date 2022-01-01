@@ -18,9 +18,11 @@ public:
 
     void onBegin() override;
     void onUpdate() override;
+    void onEnd() override;
 
 private:
-    void synchronizeSoundWithVideo();
+    void debug();
+
     void renderFrame(const PPU::Frame& frame);
 
     void checkKeyboard();
@@ -37,6 +39,11 @@ private:
     std::vector<std::int16_t> samples;
     std::condition_variable cond;
     std::mutex mtx;
+    bool stop;
+
+#ifdef OCFBNJ_NES_EMULATOR_DEBUG
+    std::uint16_t sampleCount = 0;
+#endif
 };
 
 #endif

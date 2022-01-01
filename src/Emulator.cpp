@@ -1,26 +1,18 @@
+#include <cassert>
 #include <cmath>
 #include <numbers>
 #include <unordered_map>
 
 #include <nes/NesFile.h>
+#include <nes/literals.h>
 
 #include "Emulator.h"
-
-namespace {
-// CPU clock frequency is 1.789773 MHz
-// PPU clock frequency is three times CPU (~5.369319 MHz)
-// A frame has 341 x 262 = 89,342 clock cycles
-// So NES can output 5,369,319 / 89,342 ~= 60.098 frame per seconds
-constexpr auto FPS = 60;
-
-constexpr auto SampleRate = 44100;
-constexpr auto SampleCountPerFrame = SampleRate / FPS;
-} // namespace
 
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
       nesFile(nesFile),
-      audioMaker(SampleRate, 1) {}
+      audioMaker(SampleRate, 1),
+      stop(false) {}
 
 void Emulator::onBegin() {
     std::optional<Cartridge> cartridge = loadNesFile(nesFile);
@@ -44,21 +36,36 @@ void Emulator::onBegin() {
 
 void Emulator::onUpdate() {
     checkKeyboard();
-    synchronizeSoundWithVideo();
 
     do {
         nes.clock();
     } while (!nes.getPPU().isFrameComplete());
 
     renderFrame(nes.getPPU().getFrame());
+
+    debug();
 }
 
-void Emulator::synchronizeSoundWithVideo() {
-    // The game runs faster than the speed of sound production.
-    // So after a period of time, the sound will lag behind the video.
-    // We need to synchronize them.
+void Emulator::onEnd() {
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        stop = true;
+    }
 
-    // TODO
+    cond.notify_one();
+}
+
+void Emulator::debug() {
+#ifdef OCFBNJ_NES_EMULATOR_DEBUG
+    // verify the sampling rate
+    static std::uint8_t i = 0;
+    if (++i == FPS) {
+        i = 0;
+
+        assert(sampleCount == SampleRate);
+        sampleCount = 0;
+    }
+#endif
 }
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
@@ -130,11 +137,20 @@ void Emulator::checkSerialization() {
 }
 
 void Emulator::sampleCallback(double sample) {
-    std::unique_lock<std::mutex> lock{mtx};
-    samples.emplace_back(static_cast<std::int16_t>(sample) * 50);
-    if (samples.size() >= SampleCountPerFrame) {
-        lock.unlock();
-        cond.notify_one();
+#ifdef OCFBNJ_NES_EMULATOR_DEBUG
+    sampleCount++;
+#endif
+
+    auto value = static_cast<std::int16_t>(sample) * 50;
+
+    {
+        std::unique_lock<std::mutex> lock{mtx};
+
+        samples.emplace_back(value);
+        if (samples.size() >= SampleCountPerFrame) {
+            lock.unlock();
+            cond.notify_one();
+        }
     }
 }
 
@@ -143,7 +159,7 @@ std::vector<std::int16_t> Emulator::audioMakerGetData() {
 
     {
         std::unique_lock<std::mutex> lock{mtx};
-        cond.wait(lock, [this]() { return samples.size() >= SampleCountPerFrame; });
+        cond.wait(lock, [this]() { return samples.size() >= SampleCountPerFrame || stop; });
 
         samples.swap(data);
     }

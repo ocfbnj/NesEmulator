@@ -3,13 +3,7 @@
 #include <cmath>
 
 #include <nes/APU.h>
-
-namespace {
-constexpr auto CpuFrequency = 1.789773 * 1'000'000;
-constexpr auto ApuFrequency = static_cast<std::uint32_t>(CpuFrequency / 2 + 0.5);
-constexpr auto FrameCounterFrequency = 240;
-constexpr auto FrameCounterPeriod = static_cast<std::uint16_t>(ApuFrequency / FrameCounterFrequency + 0.5);
-} // namespace
+#include <nes/literals.h>
 
 void APU::clock() {
     stepTimer();
