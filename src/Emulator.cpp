@@ -141,7 +141,7 @@ void Emulator::sampleCallback(double sample) {
     sampleCount++;
 #endif
 
-    auto value = static_cast<std::int16_t>(sample) * 50;
+    auto value = static_cast<std::int16_t>(sample) * 20;
 
     {
         std::unique_lock<std::mutex> lock{mtx};
