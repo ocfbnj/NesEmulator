@@ -172,7 +172,7 @@ void Bus::cpuWrite(std::uint16_t addr, std::uint8_t data) {
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        if (addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015) {
+        if (addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015 || addr == 0x4017) {
             // APU  addresses
             apu.apuWrite(addr, data);
         } else if (addr == 0x4014) {

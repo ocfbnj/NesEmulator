@@ -6,6 +6,8 @@
 #include <istream>
 #include <ostream>
 
+#include <nes/literals.h>
+
 class APU {
 public:
     using SampleCallback = std::function<void(double sample)>;
@@ -25,8 +27,17 @@ public:
 private:
     static void defaultSampleCallback(double) {}
 
+    std::uint8_t readStatus();
+
+    void writeStatus(std::uint8_t data);
+    void writeFrameCounter(std::uint8_t data);
+
     void stepTimer();
+    void stepLengthCounter();
+    void stepEnvelope();
+    void stepSweep();
     void stepFrameCounter();
+
     void sendSample();
 
     double getOutputSample();
@@ -45,6 +56,20 @@ private:
         std::uint16_t reloadValue;
     };
 
+    struct LengthCounter {
+        void step() {
+            if (value > 0) {
+                value--;
+            }
+        }
+
+        bool isZero() const {
+            return value == 0;
+        }
+
+        std::uint8_t value;
+    };
+
     struct Pulse {
         void stepTimer() {
             if (timer.step()) {
@@ -52,19 +77,25 @@ private:
             }
         }
 
-        std::uint8_t output() const {
-            constexpr std::array<std::uint8_t, 4> DutyCycleSequences{
-                0b0100'0000, // 12.5%
-                0b0110'0000, // 25%
-                0b0111'1000, // 50%
-                0b1001'1111, // 25% negated
-            };
+        void stepLengthCounter() {
+            if (!lengthCounterHalt) {
+                lengthCounter.step();
+            }
+        }
 
-            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? (reg & period) : 0;
+        std::uint8_t output() const {
+            if (lengthCounter.isZero()) {
+                return 0;
+            }
+
+            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? period : 0;
         }
 
         void writeControl(std::uint8_t data) {
             reg = data;
+        }
+
+        void writeSweep(std::uint8_t data) {
         }
 
         void writeTimerLo(std::uint8_t data) {
@@ -73,6 +104,7 @@ private:
 
         void writeTimerHi(std::uint8_t data) {
             timer.reloadValue = (timer.reloadValue & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
+            lengthCounter.value = LengthTable[data >> 3];
 
             dutyValue = 0;
         }
@@ -88,8 +120,9 @@ private:
             std::uint8_t reg;
         };
 
-        Timer timer;
         std::uint8_t dutyValue = 0;
+        Timer timer;
+        LengthCounter lengthCounter;
     };
 
     struct StatusRegister {
@@ -127,8 +160,9 @@ private:
         };
     };
 
-    std::uint16_t frameCounter;
-    std::uint8_t frameCounterMode;
+    std::uint16_t frameCounter = 0;
+    std::uint8_t frameCounterMode = 4;
+    bool irqInhibit = false;
 
     StatusRegister status{.reg = 0};
     Pulse pulse1{.reg = 0};

@@ -18,12 +18,22 @@ void APU::reset() {
 std::uint8_t APU::apuRead(std::uint16_t addr) {
     assert(addr == 0x4015);
 
-    // TODO
-    return 0;
+    std::uint8_t data = 0;
+    if (addr == 0x4015) {
+        if (!pulse1.lengthCounter.isZero()) {
+            data |= 0b0000'0001;
+        }
+
+        if (!pulse2.lengthCounter.isZero()) {
+            data |= 0b0000'0010;
+        }
+    }
+
+    return data;
 }
 
 void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
-    assert(addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015);
+    assert(addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015 || addr == 0x4017);
     switch (addr) {
     case 0x4000:
         pulse1.writeControl(data);
@@ -44,7 +54,10 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
         pulse2.writeTimerHi(data);
         break;
     case 0x4015:
-        status.reg = data;
+        writeStatus(data);
+        break;
+    case 0x4017:
+        writeFrameCounter(data);
         break;
     default:
         break;
@@ -65,25 +78,52 @@ void APU::serialize(std::ostream& os) const {
 void APU::deserialize(std::istream& is) {
 }
 
+void APU::writeStatus(std::uint8_t data) {
+    status.reg = data;
+}
+
+void APU::writeFrameCounter(std::uint8_t data) {
+    frameCounterMode = 4 + ((data >> 7) & 1);
+    irqInhibit = (data >> 6) & 1;
+}
+
 void APU::stepTimer() {
     pulse1.stepTimer();
     pulse2.stepTimer();
 }
 
+void APU::stepLengthCounter() {
+    pulse1.stepLengthCounter();
+    pulse2.stepLengthCounter();
+}
+
+void APU::stepEnvelope() {
+}
+
+void APU::stepSweep() {
+}
+
 void APU::stepFrameCounter() {
-    static std::uint16_t i = 0;
+    static std::uint64_t i = 0;
 
     if ((i % FrameCounterPeriod) == 0) {
         switch (frameCounterMode) {
         case 4:
             switch (frameCounter) {
             case 0:
+            case 2:
+                stepEnvelope();
                 break;
             case 1:
-                break;
-            case 2:
+                stepLengthCounter();
+                stepEnvelope();
+                stepSweep();
                 break;
             case 3:
+                stepLengthCounter();
+                stepEnvelope();
+                stepSweep();
+                // TODO irq
                 break;
             default:
                 assert(0);
@@ -93,14 +133,17 @@ void APU::stepFrameCounter() {
         case 5:
             switch (frameCounter) {
             case 0:
+            case 2:
+                stepLengthCounter();
+                stepEnvelope();
+                stepSweep();
                 break;
             case 1:
-                break;
-            case 2:
-                break;
             case 3:
+                stepEnvelope();
                 break;
             case 4:
+                // do nothing
                 break;
             default:
                 assert(0);
@@ -108,18 +151,14 @@ void APU::stepFrameCounter() {
             }
             break;
         default:
-            // assert(0);
+            assert(0);
             break;
         }
 
-        if (++frameCounter == frameCounterMode) {
-            frameCounter = 0;
-        }
+        frameCounter = (frameCounter + 1) % frameCounterMode;
     }
 
-    if (++i == FrameCounterPeriod) {
-        i = 0;
-    }
+    i = (i + 1) % FrameCounterPeriod;
 }
 
 void APU::sendSample() {
@@ -142,5 +181,7 @@ void APU::sendSample() {
 double APU::getOutputSample() {
     std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
     std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
+
+    // std::cout << +pulse1Out << " " << +pulse2Out << "\n";
     return pulse1Out + pulse2Out;
 }
