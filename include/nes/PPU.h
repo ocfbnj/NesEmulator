@@ -283,7 +283,7 @@ private:
 
     // for frame rendering
     // See https://wiki.nesdev.org/w/images/4/4f/Ppu.svg
-    std::int16_t scanline = 0;
+    std::int16_t scanline = -1;
     std::int16_t cycle = 0;
 
     // for background rendering

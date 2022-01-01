@@ -107,7 +107,7 @@ void PPU::reset() {
     oamAddr = 0;
     internalReadBuf = 0;
 
-    scanline = 0;
+    scanline = -1;
     cycle = 0;
 
     vramAddr.reg = 0;
