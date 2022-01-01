@@ -20,13 +20,7 @@ std::uint8_t APU::apuRead(std::uint16_t addr) {
 
     std::uint8_t data = 0;
     if (addr == 0x4015) {
-        if (!pulse1.lengthCounter.isZero()) {
-            data |= 0b0000'0001;
-        }
-
-        if (!pulse2.lengthCounter.isZero()) {
-            data |= 0b0000'0010;
-        }
+        data = readStatus();
     }
 
     return data;
@@ -78,6 +72,20 @@ void APU::serialize(std::ostream& os) const {
 void APU::deserialize(std::istream& is) {
 }
 
+std::uint8_t APU::readStatus() const {
+    std::uint8_t data = 0;
+
+    if (!pulse1.lengthCounter.isZero()) {
+        data |= 0b0000'0001;
+    }
+
+    if (!pulse2.lengthCounter.isZero()) {
+        data |= 0b0000'0010;
+    }
+
+    return data;
+}
+
 void APU::writeStatus(std::uint8_t data) {
     status.reg = data;
 }
@@ -98,6 +106,8 @@ void APU::stepLengthCounter() {
 }
 
 void APU::stepEnvelope() {
+    pulse1.stepEnvelope();
+    pulse2.stepEnvelope();
 }
 
 void APU::stepSweep() {

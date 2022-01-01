@@ -27,7 +27,7 @@ public:
 private:
     static void defaultSampleCallback(double) {}
 
-    std::uint8_t readStatus();
+    std::uint8_t readStatus() const;
 
     void writeStatus(std::uint8_t data);
     void writeFrameCounter(std::uint8_t data);
@@ -70,6 +70,34 @@ private:
         std::uint8_t value;
     };
 
+    struct Envelope {
+        void step() {
+            if (start) {
+                start = false;
+                volume = 15;
+                value = divider;
+            } else if (value > 0) {
+                value--;
+            } else {
+                value = divider;
+
+                if (volume > 0) {
+                    volume--;
+                } else {
+                    if (loop) {
+                        volume = 15;
+                    }
+                }
+            }
+        }
+
+        bool start;
+        std::uint8_t divider;
+        std::uint8_t volume;
+        std::uint8_t value;
+        bool loop;
+    };
+
     struct Pulse {
         void stepTimer() {
             if (timer.step()) {
@@ -78,9 +106,13 @@ private:
         }
 
         void stepLengthCounter() {
-            if (!lengthCounterHalt) {
+            if (!l) {
                 lengthCounter.step();
             }
+        }
+
+        void stepEnvelope() {
+            envelope.step();
         }
 
         std::uint8_t output() const {
@@ -88,11 +120,16 @@ private:
                 return 0;
             }
 
-            return ((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) ? period : 0;
+            std::uint8_t volume = c ? v : envelope.volume;
+            return ((DutyCycleSequences[d] >> (7 - dutyValue)) & 1) ? volume : 0;
         }
 
         void writeControl(std::uint8_t data) {
             reg = data;
+
+            envelope.divider = v;
+            envelope.loop = l;
+            envelope.start = true;
         }
 
         void writeSweep(std::uint8_t data) {
@@ -105,16 +142,17 @@ private:
         void writeTimerHi(std::uint8_t data) {
             timer.reloadValue = (timer.reloadValue & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
             lengthCounter.value = LengthTable[data >> 3];
+            envelope.start = true;
 
             dutyValue = 0;
         }
 
         union {
             struct {
-                std::uint8_t period : 4;
-                std::uint8_t envelopeEnabled : 1;
-                std::uint8_t lengthCounterHalt : 1;
-                std::uint8_t dutyCycle : 2;
+                std::uint8_t v : 4; // Used as the volume in constant volume (C set) mode. Also used as the `reload` value for the envelope's divider (the divider becomes V + 1 quarter frames).
+                std::uint8_t c : 1; // Constant volume flag (0: use volume from envelope; 1: use constant volume)
+                std::uint8_t l : 1; // APU Length Counter halt flag/envelope loop flag
+                std::uint8_t d : 2; // Duty cycle
             };
 
             std::uint8_t reg;
@@ -123,6 +161,7 @@ private:
         std::uint8_t dutyValue = 0;
         Timer timer;
         LengthCounter lengthCounter;
+        Envelope envelope;
     };
 
     struct StatusRegister {
