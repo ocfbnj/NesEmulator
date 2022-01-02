@@ -44,57 +44,141 @@ private:
 
     struct Timer {
         bool step() {
-            if (--value == 0) {
-                value = reloadValue;
+            if (counter == 0) {
+                counter = period;
                 return true;
+            } else if (counter > 0) {
+                counter--;
             }
 
             return false;
         }
 
-        std::uint16_t value;
-        std::uint16_t reloadValue;
+        std::uint16_t counter = 0;
+        std::uint16_t period = 0;
     };
 
-    struct LengthCounter {
+    class LengthCounter {
+    public:
+        bool isZero() const {
+            return counter == 0;
+        }
+
+        bool greaterZero() const {
+            return counter > 0;
+        }
+
+        void setCounter(std::uint8_t value) {
+            counter = value;
+        }
+
+        void setHalt(bool b) {
+            halt = b;
+        }
+
         void step() {
-            if (value > 0) {
-                value--;
+            if (counter > 0 && !halt) {
+                counter--;
             }
         }
 
-        std::uint8_t value;
+    private:
+        std::uint8_t counter = 0;
+        bool halt = false;
     };
 
-    struct Envelope {
+    class Envelope {
+    public:
+        std::uint8_t getVolume() const {
+            return c ? v : decayLevel;
+        }
+
+        void write(std::uint8_t value) {
+            data = value;
+        }
+
+        void setStartFlag() {
+            start = true;
+        }
+
         void step() {
             if (start) {
                 start = false;
-                volume = 15;
-                value = divider;
-            } else if (value > 0) {
-                value--;
+                decayLevel = 15;
+                counter = v;
             } else {
-                value = divider;
-
-                if (volume > 0) {
-                    volume--;
-                } else {
-                    if (loop) {
-                        volume = 15;
+                if (counter == 0) {
+                    counter = v;
+                    if (decayLevel == 0 && l) {
+                        decayLevel = 15;
+                    } else if (decayLevel > 0) {
+                        decayLevel--;
                     }
+                } else if (counter > 0) {
+                    counter--;
                 }
             }
         }
 
-        bool start;
-        std::uint8_t divider;
-        std::uint8_t volume;
-        std::uint8_t value;
-        bool loop;
+    private:
+        union {
+            struct {
+                std::uint8_t v : 4; // Used as the volume in constant volume (C set) mode. Also used as the `reload` value for the envelope's divider (the divider becomes V + 1 quarter frames)
+                std::uint8_t c : 1; // Constant volume flag (0: use volume from envelope; 1: use constant volume)
+                std::uint8_t l : 1; // APU Length Counter halt flag/envelope loop flag
+                std::uint8_t unused : 2;
+            };
+
+            std::uint8_t data = 0;
+        };
+
+        bool start = false;
+        std::uint8_t decayLevel = 0;
+        std::uint8_t counter = 0;
     };
 
-    struct Sweep {
+    class Sweep {
+    public:
+        std::uint16_t getPeriodChangeAmount(std::uint16_t rawTimerPeriod) const {
+            std::uint16_t delta = rawTimerPeriod >> s;
+
+            return n ? -delta : delta;
+        }
+
+        void write(std::uint8_t value) {
+            data = value;
+        }
+
+        void setReloadFlag() {
+            reload = true;
+        }
+
+        void step(std::uint16_t& timerPeriod, bool muting) {
+            if (counter == 0 && e && !muting) {
+                // The pulse's period is adjusted.
+                sweep(timerPeriod);
+            }
+
+            if (counter == 0 || reload) {
+                counter = p + 1;
+                if (reload) {
+                    reload = false;
+                }
+            } else if (counter > 0) {
+                counter--;
+            }
+        }
+
+    private:
+        void sweep(std::uint16_t& timerPeriod) {
+            std::uint16_t delta = timerPeriod >> s;
+            if (n) {
+                timerPeriod -= delta;
+            } else {
+                timerPeriod += delta;
+            }
+        }
+
         union {
             struct {
                 std::uint8_t s : 3; // Shift count (number of bits)
@@ -103,14 +187,39 @@ private:
                 std::uint8_t e : 1; // Enabled flag
             };
 
-            std::uint8_t reg;
+            std::uint8_t data = 0;
         };
 
-        bool reload;
-        std::uint8_t value;
+        bool reload = false;
+        std::uint8_t counter = 0;
     };
 
-    struct Pulse {
+    class Pulse {
+    public:
+        bool lengthGreaterThanZero() const {
+            return lengthCounter.greaterZero();
+        }
+
+        std::uint8_t output() const {
+            if (muting()) {
+                return 0;
+            }
+
+            if (((DutyCycleSequences[dutyCycle] >> (7 - dutyValue)) & 1) == 0) {
+                return 0;
+            }
+
+            if (lengthCounter.isZero()) {
+                return 0;
+            }
+
+            return envelope.getVolume();
+        }
+
+        void resetLengthCounter() {
+            lengthCounter.setCounter(0);
+        }
+
         void stepTimer() {
             if (timer.step()) {
                 dutyValue = (dutyValue + 1) % 8;
@@ -118,9 +227,7 @@ private:
         }
 
         void stepLengthCounter() {
-            if (!l) {
-                lengthCounter.step();
-            }
+            lengthCounter.step();
         }
 
         void stepEnvelope() {
@@ -128,87 +235,74 @@ private:
         }
 
         void stepSweep() {
-            if (sweep.reload) {
-                sweep.reload = false;
-
-                if (sweep.e && sweep.value == 0) {
-                    performSweep();
-                }
-
-                sweep.value = sweep.p;
-            } else if (sweep.value > 0) {
-                sweep.value--;
-            } else {
-                sweep.value = sweep.p;
-
-                if (sweep.e) {
-                    performSweep();
-                }
-            }
-        }
-
-        void performSweep() {
-            std::uint16_t delta = timer.reloadValue >> sweep.s;
-
-            if (sweep.n) {
-                timer.reloadValue -= delta;
-            } else {
-                timer.reloadValue += delta;
-            }
-        }
-
-        std::uint8_t output() const {
-            if (lengthCounter.value == 0) {
-                return 0;
-            }
-
-            std::uint8_t volume = c ? v : envelope.volume;
-            return ((DutyCycleSequences[d] >> (7 - dutyValue)) & 1) ? volume : 0;
+            sweep.step(timer.period, muting());
         }
 
         void writeControl(std::uint8_t data) {
-            reg = data;
+            dutyCycle = (data >> 6) & 0b11;
 
-            envelope.divider = v;
-            envelope.loop = l;
-            envelope.start = true;
+            lengthCounter.setHalt((data >> 5) & 1);
+
+            envelope.write(data);
+            envelope.setStartFlag();
         }
 
         void writeSweep(std::uint8_t data) {
-            sweep.reg = data;
+            sweep.write(data);
+            sweep.setReloadFlag();
         }
 
         void writeTimerLo(std::uint8_t data) {
-            timer.reloadValue = (timer.reloadValue & 0xFF00) | static_cast<std::uint16_t>(data);
+            timer.period = (timer.period & 0xFF00) | static_cast<std::uint16_t>(data);
         }
 
         void writeTimerHi(std::uint8_t data) {
-            timer.reloadValue = (timer.reloadValue & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
-            lengthCounter.value = LengthTable[data >> 3];
-            envelope.start = true;
+            timer.period = (timer.period & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
+            lengthCounter.setCounter(LengthTable[data >> 3]);
+            envelope.setStartFlag();
 
             dutyValue = 0;
         }
 
-        union {
-            struct {
-                std::uint8_t v : 4; // Used as the volume in constant volume (C set) mode. Also used as the `reload` value for the envelope's divider (the divider becomes V + 1 quarter frames).
-                std::uint8_t c : 1; // Constant volume flag (0: use volume from envelope; 1: use constant volume)
-                std::uint8_t l : 1; // APU Length Counter halt flag/envelope loop flag
-                std::uint8_t d : 2; // Duty cycle
-            };
+    private:
+        bool muting() const {
+            return timer.period < 8 || timer.period > 0x7FF;
+        }
 
-            std::uint8_t reg;
-        };
-
+        std::uint8_t dutyCycle = 0;
         std::uint8_t dutyValue = 0;
+
         Timer timer;
         LengthCounter lengthCounter;
         Envelope envelope;
         Sweep sweep;
     };
 
-    struct Noise {
+    class Noise {
+    public:
+        bool lengthGreaterThanZero() const {
+            return lengthCounter.greaterZero();
+        }
+
+        std::uint8_t output() const {
+            // The mixer receives the current envelope volume except when
+            // - Bit 0 of the shift register is set, or
+            // - The length counter is zero
+            if (shiftRegister & 1) {
+                return 0;
+            }
+
+            if (lengthCounter.isZero()) {
+                return 0;
+            }
+
+            return envelope.getVolume();
+        }
+
+        void resetLengthCounter() {
+            lengthCounter.setCounter(0);
+        }
+
         void stepTimer() {
             if (timer.step()) {
                 // When the timer clocks the shift register, the following actions occur in order:
@@ -226,62 +320,34 @@ private:
         }
 
         void stepLengthCounter() {
-            if (!l) {
-                lengthCounter.step();
-            }
+            lengthCounter.step();
         }
 
         void stepEnvelope() {
             envelope.step();
         }
 
-        std::uint8_t output() const {
-            // The mixer receives the current envelope volume except when
-            // - Bit 0 of the shift register is set, or
-            // - The length counter is zero
-            if (shiftRegister & 1) {
-                return 0;
-            }
-
-            if (lengthCounter.value == 0) {
-                return 0;
-            }
-
-            std::uint8_t volume = c ? v : envelope.volume;
-            return volume;
-        }
-
         void writeControl(std::uint8_t data) {
-            reg = data;
+            lengthCounter.setHalt((data >> 5) & 1);
 
-            envelope.divider = v;
-            envelope.loop = l;
-            envelope.start = true;
+            envelope.write(data);
+            envelope.setStartFlag();
         }
 
         void writePeriod(std::uint8_t data) {
             mode = (data >> 7) & 1;
-            timer.reloadValue = NoiseTable[data & 0x0F];
+            timer.period = NoiseTable[data & 0x0F];
         }
 
         void writeLengthCounter(std::uint8_t data) {
-            lengthCounter.value = LengthTable[data >> 3];
-            envelope.start = true;
+            lengthCounter.setCounter(LengthTable[data >> 3]);
+            envelope.setStartFlag();
         }
 
-        union {
-            struct {
-                std::uint8_t v : 4; // Used as the volume in constant volume (C set) mode. Also used as the `reload` value for the envelope's divider (the divider becomes V + 1 quarter frames).
-                std::uint8_t c : 1; // Constant volume flag (0: use volume from envelope; 1: use constant volume)
-                std::uint8_t l : 1; // APU Length Counter halt flag/envelope loop flag
-                std::uint8_t unused : 2;
-            };
-
-            std::uint8_t reg;
-        };
-
-        std::uint8_t mode;
+    private:
+        std::uint8_t mode = 0;
         std::uint16_t shiftRegister = 0x7F;
+
         Timer timer;
         LengthCounter lengthCounter;
         Envelope envelope;
@@ -327,9 +393,9 @@ private:
     bool irqInhibit = false;
 
     StatusRegister status{.reg = 0};
-    Pulse pulse1{.reg = 0};
-    Pulse pulse2{.reg = 0};
-    Noise noise{.reg = 0};
+    Pulse pulse1;
+    Pulse pulse2;
+    Noise noise;
 
     int sampleRate = SampleRate;
     SampleCallback sampleCallback = &APU::defaultSampleCallback;

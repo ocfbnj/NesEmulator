@@ -7,12 +7,15 @@
 
 void APU::clock() {
     stepTimer();
-
     stepFrameCounter();
+
     sendSample();
 }
 
 void APU::reset() {
+    frameCounter = 0;
+    frameCounterMode = 4;
+    irqInhibit = false;
 }
 
 std::uint8_t APU::apuRead(std::uint16_t addr) {
@@ -56,9 +59,6 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
     case 0x400C:
         noise.writeControl(data);
         break;
-    case 0x400D:
-        // do nothing
-        break;
     case 0x400E:
         noise.writePeriod(data);
         break;
@@ -93,12 +93,16 @@ void APU::deserialize(std::istream& is) {
 std::uint8_t APU::readStatus() const {
     std::uint8_t data = 0;
 
-    if (pulse1.lengthCounter.value > 0) {
+    if (pulse1.lengthGreaterThanZero()) {
         data |= 0b0000'0001;
     }
 
-    if (pulse2.lengthCounter.value > 0) {
+    if (pulse2.lengthGreaterThanZero()) {
         data |= 0b0000'0010;
+    }
+
+    if (noise.lengthGreaterThanZero()) {
+        data |= 0b0000'1000;
     }
 
     return data;
@@ -108,17 +112,28 @@ void APU::writeStatus(std::uint8_t data) {
     status.reg = data;
 
     if (!status.pulse1Enabled()) {
-        pulse1.lengthCounter.value = 0;
+        pulse1.resetLengthCounter();
     }
 
     if (!status.pulse2Enabled()) {
-        pulse2.lengthCounter.value = 0;
+        pulse2.resetLengthCounter();
+    }
+
+    if (!status.noiseEnabled()) {
+        noise.resetLengthCounter();
     }
 }
 
 void APU::writeFrameCounter(std::uint8_t data) {
     frameCounterMode = 4 + ((data >> 7) & 1);
     irqInhibit = (data >> 6) & 1;
+
+    frameCounter = 0;
+    if (frameCounterMode == 5) {
+        stepLengthCounter();
+        stepEnvelope();
+        stepSweep();
+    }
 }
 
 void APU::stepTimer() {
@@ -145,6 +160,12 @@ void APU::stepSweep() {
 }
 
 void APU::stepFrameCounter() {
+    // mode 0:    mode 1:       function
+    // ---------  -----------  -----------------------------
+    //  - - - f    - - - - -    IRQ (if bit 6 is clear)
+    //  - l - l    - l - - l    Length counter and sweep
+    //  e e e e    e e e - e    Envelope and linear counter
+
     static std::uint64_t i = 0;
 
     if ((i % FrameCounterPeriod) == 0) {
@@ -175,15 +196,15 @@ void APU::stepFrameCounter() {
             switch (frameCounter) {
             case 0:
             case 2:
+                stepEnvelope();
+                break;
+            case 1:
+            case 4:
                 stepLengthCounter();
                 stepEnvelope();
                 stepSweep();
                 break;
-            case 1:
             case 3:
-                stepEnvelope();
-                break;
-            case 4:
                 // do nothing
                 break;
             default:
