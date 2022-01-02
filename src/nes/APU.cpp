@@ -32,6 +32,9 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
     case 0x4000:
         pulse1.writeControl(data);
         break;
+    case 0x4001:
+        pulse1.writeSweep(data);
+        break;
     case 0x4002:
         pulse1.writeTimerLo(data);
         break;
@@ -40,6 +43,9 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
         break;
     case 0x4004:
         pulse2.writeControl(data);
+        break;
+    case 0x4005:
+        pulse2.writeSweep(data);
         break;
     case 0x4006:
         pulse2.writeTimerLo(data);
@@ -119,6 +125,8 @@ void APU::stepEnvelope() {
 }
 
 void APU::stepSweep() {
+    pulse1.stepSweep();
+    pulse2.stepSweep();
 }
 
 void APU::stepFrameCounter() {

@@ -94,6 +94,22 @@ private:
         bool loop;
     };
 
+    struct Sweep {
+        union {
+            struct {
+                std::uint8_t s : 3; // Shift count (number of bits)
+                std::uint8_t n : 1; // Negate flag; 0: add to period, sweeping toward lower frequencies; 1: subtract from period, sweeping toward higher frequencies
+                std::uint8_t p : 3; // The divider's period is P + 1 half-frames
+                std::uint8_t e : 1; // Enabled flag
+            };
+
+            std::uint8_t reg;
+        };
+
+        bool reload;
+        std::uint8_t value;
+    };
+
     struct Pulse {
         void stepTimer() {
             if (timer.step()) {
@@ -109,6 +125,36 @@ private:
 
         void stepEnvelope() {
             envelope.step();
+        }
+
+        void stepSweep() {
+            if (sweep.reload) {
+                sweep.reload = false;
+
+                if (sweep.e && sweep.value == 0) {
+                    performSweep();
+                }
+
+                sweep.value = sweep.p;
+            } else if (sweep.value > 0) {
+                sweep.value--;
+            } else {
+                sweep.value = sweep.p;
+
+                if (sweep.e) {
+                    performSweep();
+                }
+            }
+        }
+
+        void performSweep() {
+            std::uint16_t delta = timer.reloadValue >> sweep.s;
+
+            if (sweep.n) {
+                timer.reloadValue -= delta;
+            } else {
+                timer.reloadValue += delta;
+            }
         }
 
         std::uint8_t output() const {
@@ -129,6 +175,7 @@ private:
         }
 
         void writeSweep(std::uint8_t data) {
+            sweep.reg = data;
         }
 
         void writeTimerLo(std::uint8_t data) {
@@ -158,6 +205,7 @@ private:
         Timer timer;
         LengthCounter lengthCounter;
         Envelope envelope;
+        Sweep sweep;
     };
 
     struct StatusRegister {
