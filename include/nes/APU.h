@@ -40,7 +40,7 @@ private:
 
     void sendSample();
 
-    double getOutputSample();
+    double getOutputSample() const;
 
     struct Timer {
         bool step() {
@@ -208,6 +208,85 @@ private:
         Sweep sweep;
     };
 
+    struct Noise {
+        void stepTimer() {
+            if (timer.step()) {
+                // When the timer clocks the shift register, the following actions occur in order:
+                // 1. Feedback is calculated as the exclusive-OR of bit 0 and one other bit: bit 6 if Mode flag is set, otherwise bit 1.
+                // 2. The shift register is shifted right by one bit.
+                // 3. Bit 14, the leftmost bit, is set to the feedback calculated earlier.
+                std::uint8_t shift = mode ? 6 : 1;
+
+                std::uint16_t b1 = shiftRegister & 1;
+                std::uint16_t b2 = (shiftRegister >> shift) & 1;
+
+                shiftRegister >>= 1;
+                shiftRegister |= (b1 ^ b2) << 14;
+            }
+        }
+
+        void stepLengthCounter() {
+            if (!l) {
+                lengthCounter.step();
+            }
+        }
+
+        void stepEnvelope() {
+            envelope.step();
+        }
+
+        std::uint8_t output() const {
+            // The mixer receives the current envelope volume except when
+            // - Bit 0 of the shift register is set, or
+            // - The length counter is zero
+            if (shiftRegister & 1) {
+                return 0;
+            }
+
+            if (lengthCounter.value == 0) {
+                return 0;
+            }
+
+            std::uint8_t volume = c ? v : envelope.volume;
+            return volume;
+        }
+
+        void writeControl(std::uint8_t data) {
+            reg = data;
+
+            envelope.divider = v;
+            envelope.loop = l;
+            envelope.start = true;
+        }
+
+        void writePeriod(std::uint8_t data) {
+            mode = (data >> 7) & 1;
+            timer.reloadValue = NoiseTable[data & 0x0F];
+        }
+
+        void writeLengthCounter(std::uint8_t data) {
+            lengthCounter.value = LengthTable[data >> 3];
+            envelope.start = true;
+        }
+
+        union {
+            struct {
+                std::uint8_t v : 4; // Used as the volume in constant volume (C set) mode. Also used as the `reload` value for the envelope's divider (the divider becomes V + 1 quarter frames).
+                std::uint8_t c : 1; // Constant volume flag (0: use volume from envelope; 1: use constant volume)
+                std::uint8_t l : 1; // APU Length Counter halt flag/envelope loop flag
+                std::uint8_t unused : 2;
+            };
+
+            std::uint8_t reg;
+        };
+
+        std::uint8_t mode;
+        std::uint16_t shiftRegister = 0x7F;
+        Timer timer;
+        LengthCounter lengthCounter;
+        Envelope envelope;
+    };
+
     struct StatusRegister {
         bool pulse1Enabled() const {
             return p1;
@@ -250,8 +329,9 @@ private:
     StatusRegister status{.reg = 0};
     Pulse pulse1{.reg = 0};
     Pulse pulse2{.reg = 0};
+    Noise noise{.reg = 0};
 
-    int sampleRate = 44100;
+    int sampleRate = SampleRate;
     SampleCallback sampleCallback = &APU::defaultSampleCallback;
 };
 

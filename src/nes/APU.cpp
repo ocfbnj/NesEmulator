@@ -53,6 +53,18 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
     case 0x4007:
         pulse2.writeTimerHi(data);
         break;
+    case 0x400C:
+        noise.writeControl(data);
+        break;
+    case 0x400D:
+        // do nothing
+        break;
+    case 0x400E:
+        noise.writePeriod(data);
+        break;
+    case 0x400F:
+        noise.writeLengthCounter(data);
+        break;
     case 0x4015:
         writeStatus(data);
         break;
@@ -112,16 +124,19 @@ void APU::writeFrameCounter(std::uint8_t data) {
 void APU::stepTimer() {
     pulse1.stepTimer();
     pulse2.stepTimer();
+    noise.stepTimer();
 }
 
 void APU::stepLengthCounter() {
     pulse1.stepLengthCounter();
     pulse2.stepLengthCounter();
+    noise.stepLengthCounter();
 }
 
 void APU::stepEnvelope() {
     pulse1.stepEnvelope();
     pulse2.stepEnvelope();
+    noise.stepEnvelope();
 }
 
 void APU::stepSweep() {
@@ -204,9 +219,13 @@ void APU::sendSample() {
     }
 }
 
-double APU::getOutputSample() {
+double APU::getOutputSample() const {
     std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
     std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
+    std::uint8_t noiseOut = status.noiseEnabled() ? noise.output() : 0;
 
-    return pulse1Out + pulse2Out;
+    double pulseOut = PulseTable[pulse1Out + pulse2Out];
+    double tndOut = TndTable[2 * noiseOut];
+
+    return pulseOut + tndOut;
 }
