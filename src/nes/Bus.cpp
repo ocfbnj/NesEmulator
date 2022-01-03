@@ -66,6 +66,7 @@ void Bus::insert(Cartridge cartridge) {
 void Bus::powerUp() {
     cpu.connect(this);
     ppu.connect(this);
+    apu.connect(this);
 
     reset();
 }

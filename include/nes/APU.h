@@ -8,9 +8,13 @@
 
 #include <nes/literals.h>
 
+class Bus;
+
 class APU {
 public:
     using SampleCallback = std::function<void(double sample)>;
+
+    void connect(Bus* bus);
 
     void clock();
     void reset();
@@ -428,6 +432,104 @@ private:
         Envelope envelope;
     };
 
+    class DMC {
+    public:
+        std::uint16_t getCurrentLength() const {
+            return currentLength;
+        }
+
+        std::uint8_t output() const {
+            return value;
+        }
+
+        void connect(Bus* bus) {
+            this->bus = bus;
+        }
+
+        void resetCurrentLength() {
+            currentLength = 0;
+        }
+
+        void stepTimer() {
+            stepReader();
+
+            if (timer.step()) {
+                stepShifter();
+            }
+        }
+
+        void stepReader();
+
+        void stepShifter() {
+            if (bitCount == 0) {
+                return;
+            }
+
+            if (shiftRegister & 1) {
+                if (value <= 125) {
+                    value += 2;
+                }
+            } else {
+                if (value >= 2) {
+                    value -= 2;
+                }
+            }
+
+            shiftRegister >>= 1;
+            bitCount--;
+        }
+
+        void restart() {
+            currentAddress = sampleAddress;
+            currentLength = sampleLength;
+        }
+
+        void writeControl(std::uint8_t data) {
+            flagsAndRate = data;
+            timer.period = DmcTable[r];
+        }
+
+        void writeValue(std::uint8_t data) {
+            value = data & 0x7F;
+        }
+
+        void writeAddress(std::uint8_t data) {
+            // Sample address = %11AAAAAA.AA000000 = $C000 + (A * 64)
+            sampleAddress = 0xC000 + data * 64;
+        }
+
+        void writeLength(std::uint8_t data) {
+            // Sample length = %LLLL.LLLL0001 = (L * 16) + 1 bytes
+            sampleLength = (data * 16) + 1;
+        }
+
+    private:
+        struct {
+            union {
+                struct {
+                    std::uint8_t r : 4; // Rate index
+                    std::uint8_t unused : 2;
+                    std::uint8_t l : 1; // Loop flag
+                    std::uint8_t i : 1; // IRQ enabled flag. If clear, the interrupt flag is cleared.
+                };
+
+                std::uint8_t flagsAndRate = 0;
+            };
+        };
+
+        std::uint8_t value = 0;
+        std::uint16_t sampleAddress = 0;
+        std::uint16_t sampleLength = 0;
+        std::uint16_t currentAddress = 0;
+        std::uint16_t currentLength = 0;
+        std::uint8_t bitCount = 0;
+        std::uint8_t shiftRegister = 0;
+
+        Timer timer;
+
+        Bus* bus = nullptr;
+    };
+
     class StatusRegister {
     public:
         bool pulse1Enabled() const {
@@ -473,11 +575,13 @@ private:
     std::uint8_t frameCounterMode = 4;
     bool irqInhibit = false;
 
-    StatusRegister status;
     Pulse pulse1;
     Pulse pulse2;
     Triangle triangle;
     Noise noise;
+    DMC dmc;
+
+    StatusRegister status;
 
     int sampleRate = SampleRate;
     SampleCallback sampleCallback = &APU::defaultSampleCallback;

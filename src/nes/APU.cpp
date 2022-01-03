@@ -3,7 +3,29 @@
 #include <cmath>
 
 #include <nes/APU.h>
+#include <nes/Bus.h>
 #include <nes/literals.h>
+
+void APU::DMC::stepReader() {
+    if (currentLength > 0 && bitCount == 0) {
+        assert(bus != nullptr);
+        shiftRegister = bus->cpuRead(currentAddress);
+
+        bitCount = 8;
+
+        if (++currentAddress == 0) {
+            currentAddress = 0x8000;
+        }
+
+        if (--currentLength == 0 && l) {
+            restart();
+        }
+    }
+}
+
+void APU::connect(Bus* bus) {
+    dmc.connect(bus);
+}
 
 void APU::clock() {
     stepTimer();
@@ -74,6 +96,18 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
     case 0x400F:
         noise.writeLengthCounter(data);
         break;
+    case 0x4010:
+        dmc.writeControl(data);
+        break;
+    case 0x4011:
+        dmc.writeValue(data);
+        break;
+    case 0x4012:
+        dmc.writeAddress(data);
+        break;
+    case 0x4013:
+        dmc.writeLength(data);
+        break;
     case 0x4015:
         writeStatus(data);
         break;
@@ -118,6 +152,10 @@ std::uint8_t APU::readStatus() const {
         data |= 0b0000'1000;
     }
 
+    if (dmc.getCurrentLength() > 0) {
+        data |= 0b0001'0000;
+    }
+
     return data;
 }
 
@@ -139,6 +177,14 @@ void APU::writeStatus(std::uint8_t data) {
     if (!status.noiseEnabled()) {
         noise.resetLengthCounter();
     }
+
+    if (!status.dmcEnabled()) {
+        dmc.resetCurrentLength();
+    } else {
+        if (dmc.getCurrentLength() == 0) {
+            dmc.restart();
+        }
+    }
 }
 
 void APU::writeFrameCounter(std::uint8_t data) {
@@ -159,6 +205,10 @@ void APU::stepTimer() {
     triangle.stepTimer();
     triangle.stepTimer();
     noise.stepTimer();
+
+    if (status.dmcEnabled()) {
+        dmc.stepTimer();
+    }
 }
 
 void APU::stepLengthCounter() {
@@ -267,9 +317,10 @@ double APU::getOutputSample() const {
 
     std::uint8_t triangleOut = status.triangleEnabled() ? triangle.output() : 0;
     std::uint8_t noiseOut = status.noiseEnabled() ? noise.output() : 0;
+    std::uint8_t dmcOut = status.dmcEnabled() ? dmc.output() : 0;
 
     double pulseOut = PulseTable[pulse1Out + pulse2Out];
-    double tndOut = TndTable[3 * triangleOut + 2 * noiseOut];
+    double tndOut = TndTable[3 * triangleOut + 2 * noiseOut + dmcOut];
 
     return pulseOut + tndOut;
 }
