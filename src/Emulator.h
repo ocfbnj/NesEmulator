@@ -29,6 +29,8 @@ private:
     void checkReset();
     void checkSerialization();
 
+    void resetAudioMaker();
+
     void sampleCallback(double sample);
     std::vector<std::int16_t> audioMakerGetData();
 

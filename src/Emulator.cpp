@@ -103,6 +103,8 @@ void Emulator::checkReset() {
     if (int status = glfwGetKey(getWindow(), GLFW_KEY_R); !pressedReset && status == GLFW_PRESS) {
         pressedReset = true;
         nes.reset();
+
+        resetAudioMaker();
     } else if (status == GLFW_RELEASE) {
         pressedReset = false;
     }
@@ -133,6 +135,22 @@ void Emulator::checkSerialization() {
         }
     } else if (statusL == GLFW_RELEASE) {
         pressedLoad = false;
+    }
+}
+
+void Emulator::resetAudioMaker() {
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        stop = true;
+    }
+    cond.notify_one();
+
+    audioMaker.stop();
+    audioMaker.run();
+
+    {
+        std::lock_guard<std::mutex> lock{mtx};
+        stop = false;
     }
 }
 
