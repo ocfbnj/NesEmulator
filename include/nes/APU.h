@@ -34,7 +34,7 @@ private:
 
     void stepTimer();
     void stepLengthCounter();
-    void stepEnvelope();
+    void stepEnvelopeAndLinearCounter();
     void stepSweep();
     void stepFrameCounter();
 
@@ -278,6 +278,81 @@ private:
         Sweep sweep;
     };
 
+    class Triangle {
+    public:
+        bool lengthGreaterThanZero() const {
+            return lengthCounter.greaterZero();
+        }
+
+        std::uint8_t output() const {
+            if (linearCounterValue == 0) {
+                return 0;
+            }
+
+            if (lengthCounter.isZero()) {
+                return 0;
+            }
+
+            return TriangleTable[dutyValue];
+        }
+
+        void resetLengthCounter() {
+            lengthCounter.setCounter(0);
+        }
+
+        void stepTimer() {
+            if (timer.step()) {
+                if (linearCounterValue > 0 && lengthCounter.greaterZero()) {
+                    dutyValue = (dutyValue + 1) % 32;
+                }
+            }
+        }
+
+        void stepLengthCounter() {
+            lengthCounter.step();
+        }
+
+        void stepLinearCounter() {
+            if (reload) {
+                linearCounterValue = linearCounterPeriod;
+            } else if (linearCounterValue > 0) {
+                linearCounterValue--;
+            }
+
+            if (!control) {
+                reload = false;
+            }
+        }
+
+        void writeControl(std::uint8_t data) {
+            lengthCounter.setHalt((data >> 7) & 1);
+
+            control = (data >> 7) & 1;
+            linearCounterPeriod = data & 0x7F;
+        }
+
+        void writeTimerLo(std::uint8_t data) {
+            timer.period = (timer.period & 0xFF00) | static_cast<std::uint16_t>(data);
+        }
+
+        void writeTimerHi(std::uint8_t data) {
+            timer.period = (timer.period & 0x00FF) | ((static_cast<std::uint16_t>(data) & 0b111) << 8);
+            lengthCounter.setCounter(LengthTable[data >> 3]);
+
+            reload = true;
+        }
+
+    private:
+        std::uint8_t linearCounterPeriod = 0;
+        std::uint8_t linearCounterValue = 0;
+        std::uint8_t dutyValue = 0;
+        bool reload = false;
+        bool control = false;
+
+        Timer timer;
+        LengthCounter lengthCounter;
+    };
+
     class Noise {
     public:
         bool lengthGreaterThanZero() const {
@@ -401,6 +476,7 @@ private:
     StatusRegister status;
     Pulse pulse1;
     Pulse pulse2;
+    Triangle triangle;
     Noise noise;
 
     int sampleRate = SampleRate;

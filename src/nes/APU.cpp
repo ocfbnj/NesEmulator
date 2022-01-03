@@ -56,6 +56,15 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
     case 0x4007:
         pulse2.writeTimerHi(data);
         break;
+    case 0x4008:
+        triangle.writeControl(data);
+        break;
+    case 0x400A:
+        triangle.writeTimerLo(data);
+        break;
+    case 0x400B:
+        triangle.writeTimerHi(data);
+        break;
     case 0x400C:
         noise.writeControl(data);
         break;
@@ -101,6 +110,10 @@ std::uint8_t APU::readStatus() const {
         data |= 0b0000'0010;
     }
 
+    if (triangle.lengthGreaterThanZero()) {
+        data |= 0b0000'0100;
+    }
+
     if (noise.lengthGreaterThanZero()) {
         data |= 0b0000'1000;
     }
@@ -119,6 +132,10 @@ void APU::writeStatus(std::uint8_t data) {
         pulse2.resetLengthCounter();
     }
 
+    if (!status.triangleEnabled()) {
+        triangle.resetLengthCounter();
+    }
+
     if (!status.noiseEnabled()) {
         noise.resetLengthCounter();
     }
@@ -131,7 +148,7 @@ void APU::writeFrameCounter(std::uint8_t data) {
     frameCounter = 0;
     if (frameCounterMode == 5) {
         stepLengthCounter();
-        stepEnvelope();
+        stepEnvelopeAndLinearCounter();
         stepSweep();
     }
 }
@@ -139,18 +156,22 @@ void APU::writeFrameCounter(std::uint8_t data) {
 void APU::stepTimer() {
     pulse1.stepTimer();
     pulse2.stepTimer();
+    triangle.stepTimer();
+    triangle.stepTimer();
     noise.stepTimer();
 }
 
 void APU::stepLengthCounter() {
     pulse1.stepLengthCounter();
     pulse2.stepLengthCounter();
+    triangle.stepLengthCounter();
     noise.stepLengthCounter();
 }
 
-void APU::stepEnvelope() {
+void APU::stepEnvelopeAndLinearCounter() {
     pulse1.stepEnvelope();
     pulse2.stepEnvelope();
+    triangle.stepLinearCounter();
     noise.stepEnvelope();
 }
 
@@ -174,17 +195,17 @@ void APU::stepFrameCounter() {
             switch (frameCounter) {
             case 0:
             case 2:
-                stepEnvelope();
+                stepEnvelopeAndLinearCounter();
                 break;
             case 1:
                 stepLengthCounter();
-                stepEnvelope();
                 stepSweep();
+                stepEnvelopeAndLinearCounter();
                 break;
             case 3:
                 stepLengthCounter();
-                stepEnvelope();
                 stepSweep();
+                stepEnvelopeAndLinearCounter();
                 // TODO irq
                 break;
             default:
@@ -196,13 +217,13 @@ void APU::stepFrameCounter() {
             switch (frameCounter) {
             case 0:
             case 2:
-                stepEnvelope();
+                stepEnvelopeAndLinearCounter();
                 break;
             case 1:
             case 4:
                 stepLengthCounter();
-                stepEnvelope();
                 stepSweep();
+                stepEnvelopeAndLinearCounter();
                 break;
             case 3:
                 // do nothing
@@ -243,10 +264,12 @@ void APU::sendSample() {
 double APU::getOutputSample() const {
     std::uint8_t pulse1Out = status.pulse1Enabled() ? pulse1.output() : 0;
     std::uint8_t pulse2Out = status.pulse2Enabled() ? pulse2.output() : 0;
+
+    std::uint8_t triangleOut = status.triangleEnabled() ? triangle.output() : 0;
     std::uint8_t noiseOut = status.noiseEnabled() ? noise.output() : 0;
 
     double pulseOut = PulseTable[pulse1Out + pulse2Out];
-    double tndOut = TndTable[2 * noiseOut];
+    double tndOut = TndTable[3 * triangleOut + 2 * noiseOut];
 
     return pulseOut + tndOut;
 }
