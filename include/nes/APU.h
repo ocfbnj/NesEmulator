@@ -353,7 +353,8 @@ private:
         Envelope envelope;
     };
 
-    struct StatusRegister {
+    class StatusRegister {
+    public:
         bool pulse1Enabled() const {
             return p1;
         }
@@ -374,6 +375,11 @@ private:
             return d;
         }
 
+        void write(std::uint8_t data) {
+            reg = data;
+        }
+
+    private:
         union {
             struct {
                 std::uint8_t p1 : 1;
@@ -384,7 +390,7 @@ private:
                 std::uint8_t unused : 3;
             };
 
-            std::uint8_t reg;
+            std::uint8_t reg = 0;
         };
     };
 
@@ -392,7 +398,7 @@ private:
     std::uint8_t frameCounterMode = 4;
     bool irqInhibit = false;
 
-    StatusRegister status{.reg = 0};
+    StatusRegister status;
     Pulse pulse1;
     Pulse pulse2;
     Noise noise;

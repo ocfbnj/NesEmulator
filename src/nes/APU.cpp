@@ -109,7 +109,7 @@ std::uint8_t APU::readStatus() const {
 }
 
 void APU::writeStatus(std::uint8_t data) {
-    status.reg = data;
+    status.write(data);
 
     if (!status.pulse1Enabled()) {
         pulse1.resetLengthCounter();
