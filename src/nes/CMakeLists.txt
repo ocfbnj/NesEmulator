@@ -2,6 +2,15 @@ add_library(
     nes
     STATIC
     APU.cpp
+    APU/DMC.cpp
+    APU/Envelope.cpp
+    APU/LengthCounter.cpp
+    APU/Noise.cpp
+    APU/Pulse.cpp
+    APU/StatusRegister.cpp
+    APU/Sweep.cpp
+    APU/Timer.cpp
+    APU/Triangle.cpp
     Bus.cpp
     Cartridge.cpp
     CPU.cpp

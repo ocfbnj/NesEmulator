@@ -6,22 +6,27 @@
 #include <nes/Bus.h>
 #include <nes/literals.h>
 
-void APU::DMC::stepReader() {
-    if (currentLength > 0 && bitCount == 0) {
-        assert(bus != nullptr);
-        shiftRegister = bus->cpuRead(currentAddress);
+namespace {
+static const std::array<double, 31> PulseTable = [] {
+    std::array<double, 31> res;
 
-        bitCount = 8;
-
-        if (++currentAddress == 0) {
-            currentAddress = 0x8000;
-        }
-
-        if (--currentLength == 0 && l) {
-            restart();
-        }
+    for (int i = 0; i != res.size(); i++) {
+        res[i] = 95.52 / (8128.0 / i + 100);
     }
-}
+
+    return res;
+}();
+
+static const std::array<double, 203> TndTable = [] {
+    std::array<double, 203> res;
+
+    for (int i = 0; i != res.size(); i++) {
+        res[i] = 163.67 / (24329.0 / i + 100);
+    }
+
+    return res;
+}();
+} // namespace
 
 void APU::connect(Bus* bus) {
     dmc.connect(bus);
