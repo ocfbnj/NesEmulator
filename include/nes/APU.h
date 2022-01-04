@@ -29,8 +29,6 @@ public:
     void deserialize(std::istream& is);
 
 private:
-    static void defaultSampleCallback(double) {}
-
     std::uint8_t readStatus() const;
 
     void writeStatus(std::uint8_t data);
@@ -584,7 +582,7 @@ private:
     StatusRegister status;
 
     int sampleRate = SampleRate;
-    SampleCallback sampleCallback = &APU::defaultSampleCallback;
+    SampleCallback sampleCallback;
 };
 
 #endif

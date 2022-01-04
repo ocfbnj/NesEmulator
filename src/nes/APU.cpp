@@ -29,9 +29,33 @@ void APU::connect(Bus* bus) {
 
 void APU::clock() {
     stepTimer();
-    stepFrameCounter();
 
-    sendSample();
+    // i:      0 1 2 3 4 5 6 7 8 9
+    //         - - - - - - - - - -
+    // period: 3 3 3 3 3 3 3 3 3 3
+    // A, B:   0 0 0 1 1 1 2 2 2 3
+    //          x x o x x o x x o
+
+    // With 64-bit integer and 44'100 sample rate, it can be stable for about 27 hours.
+    static std::uint64_t i = 0;
+
+    std::uint64_t a = i;
+    i++;
+    std::uint64_t b = i;
+
+    double frameCounterPeriod = static_cast<double>(ApuFrequency) / FrameCounterFrequency;
+    auto frameCounterA = static_cast<std::uint64_t>(a / frameCounterPeriod);
+    auto frameCounterB = static_cast<std::uint64_t>(b / frameCounterPeriod);
+    if (frameCounterA != frameCounterB) {
+        stepFrameCounter();
+    }
+
+    double samplePeriod = static_cast<double>(ApuFrequency) / sampleRate;
+    auto sampleA = static_cast<std::uint64_t>(a / samplePeriod);
+    auto sampleB = static_cast<std::uint64_t>(b / samplePeriod);
+    if (sampleA != sampleB) {
+        sendSample();
+    }
 }
 
 void APU::reset() {
@@ -121,6 +145,9 @@ void APU::apuWrite(std::uint16_t addr, std::uint8_t data) {
 
 void APU::setSampleRate(int rate) {
     sampleRate = rate;
+
+    assert(sampleRate > 0);
+    assert(ApuFrequency > sampleRate);
 }
 
 void APU::setSampleCallback(SampleCallback callback) {
@@ -128,9 +155,11 @@ void APU::setSampleCallback(SampleCallback callback) {
 }
 
 void APU::serialize(std::ostream& os) const {
+    // TODO
 }
 
 void APU::deserialize(std::istream& is) {
+    // TODO
 }
 
 std::uint8_t APU::readStatus() const {
@@ -237,77 +266,60 @@ void APU::stepFrameCounter() {
     //  - l - l    - l - - l    Length counter and sweep
     //  e e e e    e e e - e    Envelope and linear counter
 
-    static std::uint64_t i = 0;
-
-    if ((i % FrameCounterPeriod) == 0) {
-        switch (frameCounterMode) {
-        case 4:
-            switch (frameCounter) {
-            case 0:
-            case 2:
-                stepEnvelopeAndLinearCounter();
-                break;
-            case 1:
-                stepLengthCounter();
-                stepSweep();
-                stepEnvelopeAndLinearCounter();
-                break;
-            case 3:
-                stepLengthCounter();
-                stepSweep();
-                stepEnvelopeAndLinearCounter();
-                // TODO irq
-                break;
-            default:
-                assert(0);
-                break;
-            }
+    switch (frameCounterMode) {
+    case 4:
+        switch (frameCounter) {
+        case 0:
+        case 2:
+            stepEnvelopeAndLinearCounter();
             break;
-        case 5:
-            switch (frameCounter) {
-            case 0:
-            case 2:
-                stepEnvelopeAndLinearCounter();
-                break;
-            case 1:
-            case 4:
-                stepLengthCounter();
-                stepSweep();
-                stepEnvelopeAndLinearCounter();
-                break;
-            case 3:
-                // do nothing
-                break;
-            default:
-                assert(0);
-                break;
-            }
+        case 1:
+            stepLengthCounter();
+            stepSweep();
+            stepEnvelopeAndLinearCounter();
+            break;
+        case 3:
+            stepLengthCounter();
+            stepSweep();
+            stepEnvelopeAndLinearCounter();
+            // TODO irq
             break;
         default:
             assert(0);
             break;
         }
-
-        frameCounter = (frameCounter + 1) % frameCounterMode;
+        break;
+    case 5:
+        switch (frameCounter) {
+        case 0:
+        case 2:
+            stepEnvelopeAndLinearCounter();
+            break;
+        case 1:
+        case 4:
+            stepLengthCounter();
+            stepSweep();
+            stepEnvelopeAndLinearCounter();
+            break;
+        case 3:
+            // do nothing
+            break;
+        default:
+            assert(0);
+            break;
+        }
+        break;
+    default:
+        assert(0);
+        break;
     }
 
-    i = (i + 1) % FrameCounterPeriod;
+    frameCounter = (frameCounter + 1) % frameCounterMode;
 }
 
 void APU::sendSample() {
-    assert(sampleRate > 0);
-    assert(ApuFrequency > sampleRate);
-
-    static std::uint32_t i = 0;
-
-    std::uint32_t period = ApuFrequency / sampleRate;
-
-    if ((i % period) == 0) {
+    if (sampleCallback) {
         sampleCallback(getOutputSample());
-    }
-
-    if (++i == period) {
-        i = 0;
     }
 }
 
