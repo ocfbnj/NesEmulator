@@ -23,6 +23,7 @@ public:
 
     void run();
     void stop();
+    void restart();
 
 private:
     void streamData();

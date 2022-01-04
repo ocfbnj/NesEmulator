@@ -6,12 +6,24 @@
 
 #include <audio_maker/AudioMaker.h>
 
+namespace {
+#define alCheck(expr)                        \
+    do {                                     \
+        expr;                                \
+        assert(alGetError() == AL_NO_ERROR); \
+    } while (false);
+
+ALfloat listenerPos[] = {0.0, 0.0, 0.0};
+ALfloat listenerVel[] = {0.0, 0.0, 0.0};
+ALfloat listenerOri[] = {0.0, 0.0, -1.0, 0.0, 1.0, 0.0};
+} // namespace
+
 AudioMaker::AudioMaker(int sampleRate, int channelCount)
     : sampleRate(sampleRate),
       channelCount(channelCount),
-      isStop(false),
+      isStop(true),
       processingInterval(10) {
-    assert(channelCount >= 1 && channelCount < 3);
+    assert(channelCount == 1 || channelCount == 2);
     channelFormat = (channelCount == 1) ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 
     audioDevice = alcOpenDevice(nullptr);
@@ -22,18 +34,12 @@ AudioMaker::AudioMaker(int sampleRate, int channelCount)
 
     alcMakeContextCurrent(audioContext);
 
-    float orientation[] = {
-        0.0f,
-        0.0f,
-        -1.0f,
-        0.0f,
-        1.0f,
-        0.0f,
-    };
+    alGetError(); // clear error code
 
-    alListenerf(AL_GAIN, 100.0f);
-    alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
-    alListenerfv(AL_ORIENTATION, orientation);
+    alCheck(alListenerf(AL_GAIN, 100.0f));
+    alCheck(alListenerfv(AL_POSITION, listenerPos));
+    alCheck(alListenerfv(AL_VELOCITY, listenerVel));
+    alCheck(alListenerfv(AL_ORIENTATION, listenerOri));
 }
 
 AudioMaker::~AudioMaker() {
@@ -51,6 +57,7 @@ AudioMaker::~AudioMaker() {
 }
 
 void AudioMaker::setCallback(GetData f) {
+    assert(isStop);
     getData = std::move(f);
 }
 
@@ -59,39 +66,44 @@ void AudioMaker::setProcessingInterval(int ms) {
 }
 
 void AudioMaker::run() {
-    alGenSources(1, &source);
-    alSourcei(source, AL_BUFFER, 0);
-
-    assert(alGetError() == AL_NO_ERROR);
+    alCheck(alGenSources(1, &source));
+    alCheck(alSourcei(source, AL_BUFFER, 0));
 
     isStop = false;
     thread = std::thread{&AudioMaker::streamData, this};
 }
 
 void AudioMaker::stop() {
+    if (isStop) {
+        return;
+    }
+
     isStop = true;
 
     if (thread.joinable()) {
         thread.join();
     }
 
-    alDeleteSources(1, &source);
-    assert(alGetError() == AL_NO_ERROR);
+    alCheck(alDeleteSources(1, &source));
+}
+
+void AudioMaker::restart() {
+    stop();
+    run();
 }
 
 void AudioMaker::streamData() {
-    alGenBuffers(buffers.size(), buffers.data());
-    fillQueue();
-    alSourcePlay(source);
-    assert(alGetError() == AL_NO_ERROR);
+    alCheck(alGenBuffers(buffers.size(), buffers.data()));
+    alCheck(fillQueue());
+    alCheck(alSourcePlay(source));
 
     while (!isStop) {
         ALint processed = 0;
-        alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+        alCheck(alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed));
 
         while (processed--) {
             ALuint buffer;
-            alSourceUnqueueBuffers(source, 1, &buffer);
+            alCheck(alSourceUnqueueBuffers(source, 1, &buffer));
 
             int bufferNum = 0;
             for (int i = 0; i != buffers.size(); ++i) {
@@ -109,11 +121,10 @@ void AudioMaker::streamData() {
         }
     }
 
-    alSourceStop(source);
+    alCheck(alSourceStop(source));
     closeQueue();
-    alSourcei(source, AL_BUFFER, 0);
-    alDeleteBuffers(buffers.size(), buffers.data());
-    assert(alGetError() == AL_NO_ERROR);
+    alCheck(alSourcei(source, AL_BUFFER, 0));
+    alCheck(alDeleteBuffers(buffers.size(), buffers.data()));
 }
 
 void AudioMaker::fillQueue() {
@@ -124,23 +135,27 @@ void AudioMaker::fillQueue() {
 
 void AudioMaker::closeQueue() {
     ALint count;
-    alGetSourcei(source, AL_BUFFERS_QUEUED, &count);
+    alCheck(alGetSourcei(source, AL_BUFFERS_QUEUED, &count));
 
     for (ALint i = 0; i != count; i++) {
         ALuint buffer;
-        alSourceUnqueueBuffers(source, 1, &buffer);
+        alCheck(alSourceUnqueueBuffers(source, 1, &buffer));
     }
 }
 
 void AudioMaker::fillAndPushBuffer(int bufferNum) {
-    std::vector<std::int16_t> data = getData();
+    std::vector<std::int16_t> data;
 
-    if (data.size() == 0) {
+    if (getData) {
+        data = getData();
+    }
+
+    if (data.empty()) {
         return;
     }
 
-    std::uint32_t buffer = buffers[bufferNum];
+    ALuint buffer = buffers[bufferNum];
 
-    alBufferData(buffer, channelFormat, data.data(), data.size() * sizeof(data[0]), sampleRate);
-    alSourceQueueBuffers(source, 1, &buffer);
+    alCheck(alBufferData(buffer, channelFormat, data.data(), data.size() * sizeof(data[0]), sampleRate));
+    alCheck(alSourceQueueBuffers(source, 1, &buffer));
 }
