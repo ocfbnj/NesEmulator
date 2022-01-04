@@ -60,6 +60,8 @@ private:
 
     StatusRegister status;
 
+    Bus* bus = nullptr;
+
     int sampleRate = 44100;
     SampleCallback sampleCallback;
 };

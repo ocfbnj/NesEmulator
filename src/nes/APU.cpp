@@ -29,6 +29,7 @@ static const std::array<double, 203> TndTable = [] {
 } // namespace
 
 void APU::connect(Bus* bus) {
+    this->bus = bus;
     dmc.connect(bus);
 }
 
@@ -287,7 +288,10 @@ void APU::stepFrameCounter() {
             stepLengthCounter();
             stepSweep();
             stepEnvelopeAndLinearCounter();
-            // TODO irq
+            if (!irqInhibit) {
+                assert(bus != nullptr);
+                bus->getCPU().irq();
+            }
             break;
         default:
             assert(0);
