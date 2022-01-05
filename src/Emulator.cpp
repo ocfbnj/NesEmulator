@@ -141,6 +141,7 @@ void Emulator::checkSerialization() {
 void Emulator::resetAudioMaker() {
     {
         std::lock_guard<std::mutex> lock{mtx};
+        samples.clear();
         stop = true;
     }
     cond.notify_one();
