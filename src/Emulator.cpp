@@ -73,25 +73,25 @@ void Emulator::renderFrame(const PPU::Frame& frame) {
 }
 
 void Emulator::checkKeyboard() {
-    static const std::unordered_map<int, Joypad::Button> keyMap{
-        {GLFW_KEY_J, Joypad::Button::A},
-        {GLFW_KEY_K, Joypad::Button::B},
-        {GLFW_KEY_SPACE, Joypad::Button::Select},
-        {GLFW_KEY_ENTER, Joypad::Button::Start},
-        {GLFW_KEY_W, Joypad::Button::Up},
-        {GLFW_KEY_S, Joypad::Button::Down},
-        {GLFW_KEY_A, Joypad::Button::Left},
-        {GLFW_KEY_D, Joypad::Button::Right},
+    static const std::unordered_map<Key, Joypad::Button> keyMap{
+        {Key::J, Joypad::Button::A},
+        {Key::K, Joypad::Button::B},
+        {Key::Space, Joypad::Button::Select},
+        {Key::Enter, Joypad::Button::Start},
+        {Key::W, Joypad::Button::Up},
+        {Key::S, Joypad::Button::Down},
+        {Key::A, Joypad::Button::Left},
+        {Key::D, Joypad::Button::Right},
     };
 
     checkReset();
     checkSerialization();
 
-    for (auto [glfwKey, btn] : keyMap) {
-        int status = glfwGetKey(getWindow(), glfwKey);
-        if (status == GLFW_PRESS) {
+    for (auto [key, btn] : keyMap) {
+        KeyStatus status = getKey(key);
+        if (status == KeyStatus::Press) {
             nes.getJoypad().press(btn);
-        } else if (status == GLFW_RELEASE) {
+        } else if (status == KeyStatus::Release) {
             nes.getJoypad().release(btn);
         }
     }
@@ -100,12 +100,12 @@ void Emulator::checkKeyboard() {
 void Emulator::checkReset() {
     static bool pressedReset = false;
 
-    if (int status = glfwGetKey(getWindow(), GLFW_KEY_R); !pressedReset && status == GLFW_PRESS) {
+    if (KeyStatus status = getKey(Key::R); !pressedReset && status == KeyStatus::Press) {
         pressedReset = true;
         nes.reset();
 
         resetAudioMaker();
-    } else if (status == GLFW_RELEASE) {
+    } else if (status == KeyStatus::Release) {
         pressedReset = false;
     }
 }
@@ -116,24 +116,24 @@ void Emulator::checkSerialization() {
     static bool pressedSave = false;
     static bool pressedLoad = false;
 
-    if (int statusI = glfwGetKey(getWindow(), GLFW_KEY_I); !pressedSave && statusI == GLFW_PRESS) {
+    if (KeyStatus statusI = getKey(Key::I); !pressedSave && statusI == KeyStatus::Press) {
         pressedSave = true;
 
         std::ostringstream oss;
         nes.serialize(oss);
         dump = oss.str();
-    } else if (statusI == GLFW_RELEASE) {
+    } else if (statusI == KeyStatus::Release) {
         pressedSave = false;
     }
 
-    if (int statusL = glfwGetKey(getWindow(), GLFW_KEY_L); !pressedLoad && statusL == GLFW_PRESS) {
+    if (KeyStatus statusL = getKey(Key::L); !pressedLoad && statusL == KeyStatus::Press) {
         pressedLoad = true;
 
         if (!dump.empty()) {
             std::istringstream iss{dump};
             nes.deserialize(iss);
         }
-    } else if (statusL == GLFW_RELEASE) {
+    } else if (statusL == KeyStatus::Release) {
         pressedLoad = false;
     }
 }

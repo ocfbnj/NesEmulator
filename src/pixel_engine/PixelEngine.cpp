@@ -1,6 +1,11 @@
 #include <cassert>
 #include <cmath>
-#include <thread>
+#include <unordered_map>
+
+// clang-format off
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+// clang-format on
 
 #include <pixel_engine/PixelEngine.h>
 
@@ -18,10 +23,6 @@ GLuint indices[] = {
     0, 1, 2, // lower triangle
     2, 3, 0, // upper triangle
 };
-
-void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
 
 template <class Clock, class Duration>
 void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
@@ -42,7 +43,7 @@ void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
 }
 } // namespace
 
-PixelEngine::GLLoader::GLLoader(int width, int height, std::string_view title, GLFWwindow** window) {
+PixelEngine::GLContext::GLContext(int width, int height, std::string_view title) {
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -53,65 +54,65 @@ PixelEngine::GLLoader::GLLoader(int width, int height, std::string_view title, G
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    *window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
-
-    glfwMakeContextCurrent(*window);
-    glfwSetFramebufferSizeCallback(*window, framebufferSizeCallback);
-    glfwSwapInterval(0);
+    window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+    glfwMakeContextCurrent(window);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+}
+
+PixelEngine::GLContext::~GLContext() {
+    glfwMakeContextCurrent(nullptr);
+    glfwDestroyWindow(window);
+    glfwTerminate();
 }
 
 PixelEngine::PixelEngine(int width, int height, std::string_view title, int scale)
     : width(width),
       height(height),
       title(title),
-      window(nullptr),
-      glLoader(width * scale, height * scale, title, &window),
+      glContext(width * scale, height * scale, title),
       shader(),
       vao(),
       vbo(vertices, sizeof vertices),
       ebo(indices, sizeof indices),
-      pixels(width * height, Pixel{.r = 255, .g = 255, .b = 255, .a = 255}),
+      pixels(width * height, Pixel{.r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF}),
       texture(pixels.data(), width, height) {
-    vao.linkAttrib(vbo, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)(0 * sizeof(float)));
-    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    vao.linkAttrib(vbo, 0, 2, GL_FLOAT, 4 * sizeof(float), reinterpret_cast<void*>(0 * sizeof(float)));
+    vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 4 * sizeof(float), reinterpret_cast<void*>(2 * sizeof(float)));
 
     setFpsLimit(0);
+    setFpsUpdateInterval(500);
     setVsyncEnabled(false);
 
-    fpsUpdateInterval = 500ms;
-}
-
-PixelEngine::~PixelEngine() {
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    glfwSetWindowUserPointer(glContext.window, this);
+    glfwSetFramebufferSizeCallback(glContext.window, PixelEngine::framebufferSizeCallback);
+    glfwSetWindowSizeCallback(glContext.window, PixelEngine::windowSizeCallback);
+    glfwSetWindowMaximizeCallback(glContext.window, PixelEngine::windowMaximizeCallback);
+    glfwSetWindowIconifyCallback(glContext.window, PixelEngine::windowIconifyCallback);
+    glfwSetWindowFocusCallback(glContext.window, PixelEngine::windowFocusCallback);
+    glfwSetWindowRefreshCallback(glContext.window, PixelEngine::windowRefreshCallback);
 }
 
 void PixelEngine::run() {
-    startTime = Clock::now();
+    std::thread t{&PixelEngine::userThread, this};
 
-    onBegin();
-
-    while (!glfwWindowShouldClose(window)) {
-        updateFps();
+    while (!glfwWindowShouldClose(glContext.window)) {
         glfwPollEvents();
-        onUpdate();
-        render();
+        updateFps();
 
-        Clock::time_point now = Clock::now();
-        Clock::duration elapsedTime = now - startTime;
-        startTime = now;
-
-        if (frameTimeLimit != 0s) {
-            Clock::time_point sleepEnd = now + (frameTimeLimit - elapsedTime);
-            sleepUntil(sleepEnd);
-
-            startTime = sleepEnd;
+        {
+            std::unique_lock<std::mutex> lock{mtx};
+            cond.wait(lock, [this] { return shoundRendering; });
+            render();
+            shoundRendering = false;
         }
     }
 
-    onEnd();
+    exit = true;
+
+    if (t.joinable()) {
+        t.join();
+    }
 }
 
 void PixelEngine::setFpsLimit(int value) {
@@ -119,6 +120,14 @@ void PixelEngine::setFpsLimit(int value) {
         frameTimeLimit = std::chrono::duration_cast<Clock::duration>(1s) / value;
     } else {
         frameTimeLimit = 0s;
+    }
+}
+
+void PixelEngine::setFpsUpdateInterval(int ms) {
+    if (ms > 0) {
+        fpsUpdateInterval = std::chrono::milliseconds{ms};
+    } else {
+        fpsUpdateInterval = 0ms;
     }
 }
 
@@ -147,8 +156,48 @@ void PixelEngine::drawPixels(std::span<const std::uint8_t> rawPixels) {
     std::memcpy(pixels.data(), rawPixels.data(), rawPixels.size());
 }
 
-GLFWwindow* PixelEngine::getWindow() {
-    return window;
+PixelEngine::KeyStatus PixelEngine::getKey(Key key) const {
+    static std::unordered_map<Key, int> keyMap{
+        {Key::A, GLFW_KEY_A},
+        {Key::B, GLFW_KEY_B},
+        {Key::C, GLFW_KEY_C},
+        {Key::D, GLFW_KEY_D},
+        {Key::E, GLFW_KEY_E},
+        {Key::F, GLFW_KEY_F},
+        {Key::G, GLFW_KEY_G},
+        {Key::H, GLFW_KEY_H},
+        {Key::I, GLFW_KEY_I},
+        {Key::J, GLFW_KEY_J},
+        {Key::K, GLFW_KEY_K},
+        {Key::L, GLFW_KEY_L},
+        {Key::M, GLFW_KEY_M},
+        {Key::N, GLFW_KEY_N},
+        {Key::O, GLFW_KEY_O},
+        {Key::P, GLFW_KEY_P},
+        {Key::Q, GLFW_KEY_Q},
+        {Key::R, GLFW_KEY_R},
+        {Key::S, GLFW_KEY_S},
+        {Key::T, GLFW_KEY_T},
+        {Key::U, GLFW_KEY_U},
+        {Key::V, GLFW_KEY_V},
+        {Key::W, GLFW_KEY_W},
+        {Key::X, GLFW_KEY_X},
+        {Key::Y, GLFW_KEY_Y},
+        {Key::Z, GLFW_KEY_Z},
+        {Key::Space, GLFW_KEY_SPACE},
+        {Key::Enter, GLFW_KEY_ENTER},
+    };
+
+    static std::unordered_map<int, KeyStatus> statusMap{
+        {GLFW_PRESS, KeyStatus::Press},
+        {GLFW_RELEASE, KeyStatus::Release},
+    };
+
+    assert(keyMap.contains(key));
+    int status = glfwGetKey(glContext.window, keyMap[key]);
+
+    assert(statusMap.contains(status));
+    return statusMap[status];
 }
 
 void PixelEngine::onBegin() {
@@ -163,6 +212,59 @@ void PixelEngine::onEnd() {
     // do nothing
 }
 
+void PixelEngine::onSize(int width, int height) {
+    // do nothing
+}
+
+void PixelEngine::onMaximize(bool maximized) {
+    // do nothing
+}
+
+void PixelEngine::onIconify(bool iconified) {
+    // do nothing
+}
+
+void PixelEngine::onFocus(bool focused) {
+    // do nothing
+}
+
+void PixelEngine::onRefresh() {
+    // do nothing
+}
+
+void PixelEngine::userThread() {
+    startTime = Clock::now();
+
+    onBegin();
+
+    while (!exit) {
+        {
+            std::unique_lock<std::mutex> lock{mtx};
+            onUpdate();
+            shoundRendering = true;
+        }
+
+        cond.notify_one();
+
+        Clock::time_point now = Clock::now();
+        Clock::duration elapsedTime = now - startTime;
+        startTime = now;
+
+        if (frameTimeLimit != 0s) {
+            Clock::time_point sleepEnd = now + (frameTimeLimit - elapsedTime);
+            sleepUntil(sleepEnd);
+
+            startTime = sleepEnd;
+        }
+    }
+
+    onEnd();
+}
+
+void PixelEngine::setWindowTitle(std::string_view str) {
+    glfwSetWindowTitle(glContext.window, str.data());
+}
+
 void PixelEngine::render() {
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -174,7 +276,7 @@ void PixelEngine::render() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
     glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(glContext.window);
 }
 
 void PixelEngine::updateFps() {
@@ -188,8 +290,57 @@ void PixelEngine::updateFps() {
 
         float fps = 1s / std::chrono::duration_cast<std::chrono::duration<float>>(now - tp);
         auto displayedFps = static_cast<int>(std::round(fps));
-        glfwSetWindowTitle(window, (title + " [FPS: " + std::to_string(displayedFps) + "]").data());
+        setWindowTitle(title + " [FPS: " + std::to_string(displayedFps) + "]");
     }
 
     tp = now;
+}
+
+void PixelEngine::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+
+    double ratio = static_cast<double>(width) / height;
+    double originRatio = static_cast<double>(pixelEngine->width) / pixelEngine->height;
+
+    int x = 0;
+    int y = 0;
+    int w = width;
+    int h = height;
+
+    if (ratio > originRatio) {
+        // according to height
+        w = height * originRatio;
+        x = (width - w) / 2;
+    } else {
+        // according to width
+        h = width / originRatio;
+        y = (height - h) / 2;
+    }
+
+    glViewport(x, y, w, h);
+}
+
+void PixelEngine::windowSizeCallback(GLFWwindow* window, int width, int height) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+    pixelEngine->onSize(width, height);
+}
+
+void PixelEngine::windowMaximizeCallback(GLFWwindow* window, int maximized) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+    pixelEngine->onMaximize(maximized);
+}
+
+void PixelEngine::windowIconifyCallback(GLFWwindow* window, int iconified) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+    pixelEngine->onIconify(iconified);
+}
+
+void PixelEngine::windowFocusCallback(GLFWwindow* window, int focused) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+    pixelEngine->onFocus(focused);
+}
+
+void PixelEngine::windowRefreshCallback(GLFWwindow* window) {
+    auto pixelEngine = static_cast<PixelEngine*>(glfwGetWindowUserPointer(window));
+    pixelEngine->onRefresh();
 }
