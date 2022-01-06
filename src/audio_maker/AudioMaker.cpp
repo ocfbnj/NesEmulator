@@ -150,10 +150,6 @@ void AudioMaker::fillAndPushBuffer(int bufferNum) {
         data = getData();
     }
 
-    if (data.empty()) {
-        return;
-    }
-
     ALuint buffer = buffers[bufferNum];
 
     alCheck(alBufferData(buffer, channelFormat, data.data(), data.size() * sizeof(data[0]), sampleRate));
