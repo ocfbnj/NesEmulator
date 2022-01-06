@@ -20,15 +20,12 @@ public:
     void onUpdate() override;
     void onEnd() override;
 
+    void onKeyPress(Key key) override;
+    void onKeyRelease(Key key) override;
+
 private:
     void debug();
-
     void renderFrame(const PPU::Frame& frame);
-
-    void checkKeyboard();
-    void checkReset();
-    void checkSerialization();
-
     void resetAudioMaker();
 
     void sampleCallback(double sample);

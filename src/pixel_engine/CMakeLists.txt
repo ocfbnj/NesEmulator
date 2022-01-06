@@ -4,6 +4,7 @@ add_library(
     Pixel.cpp
     PixelEngine.cpp
     Shader.cpp
+    TaskQueue.cpp
     VAO.cpp
     VBO.cpp
     EBO.cpp

@@ -8,6 +8,19 @@
 
 #include "Emulator.h"
 
+namespace {
+const std::unordered_map<Emulator::Key, Joypad::Button> keyMap{
+    {Emulator::Key::J, Joypad::Button::A},
+    {Emulator::Key::K, Joypad::Button::B},
+    {Emulator::Key::Space, Joypad::Button::Select},
+    {Emulator::Key::Enter, Joypad::Button::Start},
+    {Emulator::Key::W, Joypad::Button::Up},
+    {Emulator::Key::S, Joypad::Button::Down},
+    {Emulator::Key::A, Joypad::Button::Left},
+    {Emulator::Key::D, Joypad::Button::Right},
+};
+}
+
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
       nesFile(nesFile),
@@ -15,6 +28,8 @@ Emulator::Emulator(std::string_view nesFile)
       stop(false) {}
 
 void Emulator::onBegin() {
+    PixelEngine::onBegin();
+
     std::optional<Cartridge> cartridge = loadNesFile(nesFile);
     if (!cartridge.has_value()) {
         throw std::runtime_error{"Cannot load the NES ROM"};
@@ -35,7 +50,7 @@ void Emulator::onBegin() {
 }
 
 void Emulator::onUpdate() {
-    checkKeyboard();
+    PixelEngine::onUpdate();
 
     do {
         nes.clock();
@@ -47,12 +62,46 @@ void Emulator::onUpdate() {
 }
 
 void Emulator::onEnd() {
+    PixelEngine::onEnd();
+
     {
         std::lock_guard<std::mutex> lock{mtx};
         stop = true;
     }
 
     cond.notify_one();
+}
+
+void Emulator::onKeyPress(PixelEngine::Key key) {
+    PixelEngine::onKeyPress(key);
+
+    static std::string dump;
+
+    if (auto it = keyMap.find(key); it != keyMap.end()) {
+        nes.getJoypad().press(it->second);
+    }
+
+    if (key == Key::R) {
+        nes.reset();
+        resetAudioMaker();
+    } else if (key == Key::I) {
+        std::ostringstream oss;
+        nes.serialize(oss);
+        dump = oss.str();
+    } else if (key == Key::L) {
+        if (!dump.empty()) {
+            std::istringstream iss{dump};
+            nes.deserialize(iss);
+        }
+    }
+}
+
+void Emulator::onKeyRelease(PixelEngine::Key key) {
+    PixelEngine::onKeyRelease(key);
+
+    if (auto it = keyMap.find(key); it != keyMap.end()) {
+        nes.getJoypad().release(it->second);
+    }
 }
 
 void Emulator::debug() {
@@ -70,72 +119,6 @@ void Emulator::debug() {
 
 void Emulator::renderFrame(const PPU::Frame& frame) {
     drawPixels(frame.getRawPixels());
-}
-
-void Emulator::checkKeyboard() {
-    static const std::unordered_map<Key, Joypad::Button> keyMap{
-        {Key::J, Joypad::Button::A},
-        {Key::K, Joypad::Button::B},
-        {Key::Space, Joypad::Button::Select},
-        {Key::Enter, Joypad::Button::Start},
-        {Key::W, Joypad::Button::Up},
-        {Key::S, Joypad::Button::Down},
-        {Key::A, Joypad::Button::Left},
-        {Key::D, Joypad::Button::Right},
-    };
-
-    checkReset();
-    checkSerialization();
-
-    for (auto [key, btn] : keyMap) {
-        KeyStatus status = getKey(key);
-        if (status == KeyStatus::Press) {
-            nes.getJoypad().press(btn);
-        } else if (status == KeyStatus::Release) {
-            nes.getJoypad().release(btn);
-        }
-    }
-}
-
-void Emulator::checkReset() {
-    static bool pressedReset = false;
-
-    if (KeyStatus status = getKey(Key::R); !pressedReset && status == KeyStatus::Press) {
-        pressedReset = true;
-        nes.reset();
-
-        resetAudioMaker();
-    } else if (status == KeyStatus::Release) {
-        pressedReset = false;
-    }
-}
-
-void Emulator::checkSerialization() {
-    static std::string dump;
-
-    static bool pressedSave = false;
-    static bool pressedLoad = false;
-
-    if (KeyStatus statusI = getKey(Key::I); !pressedSave && statusI == KeyStatus::Press) {
-        pressedSave = true;
-
-        std::ostringstream oss;
-        nes.serialize(oss);
-        dump = oss.str();
-    } else if (statusI == KeyStatus::Release) {
-        pressedSave = false;
-    }
-
-    if (KeyStatus statusL = getKey(Key::L); !pressedLoad && statusL == KeyStatus::Press) {
-        pressedLoad = true;
-
-        if (!dump.empty()) {
-            std::istringstream iss{dump};
-            nes.deserialize(iss);
-        }
-    } else if (statusL == KeyStatus::Release) {
-        pressedLoad = false;
-    }
 }
 
 void Emulator::resetAudioMaker() {
