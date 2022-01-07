@@ -1,6 +1,6 @@
 # NesEmulator
 
-This is a NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been
+This is an NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been
 tested, other games may or may not work:
 
 - Super Mario Bros.
