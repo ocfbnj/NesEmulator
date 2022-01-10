@@ -48,6 +48,7 @@ private:
 
     double getOutputSample() const;
 
+    // APU Components Begin
     std::uint16_t frameCounter = 0;
     std::uint8_t frameCounterMode = 4;
     bool irqInhibit = false;
@@ -59,6 +60,10 @@ private:
     DMC dmc;
 
     StatusRegister status;
+
+    // With 64-bit integer and 44'100 sample rate, it can be stable for about 27 hours.
+    std::uint64_t i = 0;
+    // APU Components End
 
     Bus* bus = nullptr;
 

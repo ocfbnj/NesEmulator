@@ -42,9 +42,6 @@ void APU::clock() {
     // A, B:   0 0 0 1 1 1 2 2 2 3
     //          x x o x x o x x o
 
-    // With 64-bit integer and 44'100 sample rate, it can be stable for about 27 hours.
-    static std::uint64_t i = 0;
-
     std::uint64_t a = i;
     i++;
     std::uint64_t b = i;
@@ -68,6 +65,7 @@ void APU::reset() {
     frameCounter = 0;
     frameCounterMode = 4;
     irqInhibit = false;
+    i = 0;
 }
 
 std::uint8_t APU::apuRead(std::uint16_t addr) {
@@ -161,11 +159,17 @@ void APU::setSampleCallback(SampleCallback callback) {
 }
 
 void APU::serialize(std::ostream& os) const {
-    // TODO
+    auto begin = reinterpret_cast<const char*>(this) + offsetof(APU, frameCounter);
+    auto end = reinterpret_cast<const char*>(this) + offsetof(APU, bus);
+    os.write(begin, end - begin);
 }
 
 void APU::deserialize(std::istream& is) {
-    // TODO
+    auto begin = reinterpret_cast<char*>(this) + offsetof(APU, frameCounter);
+    auto end = reinterpret_cast<char*>(this) + offsetof(APU, bus);
+    is.read(begin, end - begin);
+
+    dmc.connect(bus);
 }
 
 std::uint8_t APU::readStatus() const {
