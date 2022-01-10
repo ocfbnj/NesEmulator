@@ -2,6 +2,7 @@
 #define EMULATOR_H
 
 #include <condition_variable>
+#include <filesystem>
 #include <functional>
 #include <mutex>
 #include <sstream>
@@ -32,6 +33,9 @@ private:
     void serialize();
     void deserialize();
 
+    void loadGameAchieve();
+    void saveGameAchieve();
+
     void debug();
     void renderFrame(const PPU::Frame& frame);
     void resetAudioMaker();
@@ -40,7 +44,7 @@ private:
     std::vector<std::int16_t> audioMakerGetData();
 
     Bus nes;
-    std::string nesFile;
+    std::filesystem::path nesFilePath;
 
     std::string dump;
     std::unordered_map<Key, std::function<void()>> pressKeyMap;

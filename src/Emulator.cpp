@@ -1,22 +1,67 @@
 #include <cassert>
 #include <cmath>
+#include <fstream>
+#include <iostream>
 #include <numbers>
+
+#include <openssl/evp.h>
 
 #include <nes/NesFile.h>
 #include <nes/literals.h>
 
 #include "Emulator.h"
 
+namespace {
+std::string getFileSha256(std::string_view filePath) {
+    std::ifstream ifs{filePath, std::ios_base::binary | std::ios_base::in};
+    if (!ifs) {
+        return {};
+    }
+
+    std::string fileContent;
+    while (!ifs.eof()) {
+        char buf[4096];
+        ifs.read(buf, sizeof buf);
+        fileContent.append(buf, ifs.gcount());
+    }
+
+    EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit(mdctx, EVP_sha256());
+
+    EVP_DigestUpdate(mdctx, fileContent.data(), fileContent.size());
+
+    std::vector<unsigned char> mdValue(EVP_MAX_MD_SIZE, 0);
+    unsigned int mdLen;
+    EVP_DigestFinal(mdctx, mdValue.data(), &mdLen);
+    mdValue.resize(mdLen);
+
+    std::ostringstream oss;
+    for (unsigned char value : mdValue) {
+        oss << std::hex << +value;
+    }
+
+    return oss.str();
+}
+} // namespace
+
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
-      nesFile(nesFile),
+      nesFilePath(nesFile),
       audioMaker(SampleRate, 1),
       stop(false) {}
 
 void Emulator::onBegin() {
     PixelEngine::onBegin();
 
-    std::optional<Cartridge> cartridge = loadNesFile(nesFile);
+    if (!nesFilePath.has_filename()) {
+        throw std::runtime_error{nesFilePath.string() + " is not a file"};
+    }
+
+    if (!std::filesystem::exists(nesFilePath)) {
+        throw std::runtime_error{nesFilePath.string() + " does not exist"};
+    }
+
+    std::optional<Cartridge> cartridge = loadNesFile(nesFilePath.string());
     if (!cartridge.has_value()) {
         throw std::runtime_error{"Cannot load the NES ROM"};
     }
@@ -35,6 +80,8 @@ void Emulator::onBegin() {
     audioMaker.setCallback(std::bind(&Emulator::audioMakerGetData, this));
     audioMaker.setProcessingInterval(10);
     audioMaker.run();
+
+    loadGameAchieve();
 }
 
 void Emulator::onUpdate() {
@@ -51,6 +98,8 @@ void Emulator::onUpdate() {
 
 void Emulator::onEnd() {
     PixelEngine::onEnd();
+
+    saveGameAchieve();
 
     {
         std::lock_guard<std::mutex> lock{mtx};
@@ -140,6 +189,47 @@ void Emulator::deserialize() {
     if (!dump.empty()) {
         std::istringstream iss{dump};
         nes.deserialize(iss);
+    }
+}
+
+void Emulator::loadGameAchieve() {
+    std::string sha256 = getFileSha256(nesFilePath.string());
+    std::filesystem::path directory{".NesEmulator/"};
+    if (!std::filesystem::exists(directory)) {
+        return;
+    }
+
+    for (const auto& dirEntry : std::filesystem::directory_iterator{directory}) {
+        std::string filename = dirEntry.path().filename().string();
+
+        if (filename.starts_with(sha256)) {
+            std::ifstream ifs{dirEntry.path().string(), std::ios_base::binary | std::ios_base::in};
+            if (ifs) {
+                nes.deserialize(ifs);
+                std::cout << "Load from " + dirEntry.path().string() << "\n";
+            }
+
+            break;
+        }
+    }
+}
+
+void Emulator::saveGameAchieve() {
+    std::string sha256 = getFileSha256(nesFilePath.string());
+    std::string filename = nesFilePath.filename().stem();
+    std::string file = sha256 + "-" + filename;
+
+    std::filesystem::path filePath{".NesEmulator/"};
+    if (!std::filesystem::exists(filePath)) {
+        std::filesystem::create_directory(filePath);
+    }
+
+    filePath /= file;
+
+    std::ofstream ofs{filePath.string(), std::ios_base::binary | std::ios_base::out | std::ios_base::trunc};
+    if (ofs) {
+        nes.serialize(ofs);
+        std::cout << "Save to " << filePath.string() << "\n";
     }
 }
 
