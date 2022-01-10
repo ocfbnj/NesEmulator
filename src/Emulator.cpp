@@ -207,6 +207,8 @@ void Emulator::loadGameAchieve() {
             if (ifs) {
                 nes.deserialize(ifs);
                 std::cout << "Load from " + dirEntry.path().string() << "\n";
+
+                serialize(); // so we can quickly restore to the startup state
             }
 
             break;
