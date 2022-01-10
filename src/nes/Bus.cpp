@@ -117,7 +117,9 @@ std::uint8_t Bus::cpuRead(std::uint16_t addr) {
             // APU Status Register
             data = apu.apuRead(addr);
         } else if (addr == 0x4016) {
-            data = joypad.read();
+            data = joypad1.read();
+        } else if (addr == 0x4017) {
+            data = joypad2.read();
         }
     } else if (addr >= 0x4018 && addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
@@ -173,7 +175,7 @@ void Bus::cpuWrite(std::uint16_t addr, std::uint8_t data) {
             // assert(0);
         }
     } else if (addr >= 0x4000 && addr < 0x4018) {
-        if (addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015) {
+        if (addr >= 0x4000 && addr < 0x4009 || addr >= 0x400A && addr < 0x400D || addr >= 0x400E && addr < 0x4014 || addr == 0x4015 || addr == 0x4017) {
             // APU addresses
             apu.apuWrite(addr, data);
         } else if (addr == 0x4014) {
@@ -186,9 +188,8 @@ void Bus::cpuWrite(std::uint16_t addr, std::uint8_t data) {
 
             ppu.writeOamDMA(buffer);
         } else if (addr == 0x4016) {
-            joypad.write(data);
-        } else if (addr == 0x4017) {
-            apu.apuWrite(addr, data);
+            joypad1.write(data);
+            joypad2.write(data);
         }
     } else if (addr >= 0x4018 && addr < 0x4020) {
         // APU and I/O functionality that is normally disabled.
@@ -288,6 +289,10 @@ PPU& Bus::getPPU() {
     return ppu;
 }
 
-Joypad& Bus::getJoypad() {
-    return joypad;
+Joypad& Bus::getJoypad1() {
+    return joypad1;
+}
+
+Joypad& Bus::getJoypad2() {
+    return joypad2;
 }

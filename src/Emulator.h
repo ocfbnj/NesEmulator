@@ -2,10 +2,12 @@
 #define EMULATOR_H
 
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include <audio_maker/AudioMaker.h>
@@ -24,6 +26,12 @@ public:
     void onKeyRelease(Key key) override;
 
 private:
+    void initKeyMap();
+
+    void reset();
+    void serialize();
+    void deserialize();
+
     void debug();
     void renderFrame(const PPU::Frame& frame);
     void resetAudioMaker();
@@ -33,6 +41,10 @@ private:
 
     Bus nes;
     std::string nesFile;
+
+    std::string dump;
+    std::unordered_map<Key, std::function<void()>> pressKeyMap;
+    std::unordered_map<Key, std::function<void()>> releaseKeyMap;
 
     AudioMaker audioMaker;
     std::vector<std::int16_t> samples;

@@ -31,6 +31,19 @@ tested, other games may or may not work:
 |  Left  |     A     |
 | Right  |     D     |
 
+#### Player2
+
+| Button |  Mapped to  |
+| :----: | :---------: |
+|   A    |    Num1     |
+|   B    |    Num2     |
+| Select | Right Shift |
+| Start  |    Num0     |
+|   Up   |     Up      |
+|  Down  |    Down     |
+|  Left  |    Left     |
+| Right  |    Right    |
+
 #### Other
 
 | Button |    Effect     |

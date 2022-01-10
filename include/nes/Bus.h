@@ -50,7 +50,8 @@ public:
     CPU& getCPU();
     APU& getAPU();
     PPU& getPPU();
-    Joypad& getJoypad();
+    Joypad& getJoypad1();
+    Joypad& getJoypad2();
 
 private:
     // See https://bugzmanov.github.io/nes_ebook/images/ch2/image_5_motherboard.png
@@ -61,7 +62,8 @@ private:
     std::array<std::uint8_t, 2_kb> cpuRam{};
     std::array<std::uint8_t, 2_kb> ppuRam{};
 
-    Joypad joypad;
+    Joypad joypad1;
+    Joypad joypad2;
 };
 
 #endif // OCFBNJ_NES_BUS_H

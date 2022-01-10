@@ -1,25 +1,11 @@
 #include <cassert>
 #include <cmath>
 #include <numbers>
-#include <unordered_map>
 
 #include <nes/NesFile.h>
 #include <nes/literals.h>
 
 #include "Emulator.h"
-
-namespace {
-const std::unordered_map<Emulator::Key, Joypad::Button> keyMap{
-    {Emulator::Key::J, Joypad::Button::A},
-    {Emulator::Key::K, Joypad::Button::B},
-    {Emulator::Key::Space, Joypad::Button::Select},
-    {Emulator::Key::Enter, Joypad::Button::Start},
-    {Emulator::Key::W, Joypad::Button::Up},
-    {Emulator::Key::S, Joypad::Button::Down},
-    {Emulator::Key::A, Joypad::Button::Left},
-    {Emulator::Key::D, Joypad::Button::Right},
-};
-}
 
 Emulator::Emulator(std::string_view nesFile)
     : PixelEngine(256, 240, "Nes Emulator", 3),
@@ -40,6 +26,8 @@ void Emulator::onBegin() {
     nes.getAPU().setSampleRate(SampleRate);
     nes.getAPU().setSampleCallback(std::bind(&Emulator::sampleCallback, this, std::placeholders::_1));
     nes.powerUp();
+
+    initKeyMap();
 
     setFpsLimit(FPS);
     setVsyncEnabled(false);
@@ -75,32 +63,83 @@ void Emulator::onEnd() {
 void Emulator::onKeyPress(PixelEngine::Key key) {
     PixelEngine::onKeyPress(key);
 
-    static std::string dump;
-
-    if (auto it = keyMap.find(key); it != keyMap.end()) {
-        nes.getJoypad().press(it->second);
-    }
-
-    if (key == Key::R) {
-        nes.reset();
-        resetAudioMaker();
-    } else if (key == Key::I) {
-        std::ostringstream oss;
-        nes.serialize(oss);
-        dump = oss.str();
-    } else if (key == Key::L) {
-        if (!dump.empty()) {
-            std::istringstream iss{dump};
-            nes.deserialize(iss);
-        }
+    if (auto it = pressKeyMap.find(key); it != pressKeyMap.end()) {
+        it->second();
     }
 }
 
 void Emulator::onKeyRelease(PixelEngine::Key key) {
     PixelEngine::onKeyRelease(key);
 
-    if (auto it = keyMap.find(key); it != keyMap.end()) {
-        nes.getJoypad().release(it->second);
+    if (auto it = releaseKeyMap.find(key); it != releaseKeyMap.end()) {
+        it->second();
+    }
+}
+
+void Emulator::initKeyMap() {
+    Joypad& joypad1 = nes.getJoypad1();
+    Joypad& joypad2 = nes.getJoypad2();
+
+    pressKeyMap = {
+        {Emulator::Key::R, [this] { reset(); }},
+        {Emulator::Key::I, [this] { serialize(); }},
+        {Emulator::Key::L, [this] { deserialize(); }},
+
+        {Emulator::Key::J, [this, &joypad1] { joypad1.press(Joypad::Button::A); }},
+        {Emulator::Key::K, [this, &joypad1] { joypad1.press(Joypad::Button::B); }},
+        {Emulator::Key::Space, [this, &joypad1] { joypad1.press(Joypad::Button::Select); }},
+        {Emulator::Key::Enter, [this, &joypad1] { joypad1.press(Joypad::Button::Start); }},
+        {Emulator::Key::W, [this, &joypad1] { joypad1.press(Joypad::Button::Up); }},
+        {Emulator::Key::S, [this, &joypad1] { joypad1.press(Joypad::Button::Down); }},
+        {Emulator::Key::A, [this, &joypad1] { joypad1.press(Joypad::Button::Left); }},
+        {Emulator::Key::D, [this, &joypad1] { joypad1.press(Joypad::Button::Right); }},
+
+        {Emulator::Key::Num1, [this, &joypad2] { joypad2.press(Joypad::Button::A); }},
+        {Emulator::Key::Num2, [this, &joypad2] { joypad2.press(Joypad::Button::B); }},
+        {Emulator::Key::RightShift, [this, &joypad2] { joypad2.press(Joypad::Button::Select); }},
+        {Emulator::Key::RightControl, [this, &joypad2] { joypad2.press(Joypad::Button::Start); }},
+        {Emulator::Key::Up, [this, &joypad2] { joypad2.press(Joypad::Button::Up); }},
+        {Emulator::Key::Down, [this, &joypad2] { joypad2.press(Joypad::Button::Down); }},
+        {Emulator::Key::Left, [this, &joypad2] { joypad2.press(Joypad::Button::Left); }},
+        {Emulator::Key::Right, [this, &joypad2] { joypad2.press(Joypad::Button::Right); }},
+    };
+
+    releaseKeyMap = {
+        {Emulator::Key::J, [this, &joypad1] { joypad1.release(Joypad::Button::A); }},
+        {Emulator::Key::K, [this, &joypad1] { joypad1.release(Joypad::Button::B); }},
+        {Emulator::Key::Space, [this, &joypad1] { joypad1.release(Joypad::Button::Select); }},
+        {Emulator::Key::Enter, [this, &joypad1] { joypad1.release(Joypad::Button::Start); }},
+        {Emulator::Key::W, [this, &joypad1] { joypad1.release(Joypad::Button::Up); }},
+        {Emulator::Key::S, [this, &joypad1] { joypad1.release(Joypad::Button::Down); }},
+        {Emulator::Key::A, [this, &joypad1] { joypad1.release(Joypad::Button::Left); }},
+        {Emulator::Key::D, [this, &joypad1] { joypad1.release(Joypad::Button::Right); }},
+
+        {Emulator::Key::Num1, [this, &joypad2] { joypad2.release(Joypad::Button::A); }},
+        {Emulator::Key::Num2, [this, &joypad2] { joypad2.release(Joypad::Button::B); }},
+        {Emulator::Key::RightShift, [this, &joypad2] { joypad2.release(Joypad::Button::Select); }},
+        {Emulator::Key::Num0, [this, &joypad2] { joypad2.release(Joypad::Button::Start); }},
+        {Emulator::Key::Up, [this, &joypad2] { joypad2.release(Joypad::Button::Up); }},
+        {Emulator::Key::Down, [this, &joypad2] { joypad2.release(Joypad::Button::Down); }},
+        {Emulator::Key::Left, [this, &joypad2] { joypad2.release(Joypad::Button::Left); }},
+        {Emulator::Key::Right, [this, &joypad2] { joypad2.release(Joypad::Button::Right); }},
+    };
+}
+
+void Emulator::reset() {
+    nes.reset();
+    resetAudioMaker();
+}
+
+void Emulator::serialize() {
+    std::ostringstream oss;
+    nes.serialize(oss);
+    dump = oss.str();
+}
+
+void Emulator::deserialize() {
+    if (!dump.empty()) {
+        std::istringstream iss{dump};
+        nes.deserialize(iss);
     }
 }
 
