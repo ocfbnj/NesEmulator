@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <cstring>
 #include <unordered_map>
 
 // clang-format off
