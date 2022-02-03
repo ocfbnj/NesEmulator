@@ -28,17 +28,15 @@ public:
     void writeLength(std::uint8_t data);
 
 private:
-    struct {
-        union {
-            struct {
-                std::uint8_t r : 4; // Rate index
-                std::uint8_t unused : 2;
-                std::uint8_t l : 1; // Loop flag
-                std::uint8_t i : 1; // IRQ enabled flag. If clear, the interrupt flag is cleared.
-            };
-
-            std::uint8_t flagsAndRate = 0;
+    union {
+        struct {
+            std::uint8_t r : 4; // Rate index
+            std::uint8_t unused : 2;
+            std::uint8_t l : 1; // Loop flag
+            std::uint8_t i : 1; // IRQ enabled flag. If clear, the interrupt flag is cleared.
         };
+
+        std::uint8_t flagsAndRate = 0;
     };
 
     std::uint8_t value = 0;
