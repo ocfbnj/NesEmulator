@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+
+    strategy:
+      matrix:
+        platform:
+          - { name: Windows MSVC, os: windows-latest }
+          - {
+              name: Linux GCC,
+              os: ubuntu-latest,
+              flags: -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10,
+            }
+          - { name: MacOS Apple Clang, os: macos-latest }
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Install GCC 10
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install g++-10
+      - name: Setup Python
+        uses: actions/setup-python@v2.3.1
+      - name: Install Conan Package Manager
+        run: pip install conan -U
+      - name: Configure CMake
+        shell: bash
+        run: cmake -DCMAKE_BUILD_TYPE=Release -S $GITHUB_WORKSPACE -B $GITHUB_WORKSPACE/build ${{matrix.platform.flags}}
+      - name: Build
+        shell: bash
+        run: cmake --build $GITHUB_WORKSPACE/build --config Release
