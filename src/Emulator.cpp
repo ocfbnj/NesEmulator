@@ -218,7 +218,7 @@ void Emulator::loadGameAchieve() {
 
 void Emulator::saveGameAchieve() {
     std::string sha256 = getFileSha256(nesFilePath.string());
-    std::string filename = nesFilePath.filename().stem();
+    std::string filename = nesFilePath.filename().stem().string();
     std::string file = sha256 + "-" + filename;
 
     std::filesystem::path filePath{".NesEmulator/"};
