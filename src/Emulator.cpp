@@ -13,7 +13,7 @@
 
 namespace {
 std::string getFileSha256(std::string_view filePath) {
-    std::ifstream ifs{filePath, std::ios_base::binary | std::ios_base::in};
+    std::ifstream ifs{filePath.data(), std::ifstream::binary | std::ifstream::in};
     if (!ifs) {
         return {};
     }
