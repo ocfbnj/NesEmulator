@@ -40,3 +40,11 @@ jobs:
       - name: Build
         shell: bash
         run: cmake --build $GITHUB_WORKSPACE/build --config Release
+      - name: Test
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cd build/test && ./testCPU.exe
+          else
+            cd build/test && ./testCPU
+          fi
