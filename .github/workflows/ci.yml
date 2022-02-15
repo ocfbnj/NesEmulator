@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            cd build/test && ./testCPU.exe
+            cd build/test && ./Release/testCPU.exe
           else
             cd build/test && ./testCPU
           fi
