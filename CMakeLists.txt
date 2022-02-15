@@ -28,7 +28,7 @@ conan_cmake_configure(
         glfw/3.3.6
         glad/0.1.34
         openal/1.21.1
-        openssl/1.1.1m
+        mbedtls/3.1.0
     GENERATORS
         cmake_find_package
     IMPORTS
@@ -49,7 +49,7 @@ find_package(GTest)
 find_package(glfw3 REQUIRED)
 find_package(glad REQUIRED)
 find_package(OpenAL REQUIRED)
-find_package(OpenSSL REQUIRED)
+find_package(MbedTLS REQUIRED)
 
 #############################################################################################
 ########### Conan Package Manager End #######################################################

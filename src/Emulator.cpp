@@ -1,10 +1,12 @@
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <numbers>
 
-#include <openssl/evp.h>
+#include <mbedtls/md.h>
+#include <mbedtls/sha256.h>
 
 #include <nes/NesFile.h>
 #include <nes/literals.h>
@@ -25,15 +27,10 @@ std::string getFileSha256(std::string_view filePath) {
         fileContent.append(buf, ifs.gcount());
     }
 
-    EVP_MD_CTX* mdctx = EVP_MD_CTX_new();
-    EVP_DigestInit(mdctx, EVP_sha256());
+    std::array<unsigned char, 32> mdValue{};
 
-    EVP_DigestUpdate(mdctx, fileContent.data(), fileContent.size());
-
-    std::vector<unsigned char> mdValue(EVP_MAX_MD_SIZE, 0);
-    unsigned int mdLen;
-    EVP_DigestFinal(mdctx, mdValue.data(), &mdLen);
-    mdValue.resize(mdLen);
+    const mbedtls_md_info_t* info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+    mbedtls_md(info, reinterpret_cast<unsigned char*>(fileContent.data()), fileContent.size(), mdValue.data());
 
     std::ostringstream oss;
     for (unsigned char value : mdValue) {

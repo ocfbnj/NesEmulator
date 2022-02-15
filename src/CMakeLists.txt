@@ -14,5 +14,5 @@ target_link_libraries(
     ocfbnj::nes
     ocfbnj::pixel_engine
     ocfbnj::audio_maker
-    OpenSSL::OpenSSL
+    MbedTLS::mbedtls
 )
