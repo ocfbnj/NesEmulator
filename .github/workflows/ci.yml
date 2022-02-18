@@ -48,3 +48,10 @@ jobs:
           else
             cd build/test && ./testCPU
           fi
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v2.3.1
+        with:
+          name: ${{ matrix.platform.name }}
+          path: |
+            ./build/src/NesEmulator
+            ./build/src/Release/NesEmulator.exe
