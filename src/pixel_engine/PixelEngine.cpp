@@ -157,7 +157,9 @@ GLuint indices[] = {
 
 template <class Clock, class Duration>
 void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
-#ifdef _WIN32
+#define NES_EMULATOR_MORE_ACCURATE
+
+#if defined(_WIN32) || defined(NES_EMULATOR_MORE_ACCURATE)
     // TODO On my machine, using `std::this_thread::sleep_until()` is not precise?
     // The minimum sleep duration is about 15 milliseconds on my Windows 11 machine.
     // See https://github.com/rust-lang/rust/issues/43376
@@ -228,8 +230,9 @@ void PixelEngine::run() {
     while (!glfwWindowShouldClose(glContext.window)) {
         mainThreadQueue.pull();
 
-        if (needRendering) {
-            needRendering = false;
+        if (bool b = true; needRendering.compare_exchange_strong(b, false)) {
+            assert(b == true);
+
             render();
             updateFps();
         }
@@ -407,11 +410,13 @@ void PixelEngine::render() {
     texture.bind();
     vao.bind();
 
+    std::vector<Pixel> data;
     {
         std::lock_guard lock{mtx};
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+        data = pixels;
     }
 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
     glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(glContext.window);
