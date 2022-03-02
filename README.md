@@ -1,5 +1,7 @@
 # NesEmulator
 
+[![CI](https://github.com/ocfbnj/NesEmulator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ocfbnj/NesEmulator/actions/workflows/ci.yml)
+
 This is an NES emulator. It implements Mapper0-4, which cover about 80% of iNes rom. The following games have been
 tested, other games may or may not work:
 
