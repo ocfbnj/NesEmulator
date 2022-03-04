@@ -148,7 +148,7 @@ private:
     VBO vbo;
     EBO ebo;
 
-    std::vector<Pixel> pixels;
+    std::vector<Pixel> pixels; // guard by `mtx`
     Texture texture;
 
     Clock::time_point startTime;
