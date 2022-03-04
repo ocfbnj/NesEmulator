@@ -154,26 +154,6 @@ GLuint indices[] = {
     0, 1, 2, // lower triangle
     2, 3, 0, // upper triangle
 };
-
-template <class Clock, class Duration>
-void sleepUntil(const std::chrono::time_point<Clock, Duration>& absTime) {
-#define NES_EMULATOR_MORE_ACCURATE
-
-#if defined(_WIN32) || defined(NES_EMULATOR_MORE_ACCURATE)
-    // TODO On my machine, using `std::this_thread::sleep_until()` is not precise?
-    // The minimum sleep duration is about 15 milliseconds on my Windows 11 machine.
-    // See https://github.com/rust-lang/rust/issues/43376
-
-    // But SFML works well?
-    // See https://github.com/SFML/SFML/blob/HEAD/src/SFML/System/Sleep.cpp#L39
-
-    while (Clock::now() < absTime) {
-        std::this_thread::yield();
-    }
-#else
-    std::this_thread::sleep_until(absTime);
-#endif
-}
 } // namespace
 
 PixelEngine::GLContext::GLContext(int width, int height, std::string_view title) {
@@ -230,7 +210,11 @@ void PixelEngine::run() {
     while (!glfwWindowShouldClose(glContext.window)) {
         mainThreadQueue.pull();
 
-        if (bool b = true; needRendering.compare_exchange_strong(b, false)) {
+        if (bool b = true; needRendering.compare_exchange_strong(
+                b,
+                false,
+                std::memory_order_release,
+                std::memory_order_acquire)) {
             assert(b == true);
 
             render();
@@ -386,18 +370,23 @@ void PixelEngine::userThread() {
     while (!exit) {
         userThreadQueue.pull();
 
-        onUpdate();
-        needRendering = true;
-
         Clock::time_point now = Clock::now();
         Clock::duration elapsedTime = now - startTime;
         startTime = now;
 
-        if (frameTimeLimit != 0s) {
-            Clock::time_point sleepEnd = now + (frameTimeLimit - elapsedTime);
-            sleepUntil(sleepEnd);
+        if (frameTimeLimit == 0s) {
+            onUpdate();
+            needRendering.store(true, std::memory_order_release);
+            continue;
+        }
 
-            startTime = sleepEnd;
+        if (freeTime.count() > 0) {
+            freeTime -= elapsedTime;
+        } else {
+            freeTime += frameTimeLimit - elapsedTime;
+
+            onUpdate();
+            needRendering.store(true, std::memory_order_release);
         }
     }
 }

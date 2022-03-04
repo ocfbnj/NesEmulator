@@ -152,6 +152,7 @@ private:
     Texture texture;
 
     Clock::time_point startTime;
+    Clock::duration freeTime;
 
     Clock::duration frameTimeLimit;
     Clock::duration fpsUpdateInterval;
