@@ -193,7 +193,6 @@ PixelEngine::PixelEngine(int width, int height, std::string_view title, int scal
       frameTimeLimit(0s),
       fpsUpdateInterval(500ms),
       exit(false),
-      needRendering(true),
       mainThreadId(std::this_thread::get_id()) {
     vao.linkAttrib(vbo, 0, 2, GL_FLOAT, 4 * sizeof(float), reinterpret_cast<void*>(0 * sizeof(float)));
     vao.linkAttrib(vbo, 1, 2, GL_FLOAT, 4 * sizeof(float), reinterpret_cast<void*>(2 * sizeof(float)));
@@ -209,18 +208,6 @@ void PixelEngine::run() {
 
     while (!glfwWindowShouldClose(glContext.window)) {
         mainThreadQueue.pull();
-
-        if (bool b = true; needRendering.compare_exchange_strong(
-                b,
-                false,
-                std::memory_order_release,
-                std::memory_order_acquire)) {
-            assert(b == true);
-
-            render();
-            updateFps();
-        }
-
         glfwPollEvents();
     }
 
@@ -284,7 +271,6 @@ Pixel PixelEngine::getPixel(int x, int y) {
 
     y = height - y - 1;
 
-    std::lock_guard lock{mtx};
     return pixels[y * width + x];
 }
 
@@ -294,13 +280,10 @@ void PixelEngine::drawPixel(int x, int y, Pixel pixel) {
 
     y = height - y - 1;
 
-    std::lock_guard lock{mtx};
     pixels[y * width + x] = pixel;
 }
 
 void PixelEngine::drawPixels(std::span<const std::uint8_t> rawPixels) {
-    std::lock_guard lock{mtx};
-
     assert(rawPixels.size() == pixels.size() * sizeof(decltype(pixels)::value_type));
     std::memcpy(pixels.data(), rawPixels.data(), rawPixels.size());
 }
@@ -374,9 +357,23 @@ void PixelEngine::userThread() {
         Clock::duration elapsedTime = now - startTime;
         startTime = now;
 
-        if (frameTimeLimit == 0s) {
+        auto update = [this] {
             onUpdate();
-            needRendering.store(true, std::memory_order_release);
+
+            {
+                std::lock_guard lock{mtx};
+                pixelsCopy = pixels;
+            }
+
+            runInMainThread([this] {
+                assertInMainThread();
+                render();
+                updateFps();
+            });
+        };
+
+        if (frameTimeLimit == 0s) {
+            update();
             continue;
         }
 
@@ -384,9 +381,7 @@ void PixelEngine::userThread() {
             freeTime -= elapsedTime;
         } else {
             freeTime += frameTimeLimit - elapsedTime;
-
-            onUpdate();
-            needRendering.store(true, std::memory_order_release);
+            update();
         }
     }
 }
@@ -402,7 +397,7 @@ void PixelEngine::render() {
     std::vector<Pixel> data;
     {
         std::lock_guard lock{mtx};
-        data = pixels;
+        data = pixelsCopy;
     }
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());

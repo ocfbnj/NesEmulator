@@ -148,7 +148,8 @@ private:
     VBO vbo;
     EBO ebo;
 
-    std::vector<Pixel> pixels; // guard by `mtx`
+    std::vector<Pixel> pixels;
+    std::vector<Pixel> pixelsCopy; // guard by `mtx`
     Texture texture;
 
     Clock::time_point startTime;
@@ -158,8 +159,7 @@ private:
     Clock::duration fpsUpdateInterval;
 
     std::atomic<bool> exit;
-    std::atomic<bool> needRendering;
-    std::mutex mtx; // for `pixels`
+    std::mutex mtx; // for `pixelsCopy`
 
     std::thread::id mainThreadId;
     std::thread::id userThreadId;
