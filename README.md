@@ -68,20 +68,32 @@ tested, other games may or may not work:
 
     ~~~bash
     pip install conan -U
+    conan profile detect --force
     ~~~
 
 2. Clone and Build
 
+    **Windows**
+
     ~~~bash
     git clone https://github.com/ocfbnj/NesEmulator.git
     cd NesEmulator
-    mkdir build
-    cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-    cmake --build .
+    conan install . --build=missing
+    cmake --preset=conan-default
+    cmake --build --preset=conan-release
     ~~~
 
-Now, you can find the binary in `build/src` directory.
+    **Linux, macOS**
+
+    ~~~bash
+    git clone https://github.com/ocfbnj/NesEmulator.git
+    cd NesEmulator
+    conan install . --build=missing
+    cmake --preset=conan-release
+    cmake --build --preset=conan-release
+    ~~~
+
+Now, you can find the binary in `build` directory.
 
 ## Screenshots
 

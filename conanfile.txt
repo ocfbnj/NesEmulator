@@ -1,0 +1,13 @@
+[requires]
+gtest/1.14.0
+glfw/3.4
+glad/0.1.36
+openal-soft/1.23.1
+mbedtls/3.6.0
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout

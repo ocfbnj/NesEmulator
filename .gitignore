@@ -15,3 +15,6 @@
 
 # Mac OS
 .DS_Store
+
+# Conan
+CMakeUserPresets.json

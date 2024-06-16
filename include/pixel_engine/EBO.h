@@ -13,7 +13,7 @@ public:
     EBO& operator=(const EBO&) = delete;
     EBO(EBO&&) = default;
     EBO& operator=(EBO&&) = default;
-    
+
     ~EBO();
 
     void bind();

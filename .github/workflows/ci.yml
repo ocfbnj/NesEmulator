@@ -15,11 +15,7 @@ jobs:
       matrix:
         platform:
           - { name: Windows MSVC, os: windows-latest }
-          - {
-              name: Linux GCC,
-              os: ubuntu-latest,
-              flags: -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10,
-            }
+          - { name: Linux GCC, os: ubuntu-latest }
           - { name: MacOS Apple Clang, os: macos-latest }
 
     steps:
@@ -29,29 +25,39 @@ jobs:
           submodules: true
       - name: Install Linux Dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install g++-10 libgl-dev
+        run: sudo apt-get update && sudo apt-get install libgl-dev xorg-dev libxcb1-dev libx11-dev libx11-xcb-dev libxcb-glx0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev libxcb-cursor-dev libxcb-dri2-0-dev libxcb-present-dev libxcb-composite0-dev libxcb-ewmh-dev libxcb-res0-dev libxcb-util-dev libxcb-util0-dev
       - name: Setup Python
         uses: actions/setup-python@v2.3.1
       - name: Install Conan Package Manager
-        run: pip install conan -U
+        run: |
+          pip install conan -U
+          conan profile detect --force
+      - name: Configure Conan
+        shell: bash
+        run: conan install . --build=missing
       - name: Configure CMake
         shell: bash
-        run: cmake -DCMAKE_BUILD_TYPE=Release -S $GITHUB_WORKSPACE -B $GITHUB_WORKSPACE/build ${{matrix.platform.flags}}
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            cmake --preset=conan-default
+          else
+            cmake --preset=conan-release
+          fi
       - name: Build
         shell: bash
-        run: cmake --build $GITHUB_WORKSPACE/build --config Release
+        run: cmake --build --preset=conan-release
       - name: Test
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
             cd build/test && ./Release/testCPU.exe
           else
-            cd build/test && ./testCPU
+            cd build/Release/test && ./testCPU
           fi
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v2.3.1
         with:
           name: ${{ matrix.platform.name }}
           path: |
-            ./build/src/NesEmulator
+            ./build/Release/src/NesEmulator
             ./build/src/Release/NesEmulator.exe
